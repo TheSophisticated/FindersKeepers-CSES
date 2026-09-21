@@ -1,0 +1,335 @@
+[gd_scene format=3 uid="uid://d4cpj11iha5uc"]
+
+[ext_resource type="Script" uid="uid://buap128n0gj" path="res://Maps/Scripts/GameMode.gd" id="1_bliyt"]
+[ext_resource type="Texture2D" uid="uid://biec8m2uv843c" path="res://Textures/texture_03.png" id="2_d7oxw"]
+[ext_resource type="Texture2D" uid="uid://cwcexiteh4s2q" path="res://Textures/texture_02purpl.png" id="3_l8b2n"]
+[ext_resource type="Texture2D" uid="uid://d0u76ui7ag1at" path="res://Textures/texture_02.png" id="4_abnra"]
+[ext_resource type="Script" uid="uid://de4ax627pkk2y" path="res://Maps/Scripts/PauseMenu.gd" id="5_d7oxw"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_4okp1"]
+
+[sub_resource type="Sky" id="Sky_d7oxw"]
+sky_material = SubResource("ProceduralSkyMaterial_4okp1")
+
+[sub_resource type="Environment" id="Environment_l8b2n"]
+background_mode = 2
+sky = SubResource("Sky_d7oxw")
+tonemap_mode = 1
+ssao_enabled = true
+ssil_enabled = true
+sdfgi_enabled = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_r2ywu"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bliyt"]
+albedo_texture = ExtResource("2_d7oxw")
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundaryShape3D_x14v3"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d7oxw"]
+albedo_texture = ExtResource("3_l8b2n")
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_l8b2n"]
+albedo_texture = ExtResource("4_abnra")
+rim_tint = 1.0
+clearcoat_enabled = true
+ao_enabled = true
+refraction_enabled = true
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[node name="GameMode" type="Node3D" unique_id=109405942]
+script = ExtResource("1_bliyt")
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1945485430]
+_spawnable_scenes = PackedStringArray("uid://cmov2y6h564hu")
+spawn_path = NodePath("../SubViewportContainer/SubViewport/WorldObjects")
+spawn_limit = 4
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=2026356016]
+
+[node name="PauseMenu" type="Control" parent="CanvasLayer" unique_id=709917259]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_d7oxw")
+
+[node name="Panel" type="Panel" parent="CanvasLayer/PauseMenu" unique_id=1240750811]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PauseContainer" type="VBoxContainer" parent="CanvasLayer/PauseMenu" unique_id=1085893219]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = -73.0
+offset_right = 128.0
+offset_bottom = 66.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1.16, 1.16)
+pivot_offset = Vector2(128.452, 149.51)
+
+[node name="Continue" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer" unique_id=496432089]
+layout_mode = 2
+text = "Continue"
+
+[node name="Settings" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer" unique_id=480745511]
+layout_mode = 2
+text = "Settings"
+
+[node name="BackToMenu" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer" unique_id=1385517830]
+layout_mode = 2
+text = "Back To Menu"
+
+[node name="Quit" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer" unique_id=816998469]
+layout_mode = 2
+text = "Quit"
+
+[node name="SettingsMenu" type="Panel" parent="CanvasLayer/PauseMenu" unique_id=1924677331]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -82.3875
+offset_top = -52.035
+offset_right = 82.3875
+offset_bottom = 52.035
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(3.655, 3.655)
+pivot_offset = Vector2(80.998, 50.39)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/PauseMenu/SettingsMenu" unique_id=1180077409]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -163.253
+offset_top = -87.0951
+offset_right = 203.767
+offset_bottom = 139.33
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.44, 0.44)
+pivot_offset = Vector2(147.155, 65.355)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 39.85
+
+[node name="ResOptionButton" type="OptionButton" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=1560303543]
+layout_mode = 2
+
+[node name="FullScreenCheckButton" type="CheckButton" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=339346614]
+layout_mode = 2
+text = "FullScreen"
+
+[node name="VsyncCheckBox" type="CheckBox" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=2070054032]
+layout_mode = 2
+tooltip_text = "is a graphics technology designed to synchronize the frame rate output of a computer's graphics card with the refresh rate of the monitor"
+text = "Vsync?"
+alignment = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=701731228]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Keyboard and Mouse settings"
+
+[node name="MouseSensitivity" type="VBoxContainer" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=687606849]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/MouseSensitivity" unique_id=1128702265]
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Sensitivity"
+vertical_alignment = 1
+
+[node name="Sensitivity" type="HSlider" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/MouseSensitivity/Text" unique_id=1587502140]
+layout_mode = 0
+offset_left = 94.285
+offset_top = 4.685
+offset_right = 365.085
+offset_bottom = 20.685
+pivot_offset = Vector2(0, 7.37)
+
+[node name="SettingMenuBack" type="Button" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=1252423802]
+layout_mode = 2
+size_flags_vertical = 10
+text = "Back"
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=596178219]
+texture_filter = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+stretch_shrink = 4
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=2059672986]
+handle_input_locally = false
+size = Vector2i(320, 240)
+render_target_update_mode = 4
+
+[node name="WorldObjects" type="Node" parent="SubViewportContainer/SubViewport" unique_id=1195979618]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=181823887]
+transform = Transform3D(0.99027, 0.0455113, -0.131503, 0.139156, -0.323871, 0.935812, 0, -0.945006, -0.327053, 0.523988, 1.30407, -0.0454535)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=2009336905]
+environment = SubResource("Environment_l8b2n")
+
+[node name="Floor" type="StaticBody3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1854877067]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=1274504003]
+transform = Transform3D(19.8926, 0, 0, 0, -0.0245266, 0, 0, 0, 19.8926, 0, 0, 0)
+mesh = SubResource("BoxMesh_r2ywu")
+skeleton = NodePath("../CollisionShape3D")
+surface_material_override/0 = SubResource("StandardMaterial3D_bliyt")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=902295024]
+shape = SubResource("WorldBoundaryShape3D_x14v3")
+
+[node name="Walls" type="Node" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=1068229161]
+
+[node name="Wall" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls" unique_id=677293227]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.01472, 1.77466, -9.90484)
+use_collision = true
+size = Vector3(19.8679, 3.66162, 0.0744629)
+material = SubResource("StandardMaterial3D_d7oxw")
+
+[node name="Wall2" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls" unique_id=836347892]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.01472, 1.77466, 9.95857)
+use_collision = true
+size = Vector3(19.8679, 3.66162, 0.0744629)
+material = SubResource("StandardMaterial3D_d7oxw")
+
+[node name="Wall3" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls" unique_id=779785742]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -9.9164, 1.77466, 0.0551791)
+use_collision = true
+size = Vector3(19.8679, 3.66162, 0.0744629)
+material = SubResource("StandardMaterial3D_d7oxw")
+
+[node name="Wall4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls" unique_id=1751349623]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 9.911, 1.77466, 0.0551791)
+use_collision = true
+size = Vector3(19.8679, 3.66162, 0.0744629)
+material = SubResource("StandardMaterial3D_d7oxw")
+
+[node name="Boxes" type="Node" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=1428455199]
+
+[node name="Box" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1223982408]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.517136, 0)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box2" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1130484808]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.517136, 0)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box3" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1074895579]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.517136, 0)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1941110537]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1.51714, 0)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box5" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=35671662]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1.51714, 0)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box6" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1757795140]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.51714, 0)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box7" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1123448234]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 1)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box8" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1879094278]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 2)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box9" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1979951699]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 3)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box10" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=2055646923]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 3)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box11" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1919035920]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 2)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Box12" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=948048474]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 1)
+use_collision = true
+material = SubResource("StandardMaterial3D_l8b2n")
+
+[node name="Label3D" type="Label3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1770264067]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.99836, -9.84016)
+text = "GameMode (PlayGround)"
+font_size = 142
+
+[node name="SpotLight3D" type="SpotLight3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1627515835]
+transform = Transform3D(0.921526, -0.380833, 0.0758622, 0.386791, 0.917515, -0.0925183, -0.0343706, 0.114601, 0.992817, 0, 1.24717, -4.38749)
+spot_range = 8.19093
+spot_angle = 61.2073
+
+[node name="SpawnPoints" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=2094408359]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0218, -6.19973)
+
+[node name="SpawnPoint1" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=314873692]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.56169, 0, 0)
+
+[node name="SpawnPoint2" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=710356747]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.102142)
+
+[node name="SpawnPoint3" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=893433999]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.30116, 0, 10.4345)
+
+[node name="SpawnPoint4" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=1190545838]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.52572, 0, 10.4345)
+
+[connection signal="pressed" from="CanvasLayer/PauseMenu/PauseContainer/Continue" to="CanvasLayer/PauseMenu" method="_on_continue_pressed"]
+[connection signal="pressed" from="CanvasLayer/PauseMenu/PauseContainer/Settings" to="CanvasLayer/PauseMenu" method="_on_settings_pressed"]
+[connection signal="pressed" from="CanvasLayer/PauseMenu/PauseContainer/BackToMenu" to="CanvasLayer/PauseMenu" method="_on_back_to_menu_pressed"]
+[connection signal="pressed" from="CanvasLayer/PauseMenu/PauseContainer/Quit" to="CanvasLayer/PauseMenu" method="_on_quit_pressed"]
+[connection signal="toggled" from="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/ResOptionButton" to="CanvasLayer/PauseMenu" method="_on_res_option_button_toggled"]
+[connection signal="toggled" from="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/FullScreenCheckButton" to="CanvasLayer/PauseMenu" method="_on_full_screen_check_button_toggled"]
+[connection signal="toggled" from="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/VsyncCheckBox" to="CanvasLayer/PauseMenu" method="_on_vsync_check_box_toggled"]
+[connection signal="changed" from="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/MouseSensitivity/Text/Sensitivity" to="CanvasLayer/PauseMenu" method="_on_sensitivity_changed"]
+[connection signal="pressed" from="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/SettingMenuBack" to="CanvasLayer/PauseMenu" method="_on_setting_menu_back_pressed"]

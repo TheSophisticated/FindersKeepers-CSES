@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://cmov2y6h564hu"]
+
+[ext_resource type="Script" uid="uid://ba5s5f24vha8o" path="res://Player/Scripts/Player.gd" id="1_cb6jr"]
+[ext_resource type="Script" uid="uid://x7jvc2jhq42u" path="res://Player/Scripts/LocalPlayerController.gd" id="2_luh4h"]
+[ext_resource type="Script" uid="uid://d28ggpbcl23fi" path="res://Networking/RemotePlayerController.gd" id="3_kshrv"]
+[ext_resource type="PackedScene" uid="uid://6yhwxnmq278w" path="res://Models/male_character_ps1-style.glb" id="4_kshrv"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hegmd"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_cb6jr"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("Camera3D:rotation")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:jump_velocity")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+properties/4/path = NodePath(".:up_direction")
+properties/4/spawn = true
+properties/4/replication_mode = 1
+properties/5/path = NodePath(".:position:x")
+properties/5/spawn = true
+properties/5/replication_mode = 1
+properties/6/path = NodePath(".:position:y")
+properties/6/spawn = true
+properties/6/replication_mode = 1
+properties/7/path = NodePath(".:position:z")
+properties/7/spawn = true
+properties/7/replication_mode = 1
+
+[node name="Player" type="CharacterBody3D" unique_id=611918509]
+safe_margin = 0.08
+script = ExtResource("1_cb6jr")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=459706199]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.11025223, 0.8036157, -0.39806548)
+fov = 70.5
+
+[node name="HeadPosition" type="Node3D" parent="Camera3D" unique_id=1095777352]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1715516151]
+transform = Transform3D(0.61, 0, 0, 0, 1, 0, 0, 0, 0.635, 0.12, 0, -0.2030701)
+shape = SubResource("CapsuleShape3D_hegmd")
+
+[node name="FloorRay" type="RayCast3D" parent="." unique_id=1825602027]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.962343, 0)
+target_position = Vector3(0, -0.2, 0)
+
+[node name="StandCheck" type="RayCast3D" parent="." unique_id=1718928371]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.351917, 0)
+target_position = Vector3(0, 0.2, 0)
+collide_with_areas = true
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=486047325]
+replication_interval = 0.05
+delta_interval = 0.1
+replication_config = SubResource("SceneReplicationConfig_cb6jr")
+
+[node name="LocalPlayerController" type="Node" parent="." unique_id=1305086175]
+script = ExtResource("2_luh4h")
+
+[node name="RemotePlayerController" type="Node" parent="." unique_id=609825108]
+script = ExtResource("3_kshrv")
+
+[node name="Sketchfab_Scene" parent="." unique_id=2103658859 instance=ExtResource("4_kshrv")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0.1298219, -1.0984854, -0.18884611)
