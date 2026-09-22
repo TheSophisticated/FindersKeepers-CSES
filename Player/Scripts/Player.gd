@@ -64,7 +64,10 @@ var look_at_ray: RayCast3D            # Raycast for detecting objects in front o
 func _process(delta):
 	if look_at_ray and look_at_ray.is_colliding():
 		var hit_node = look_at_ray.get_collider()
-		print("Looking at: ", hit_node.name, " (", hit_node.get_class(), ")")
+		if hit_node.is_in_group("interactable"):
+			print("Interactable: ", hit_node.name)
+		else:
+			print("Not interactable: ", hit_node.name, " (", hit_node.get_class(), ")")
 
 func _enter_tree():
 	# Set multiplayer authority based on name

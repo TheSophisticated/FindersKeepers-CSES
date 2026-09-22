@@ -239,62 +239,62 @@ material = SubResource("StandardMaterial3D_d7oxw")
 
 [node name="Boxes" type="Node" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=1428455199]
 
-[node name="Box" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1223982408]
+[node name="Box" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1223982408 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.517136, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box2" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1130484808]
+[node name="Box2" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1130484808 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.517136, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box3" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1074895579]
+[node name="Box3" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1074895579 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.517136, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1941110537]
+[node name="Box4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1941110537 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1.51714, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box5" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=35671662]
+[node name="Box5" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=35671662 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1.51714, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box6" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1757795140]
+[node name="Box6" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1757795140 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.51714, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box7" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1123448234]
+[node name="Box7" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1123448234 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 1)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box8" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1879094278]
+[node name="Box8" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1879094278 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 2)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box9" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1979951699]
+[node name="Box9" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1979951699 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 3)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box10" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=2055646923]
+[node name="Box10" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=2055646923 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 3)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box11" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1919035920]
+[node name="Box11" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1919035920 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 2)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box12" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=948048474]
+[node name="Box12" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=948048474 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 1)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
