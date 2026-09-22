@@ -163,8 +163,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -127.5
+offset_top = 4.675873
 offset_right = 127.5
-offset_bottom = 255.0
+offset_bottom = 134.98749
 grow_horizontal = 2
 
 [node name="Join" type="Button" parent="MainMenu/MenuPanel/VBoxContainer" unique_id=709027244]
