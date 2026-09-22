@@ -1,3 +1,12 @@
 [gd_scene format=3 uid="uid://riwr8antkf37"]
 
+[ext_resource type="Script" uid="uid://bcemgv3dalyu2" path="res://Tarot/Tests/TarotTestPlayer.gd" id="1_r5va3"]
+[ext_resource type="Script" uid="uid://b362schemplyn" path="res://Tarot/Scripts/TarotEffectController.gd" id="2_ugvy3"]
+
 [node name="TarotTest" type="Node3D" unique_id=1526363546]
+
+[node name="TarotTestPlayer" type="Node" parent="." unique_id=786170852]
+script = ExtResource("1_r5va3")
+
+[node name="TarotEffectController" type="Node" parent="TarotTestPlayer" unique_id=1574527259]
+script = ExtResource("2_ugvy3")
