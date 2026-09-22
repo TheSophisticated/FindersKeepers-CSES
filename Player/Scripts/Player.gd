@@ -57,7 +57,15 @@ var network_timestamp_buffer = []     # Buffer for network timestamps
 var last_network_update_time := 0.0   # Last network update time
 var input_enabled: bool = true        # Whether input is enabled
 
-# ===== NETWORK SETUP =====
+# ===== LOOK-AT DETECTION =====
+var look_at_ray: RayCast3D            # Raycast for detecting objects in front of player
+
+# Called every frame. Checks what the player is looking at.
+func _process(delta):
+	if look_at_ray and look_at_ray.is_colliding():
+		var hit_node = look_at_ray.get_collider()
+		print("Looking at: ", hit_node.name, " (", hit_node.get_class(), ")")
+
 func _enter_tree():
 	# Set multiplayer authority based on name
 	if name.contains("_"):
@@ -77,6 +85,14 @@ func _ready():
 		if camera: 
 			camera.current = true
 	current_speed = walk_speed
+	
+	# Set up look-at raycast as child of camera
+	look_at_ray = RayCast3D.new()
+	look_at_ray.name = "LookAtDetector"
+	look_at_ray.enabled = true
+	look_at_ray.target_position = Vector3(0, 0, -10)  # 10 units forward
+	if camera:
+		camera.add_child(look_at_ray)
 
 # ===== INPUT HANDLING =====
 func _input(event):
