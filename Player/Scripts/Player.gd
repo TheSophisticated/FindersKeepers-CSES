@@ -113,6 +113,13 @@ func _input(event):
 	if event.is_action_pressed("jump"):
 		jump_buffer_timer = 0.15
 
+	# Interact input
+	if event.is_action_pressed("interact"):
+		if look_at_ray and look_at_ray.is_colliding():
+			var hit_node = look_at_ray.get_collider()
+			if hit_node.is_in_group("interactable"):
+				print("Interacted with: ", hit_node.name)
+
 # ===== PHYSICS PROCESS =====
 func _physics_process(delta):
 	if not input_enabled:
