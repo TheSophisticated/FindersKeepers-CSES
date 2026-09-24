@@ -30,6 +30,7 @@ const ROTATION_LERP_FACTOR = 0.5      # Rotation interpolation factor
 
 # ===== NODE REFERENCES =====
 @onready var camera := $Camera3D       # Player camera
+@onready var head_position := $Camera3D/HeadPosition  # Hold point for picked-up objects
 @onready var sync := $MultiplayerSynchronizer # Network sync component
 
 # ===== MOVEMENT STATE =====
@@ -59,6 +60,7 @@ var input_enabled: bool = true        # Whether input is enabled
 
 # ===== LOOK-AT DETECTION =====
 var look_at_ray: RayCast3D            # Raycast for detecting objects in front of player
+var held_object: Node3D = null        # Currently held interactable object
 
 # Called every frame. Checks what the player is looking at.
 func _process(delta):
@@ -115,10 +117,28 @@ func _input(event):
 
 	# Interact input
 	if event.is_action_pressed("interact"):
-		if look_at_ray and look_at_ray.is_colliding():
+		if held_object:
+			drop_object()
+		elif look_at_ray and look_at_ray.is_colliding():
 			var hit_node = look_at_ray.get_collider()
 			if hit_node.is_in_group("interactable"):
-				print("Interacted with: ", hit_node.name)
+				pick_up_object(hit_node)
+
+# ===== PICKUP / DROP =====
+func pick_up_object(target: Node3D) -> void:
+	if not is_multiplayer_authority():
+		return
+	held_object = target
+	target.reparent(head_position, true)
+	target.position = Vector3(0, 0, -2)
+	print("Picked up: ", target.name)
+
+func drop_object() -> void:
+	if not held_object:
+		return
+	held_object.reparent(get_parent(), true)
+	held_object = null
+	print("Dropped object")
 
 # ===== PHYSICS PROCESS =====
 func _physics_process(delta):
