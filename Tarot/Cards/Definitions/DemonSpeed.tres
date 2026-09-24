@@ -1,16 +1,12 @@
 [gd_resource type="Resource" script_class="TarotCard" format=3 uid="uid://djc8i8kdjfqc2"]
 
-[ext_resource type="Script" uid="uid://dg0erl665nq8f" path="res://Tarot/Scripts/DemonSpeedEffect.gd" id="1_hpwn4"]
+[ext_resource type="Resource" uid="uid://bf5r08fd8148a" path="res://Tarot/Cards/Effects/DemonSpeedEffect.tres" id="1_hpwn4"]
 [ext_resource type="Script" uid="uid://ddrmv7b3k80g5" path="res://Tarot/Scripts/TarotCard.gd" id="2_41l4g"]
-
-[sub_resource type="Resource" id="Resource_tbn6b"]
-script = ExtResource("1_hpwn4")
-metadata/_custom_type_script = "uid://dg0erl665nq8f"
 
 [resource]
 script = ExtResource("2_41l4g")
 card_id = &"demon_speed"
 card_name = "Demon Speed"
 description = "Increases movement speed for 10 seconds."
-effect = SubResource("Resource_tbn6b")
+effect = ExtResource("1_hpwn4")
 metadata/_custom_type_script = "uid://ddrmv7b3k80g5"

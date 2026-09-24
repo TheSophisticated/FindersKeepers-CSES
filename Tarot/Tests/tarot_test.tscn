@@ -2,6 +2,12 @@
 
 [ext_resource type="Script" uid="uid://bcemgv3dalyu2" path="res://Tarot/Tests/TarotTestPlayer.gd" id="1_r5va3"]
 [ext_resource type="Script" uid="uid://b362schemplyn" path="res://Tarot/Scripts/TarotEffectController.gd" id="2_ugvy3"]
+[ext_resource type="Script" uid="uid://qxjx26k0iqkt" path="res://Tarot/Scripts/TarotPickup.gd" id="3_acbn7"]
+[ext_resource type="Resource" uid="uid://djc8i8kdjfqc2" path="res://Tarot/Cards/Definitions/DemonSpeed.tres" id="4_37f0j"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_mkfg2"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mkfg2"]
 
 [node name="TarotTest" type="Node3D" unique_id=1526363546]
 
@@ -10,3 +16,24 @@ script = ExtResource("1_r5va3")
 
 [node name="TarotEffectController" type="Node" parent="TarotTestPlayer" unique_id=1574527259]
 script = ExtResource("2_ugvy3")
+
+[node name="TarotPickup" type="Area3D" parent="." unique_id=738219792]
+script = ExtResource("3_acbn7")
+card = ExtResource("4_37f0j")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TarotPickup" unique_id=1055127275]
+mesh = SubResource("BoxMesh_mkfg2")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TarotPickup" unique_id=266559870]
+shape = SubResource("BoxShape3D_mkfg2")
+
+[node name="TarotPickup2" type="Area3D" parent="." unique_id=1522076465]
+script = ExtResource("3_acbn7")
+card = ExtResource("4_37f0j")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TarotPickup2" unique_id=182546721]
+mesh = SubResource("BoxMesh_mkfg2")
+skeleton = NodePath("../../TarotPickup2")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TarotPickup2" unique_id=1160380085]
+shape = SubResource("BoxShape3D_mkfg2")
