@@ -20,6 +20,7 @@ func _ready():
 	# If this is the server, spawn the host player
 	if multiplayer != null && multiplayer.is_server():
 		spawn_player(multiplayer.get_unique_id())
+		GameManager.start_match()
 
 # Called when a new peer connects
 func _on_peer_connected(peer_id: int):

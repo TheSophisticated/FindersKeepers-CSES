@@ -13,7 +13,7 @@ extends CharacterBody3D
 @export var air_control := 0.3         # Air movement control factor
 
 @export_category("Camera Settings")
-@export var mouse_sensitivity := 0.002 # Mouse sensitivity
+@export var mouse_sensitivity := 0.01 # Mouse sensitivity
 @export var camera_tilt_amount := 8.0  # Amount of camera tilt when strafing
 @export var fov_normal := 80.0         # Normal field of view
 @export var fov_sprint := 120.0        # Sprinting field of view

@@ -56,12 +56,15 @@ signal game_over_announced(winner_id: int, winner_name: String)
 var current_state: MatchState = MatchState.WAITING_FOR_PLAYERS
 var time_remaining: float = MATCH_DURATION_SECONDS
 var shrine_event_triggered: bool = false
+var tarot_card_spawner : Node = null
+var body_part_spawner : Node = null
 
 ## Dictionary tracking all connected players and their match progress.
 ## Key: peer_id (int)
 ## Value: Dictionary containing stats, alive status, and sacrificed parts.
 var players: Dictionary = {}
 
+## Reference to Tarot Card Spawner Object
 
 # ==============================================================================
 # ENGINE CALLBACKS
@@ -128,6 +131,14 @@ func start_match() -> void:
 	shrine_event_triggered = false
 	current_state = MatchState.IN_PROGRESS
 	set_process(true)
+	
+	#Spawn Tarot Cards
+	if tarot_card_spawner != null:
+		tarot_card_spawner.spawn_objects()
+		
+	#Spawn Body Parts
+	if body_part_spawner != null:
+		body_part_spawner.spawn_objects()
 	
 	# Broadcast initial player roster and match start to everyone.
 	sync_match_start.rpc(players)
@@ -312,3 +323,8 @@ func conclude_match(winner_id: int) -> void:
 func broadcast_game_over(winner_id: int, winner_name: String) -> void:
 	current_state = MatchState.GAME_OVER
 	game_over_announced.emit(winner_id, winner_name)
+
+
+#============================
+# RESTART MATCH
+# ==========================

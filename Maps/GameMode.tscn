@@ -1,10 +1,13 @@
 [gd_scene format=3 uid="uid://d4cpj11iha5uc"]
 
 [ext_resource type="Script" uid="uid://buap128n0gj" path="res://Maps/Scripts/GameMode.gd" id="1_bliyt"]
+[ext_resource type="Script" uid="uid://dddte4pk3pj6w" path="res://scripts/managers/SpawnManager.gd" id="2_abnra"]
 [ext_resource type="Texture2D" uid="uid://biec8m2uv843c" path="res://Textures/texture_03.png" id="2_d7oxw"]
+[ext_resource type="PackedScene" uid="uid://b0u1d8aox07b8" path="res://TarotTest.tscn" id="3_abnra"]
 [ext_resource type="Texture2D" uid="uid://cwcexiteh4s2q" path="res://Textures/texture_02purpl.png" id="3_l8b2n"]
 [ext_resource type="Texture2D" uid="uid://d0u76ui7ag1at" path="res://Textures/texture_02.png" id="4_abnra"]
 [ext_resource type="Script" uid="uid://de4ax627pkk2y" path="res://Maps/Scripts/PauseMenu.gd" id="5_d7oxw"]
+[ext_resource type="PackedScene" uid="uid://dvj1t22mv3wkq" path="res://BodyPartTest.tscn" id="8_vlg06"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_4okp1"]
 
@@ -49,6 +52,42 @@ script = ExtResource("1_bliyt")
 _spawnable_scenes = PackedStringArray("uid://cmov2y6h564hu")
 spawn_path = NodePath("../SubViewportContainer/SubViewport/WorldObjects")
 spawn_limit = 4
+
+[node name="TarotCardSpawner" type="Node3D" parent="." unique_id=2001904792 node_paths=PackedStringArray("spawn_points")]
+script = ExtResource("2_abnra")
+object_scene = ExtResource("3_abnra")
+spawn_points = [NodePath("TarotSpawn1"), NodePath("TarotSpawn2"), NodePath("TarotSpawn3")]
+
+[node name="TarotSpawn1" type="Marker3D" parent="TarotCardSpawner" unique_id=264341435]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.7627722, 0.36811894, 0)
+
+[node name="TarotSpawn2" type="Marker3D" parent="TarotCardSpawner" unique_id=1823531587]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6383717, 6.6875515)
+
+[node name="TarotSpawn3" type="Marker3D" parent="TarotCardSpawner" unique_id=319269452]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8062255, 0.7468178, 5.427715)
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="TarotCardSpawner" unique_id=1650607275]
+_spawnable_scenes = PackedStringArray("uid://b0u1d8aox07b8")
+spawn_path = NodePath("../../SubViewportContainer/SubViewport/WorldObjects")
+spawn_limit = 1
+
+[node name="BodyPartSpawner" type="Node3D" parent="." unique_id=1939582008 node_paths=PackedStringArray("spawn_points")]
+script = ExtResource("2_abnra")
+object_scene = ExtResource("8_vlg06")
+spawn_points = [NodePath("BodySpawn1"), NodePath("BodySpawn2")]
+object_spawner_type = 1
+
+[node name="BodySpawn1" type="Marker3D" parent="BodyPartSpawner" unique_id=1635047093]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6580038, 2.7431831, 0.077067256)
+
+[node name="BodySpawn2" type="Marker3D" parent="BodyPartSpawner" unique_id=536738815]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2765667, 1.1946555, -5.4059367)
+
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="BodyPartSpawner" unique_id=1745345825]
+_spawnable_scenes = PackedStringArray("uid://dvj1t22mv3wkq")
+spawn_path = NodePath("../../SubViewportContainer/SubViewport/WorldObjects")
+spawn_limit = 12
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=2026356016]
 
@@ -313,7 +352,7 @@ spot_angle = 61.2073
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0218, -6.19973)
 
 [node name="SpawnPoint1" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=314873692]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.56169, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.7802763, 1.6293855, 7.3784676)
 
 [node name="SpawnPoint2" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=710356747]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.102142)
