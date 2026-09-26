@@ -23,6 +23,9 @@ extends CharacterBody3D
 @export var network_update_rate := 20.0 # Network updates per second
 @export var interpolation_time := 0.15  # Network interpolation smoothing time
 
+@export_category("Tarot Settings")
+@export var tarot_capacity: int = 2     # Max tarot cards this player can carry
+
 # ===== CONSTANTS =====
 const GRAVITY_FORCE = 35.0            # Gravity strength
 const POSITION_LERP_FACTOR = 0.3      # Position interpolation factor
@@ -30,6 +33,7 @@ const ROTATION_LERP_FACTOR = 0.5      # Rotation interpolation factor
 
 # ===== NODE REFERENCES =====
 @onready var camera := $Camera3D       # Player camera
+@onready var head_position := $Camera3D/HeadPosition  # Hold point for picked-up objects
 @onready var sync := $MultiplayerSynchronizer # Network sync component
 
 # ===== MOVEMENT STATE =====
@@ -57,7 +61,19 @@ var network_timestamp_buffer = []     # Buffer for network timestamps
 var last_network_update_time := 0.0   # Last network update time
 var input_enabled: bool = true        # Whether input is enabled
 
-# ===== NETWORK SETUP =====
+# ===== LOOK-AT DETECTION =====
+var look_at_ray: RayCast3D            # Raycast for detecting objects in front of player
+var held_object: Node3D = null        # Currently held interactable object
+
+# Called every frame. Checks what the player is looking at.
+func _process(delta):
+	if look_at_ray and look_at_ray.is_colliding():
+		var hit_node = look_at_ray.get_collider()
+		if hit_node.is_in_group("interactable"):
+			print("Interactable: ", hit_node.name)
+		else:
+			print("Not interactable: ", hit_node.name, " (", hit_node.get_class(), ")")
+
 func _enter_tree():
 	# Set multiplayer authority based on name
 	if name.contains("_"):
@@ -77,6 +93,16 @@ func _ready():
 		if camera: 
 			camera.current = true
 	current_speed = walk_speed
+	tarot_cards.resize(tarot_capacity)
+	
+	# Set up look-at raycast as child of camera
+	look_at_ray = RayCast3D.new()
+	look_at_ray.name = "LookAtDetector"
+	look_at_ray.enabled = true
+	look_at_ray.collide_with_areas = true
+	look_at_ray.target_position = Vector3(0, 0, -10)  # 10 units forward
+	if camera:
+		camera.add_child(look_at_ray)
 
 # ===== INPUT HANDLING =====
 func _input(event):
@@ -93,6 +119,51 @@ func _input(event):
 	# Jump input buffering
 	if event.is_action_pressed("jump"):
 		jump_buffer_timer = 0.15
+
+	# Interact input
+	if event.is_action_pressed("interact"):
+		if held_object:
+			drop_object()
+		elif look_at_ray and look_at_ray.is_colliding():
+			var hit_node = look_at_ray.get_collider()
+			if hit_node is TarotPickup:
+				hit_node.collect(self)
+			elif hit_node.is_in_group("interactable"):
+				pick_up_object(hit_node)
+
+# ===== TAROT INVENTORY =====
+var tarot_cards: Array[TarotCard] = []  # Fixed-size slots, empty slots hold null
+
+# Stores a card in the first empty slot. Returns true if it fit.
+func add_tarot_card(card: TarotCard) -> bool:
+	if card == null:
+		push_warning("Cannot add a null Tarot card.")
+		return false
+
+	for i in range(tarot_cards.size()):
+		if tarot_cards[i] == null:
+			tarot_cards[i] = card
+			print("Picked up Tarot Card: ", card.card_name, " | Slot: ", i)
+			return true
+
+	print("Tarot inventory full.")
+	return false
+
+# ===== PICKUP / DROP =====
+func pick_up_object(target: Node3D) -> void:
+	if not is_multiplayer_authority():
+		return
+	held_object = target
+	target.reparent(head_position, true)
+	target.position = Vector3(0, 0, -2)
+	print("Picked up: ", target.name)
+
+func drop_object() -> void:
+	if not held_object:
+		return
+	held_object.reparent(get_parent(), true)
+	held_object = null
+	print("Dropped object")
 
 # ===== PHYSICS PROCESS =====
 func _physics_process(delta):

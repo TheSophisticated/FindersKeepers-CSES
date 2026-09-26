@@ -5,6 +5,8 @@
 [ext_resource type="Texture2D" uid="uid://cwcexiteh4s2q" path="res://Textures/texture_02purpl.png" id="3_l8b2n"]
 [ext_resource type="Texture2D" uid="uid://d0u76ui7ag1at" path="res://Textures/texture_02.png" id="4_abnra"]
 [ext_resource type="Script" uid="uid://de4ax627pkk2y" path="res://Maps/Scripts/PauseMenu.gd" id="5_d7oxw"]
+[ext_resource type="Script" uid="uid://qxjx26k0iqkt" path="res://Tarot/Scripts/TarotPickup.gd" id="6_tpick"]
+[ext_resource type="Resource" uid="uid://djc8i8kdjfqc2" path="res://Tarot/Cards/Definitions/DemonSpeed.tres" id="7_dcard"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_4okp1"]
 
@@ -41,6 +43,10 @@ ao_enabled = true
 refraction_enabled = true
 uv1_triplanar = true
 uv1_world_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_tarot"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_tarot"]
 
 [node name="GameMode" type="Node3D" unique_id=109405942]
 script = ExtResource("1_bliyt")
@@ -239,62 +245,62 @@ material = SubResource("StandardMaterial3D_d7oxw")
 
 [node name="Boxes" type="Node" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=1428455199]
 
-[node name="Box" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1223982408]
+[node name="Box" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1223982408 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.517136, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box2" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1130484808]
+[node name="Box2" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1130484808 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.517136, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box3" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1074895579]
+[node name="Box3" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1074895579 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.517136, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1941110537]
+[node name="Box4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1941110537 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1.51714, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box5" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=35671662]
+[node name="Box5" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=35671662 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1.51714, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box6" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1757795140]
+[node name="Box6" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1757795140 groups=["interactable"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.51714, 0)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box7" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1123448234]
+[node name="Box7" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1123448234 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 1)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box8" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1879094278]
+[node name="Box8" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1879094278 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 2)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box9" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1979951699]
+[node name="Box9" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1979951699 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 3)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box10" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=2055646923]
+[node name="Box10" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=2055646923 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 3)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box11" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1919035920]
+[node name="Box11" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1919035920 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 2)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box12" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=948048474]
+[node name="Box12" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=948048474 groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 1)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
@@ -308,6 +314,17 @@ font_size = 142
 transform = Transform3D(0.921526, -0.380833, 0.0758622, 0.386791, 0.917515, -0.0925183, -0.0343706, 0.114601, 0.992817, 0, 1.24717, -4.38749)
 spot_range = 8.19093
 spot_angle = 61.2073
+
+[node name="TarotPickup" type="Area3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1919035921 groups=["interactable"]]
+transform = Transform3D(0.6, 0, 0, 0, 0.05, 0, 0, 0, 0.6, 0, 1, -3)
+script = ExtResource("6_tpick")
+card = ExtResource("7_dcard")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/WorldObjects/TarotPickup" unique_id=1919035922]
+mesh = SubResource("BoxMesh_tarot")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/WorldObjects/TarotPickup" unique_id=1919035923]
+shape = SubResource("BoxShape3D_tarot")
 
 [node name="SpawnPoints" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=2094408359]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0218, -6.19973)
