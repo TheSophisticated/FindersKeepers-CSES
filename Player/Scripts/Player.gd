@@ -23,6 +23,9 @@ extends CharacterBody3D
 @export var network_update_rate := 20.0 # Network updates per second
 @export var interpolation_time := 0.15  # Network interpolation smoothing time
 
+@export_category("Tarot Settings")
+@export var tarot_capacity: int = 2     # Max tarot cards this player can carry
+
 # ===== CONSTANTS =====
 const GRAVITY_FORCE = 35.0            # Gravity strength
 const POSITION_LERP_FACTOR = 0.3      # Position interpolation factor
@@ -90,11 +93,13 @@ func _ready():
 		if camera: 
 			camera.current = true
 	current_speed = walk_speed
+	tarot_cards.resize(tarot_capacity)
 	
 	# Set up look-at raycast as child of camera
 	look_at_ray = RayCast3D.new()
 	look_at_ray.name = "LookAtDetector"
 	look_at_ray.enabled = true
+	look_at_ray.collide_with_areas = true
 	look_at_ray.target_position = Vector3(0, 0, -10)  # 10 units forward
 	if camera:
 		camera.add_child(look_at_ray)
@@ -121,8 +126,28 @@ func _input(event):
 			drop_object()
 		elif look_at_ray and look_at_ray.is_colliding():
 			var hit_node = look_at_ray.get_collider()
-			if hit_node.is_in_group("interactable"):
+			if hit_node is TarotPickup:
+				hit_node.collect(self)
+			elif hit_node.is_in_group("interactable"):
 				pick_up_object(hit_node)
+
+# ===== TAROT INVENTORY =====
+var tarot_cards: Array[TarotCard] = []  # Fixed-size slots, empty slots hold null
+
+# Stores a card in the first empty slot. Returns true if it fit.
+func add_tarot_card(card: TarotCard) -> bool:
+	if card == null:
+		push_warning("Cannot add a null Tarot card.")
+		return false
+
+	for i in range(tarot_cards.size()):
+		if tarot_cards[i] == null:
+			tarot_cards[i] = card
+			print("Picked up Tarot Card: ", card.card_name, " | Slot: ", i)
+			return true
+
+	print("Tarot inventory full.")
+	return false
 
 # ===== PICKUP / DROP =====
 func pick_up_object(target: Node3D) -> void:
