@@ -39,7 +39,7 @@ func clear_objects():
 func _ready() -> void:
 	if object_spawner_type == spawnerType.TarotCardSpawner:
 		GameManager.tarot_card_spawner = self
-	elif  object_spawner_type == spawnerType.BodyPartSpawner:
+	if  object_spawner_type == spawnerType.BodyPartSpawner:
 		GameManager.body_part_spawner = self
 
 

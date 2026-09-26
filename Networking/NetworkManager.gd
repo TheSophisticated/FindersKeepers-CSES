@@ -9,6 +9,15 @@ const PORT = 8910  # Default port for connections
 const MAX_PLAYERS = 4  # Maximum allowed players
 var peer: ENetMultiplayerPeer = ENetMultiplayerPeer.new()  # ENet networking peer
 
+const DISCOVERY_PORT = 8911
+const DISCOVERY_MESSAGE = "FINDERS_KEEPERS_HOST"
+
+var discovery_peer : PacketPeerUDP = PacketPeerUDP.new()
+var listener_peer : PacketPeerUDP = PacketPeerUDP.new()
+
+var discovery_timer : Timer
+var discovery_listen_timer : Timer
+
 # Signals
 signal player_update_received(peer_id, position, velocity, rotation, camera_rotation)
 
@@ -23,6 +32,24 @@ func _ready():
 	# Set physics interpolation for smoother movement
 	Engine.physics_ticks_per_second = 60
 	Engine.max_physics_steps_per_frame = 10
+	
+# Broadcast Host Message for Clients to listen
+func _broadcast_host():
+	var message = DISCOVERY_MESSAGE.to_utf8_buffer()
+	discovery_peer.put_packet(message)
+	
+	print("Broadcasting Host")
+
+func start_host_discovery():
+	discovery_peer.set_broadcast_enabled(true)
+	discovery_peer.set_dest_address("255.255.255.255", DISCOVERY_PORT)
+	
+	discovery_timer = Timer.new()
+	discovery_timer.wait_time = 1.5
+	discovery_timer.timeout.connect(_broadcast_host)
+	add_child(discovery_timer)
+	discovery_timer.start()
+	print("LAN Discovery started on PORT: " , DISCOVERY_PORT)
 
 # Host a new game server
 func host_game():
@@ -36,8 +63,43 @@ func host_game():
 	# Set as multiplayer peer and load game world
 	multiplayer.multiplayer_peer = peer
 	print("Hosting game on port ", PORT)
+	start_host_discovery()
 	load_game_world()
+	
 	return true
+	
+	
+#Make Client Listen for Host Broadcast
+func start_host_search():
+	var error = listener_peer.bind(DISCOVERY_PORT)
+	
+	if error != OK:
+		print("Could not Listen for Hosts: ", error)
+		return
+		
+	print("Listening for Host Broadcast")
+	discovery_listen_timer = Timer.new()
+	discovery_listen_timer.wait_time = 0.2
+	discovery_listen_timer.timeout.connect(_check_for_host)
+	add_child(discovery_listen_timer)
+	
+	discovery_listen_timer.start()
+	
+	return true
+
+func _check_for_host():
+	print("Listening for LAN Hosts")
+	while listener_peer.get_available_packet_count() > 0:
+		var packet = listener_peer.get_packet()
+		var packet_content = packet.get_string_from_utf8()
+		var sender_ip = listener_peer.get_packet_ip()	
+		
+		if packet_content == DISCOVERY_MESSAGE:
+			print("Found Host at ", sender_ip)
+			listener_peer.close()
+			discovery_listen_timer.stop()
+			join_game(sender_ip)
+			return
 
 # Join an existing game
 func join_game(ip: String = "localhost"):

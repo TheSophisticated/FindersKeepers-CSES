@@ -76,13 +76,13 @@ func _ready():
 # Called when Host button is pressed
 func _on_host_pressed():
 	$MenuPanel/VBoxContainer/Host.disabled = true  # Disable button while attempting
-	if await NetworkManager.host_game() == false:  # Wait for host attempt
+	if NetworkManager.host_game() == false:  # Wait for host attempt
 		$MenuPanel/VBoxContainer/Host.disabled = false  # Re-enable if failed
 
 # Called when Join button is pressed
 func _on_join_pressed():
 	$MenuPanel/VBoxContainer/Join.disabled = true  # Disable button while attempting
-	if !NetworkManager.join_game("localhost"):  # Try to join (default to localhost)
+	if !NetworkManager.start_host_search():  # Try to join (default to localhost)
 		$MenuPanel/VBoxContainer/Join.disabled = false  # Re-enable if failed
 
 # Called when Settings button is pressed

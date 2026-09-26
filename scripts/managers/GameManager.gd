@@ -67,6 +67,9 @@ var players: Dictionary = {}
 ## Generated based on the active player count (2 to 4 players).
 var active_body_parts: Array[Dictionary] = []
 
+#Spawners
+var tarot_card_spawner : Node = null
+var body_part_spawner : Node = null
 
 
 # ENGINE CALLBACKS
@@ -176,9 +179,9 @@ func start_match() -> void:
 	if not multiplayer.is_server():
 		return
 
-	if players.size() < MIN_PLAYERS:
-		push_warning("Cannot start match. Minimum %d players required." % MIN_PLAYERS)
-		return
+	#if players.size() < MIN_PLAYERS:
+		#push_warning("Cannot start match. Minimum %d players required." % MIN_PLAYERS)
+		#return
 
 	time_remaining = MATCH_DURATION_SECONDS
 	timer_sync_accumulator = 0.0
@@ -186,10 +189,20 @@ func start_match() -> void:
 	current_state = MatchState.IN_PROGRESS
 	
 	# Generate only the body parts corresponding to currently connected players
-	generate_active_body_parts()
+	#generate_active_body_parts()
 	
 	set_process(true)
 	
+	if(tarot_card_spawner != null):
+		print("Tarot Card Spawner Assigned")
+		tarot_card_spawner.spawn_objects()
+	else:
+		print("Tarot Not Working!")
+	if(body_part_spawner != null):
+		print("Body Part Spawner Assigned")
+		body_part_spawner.spawn_objects()
+	else:
+		print("BodyParts Not Working!")
 	# Broadcast initial player roster and match start to everyone.
 	sync_match_start.rpc(players, active_body_parts)
 
