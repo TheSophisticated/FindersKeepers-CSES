@@ -5,10 +5,7 @@ extends Node
 ## for match timers, rule enforcement, player eliminations, and victory conditions.
 
 
-# ==============================================================================
 # ENUMS & CONSTANTS
-# ==============================================================================
-
 enum MatchState {
 	WAITING_FOR_PLAYERS, ## Lobby phase before the match officially begins
 	IN_PROGRESS,         ## Normal gameplay loop
@@ -39,10 +36,9 @@ const SHRINE_PENALTY_SECONDS: float = 20.0     # Time stripped if players accept
 const TIMER_SYNC_INTERVAL: float = 0.5         # Sync timer over network twice a second
 
 
-# ==============================================================================
+
 # SIGNALS
 # UI, player controllers, audio, and VFX systems connect to these events.
-# ==============================================================================
 
 signal match_state_changed(new_state: MatchState)
 signal match_timer_updated(time_remaining: float)
@@ -55,9 +51,8 @@ signal game_over_announced(winner_id: int, winner_name: String)
 signal active_parts_manifest_generated(parts_list: Array)
 
 
-# ==============================================================================
+
 # STATE VARIABLES
-# ==============================================================================
 
 var current_state: MatchState = MatchState.WAITING_FOR_PLAYERS
 var time_remaining: float = MATCH_DURATION_SECONDS
@@ -73,9 +68,8 @@ var players: Dictionary = {}
 var active_body_parts: Array[Dictionary] = []
 
 
-# ==============================================================================
+
 # ENGINE CALLBACKS
-# ==============================================================================
 
 func _ready() -> void:
 	# Keep the frame-by-frame loop paused until the match is formally launched.
@@ -111,9 +105,8 @@ func _process(delta: float) -> void:
 			end_match_by_timeout()
 
 
-# ==============================================================================
+
 # LOBBY & PLAYER LIFECYCLE
-# ==============================================================================
 
 ## Registers a player into the match tracker when they connect in the lobby.
 func register_player(peer_id: int, player_name: String) -> void:
@@ -216,9 +209,8 @@ func sync_timer(server_time: float) -> void:
 	match_timer_updated.emit(server_time)
 
 
-# ==============================================================================
+
 # DYNAMIC BODY PART GENERATION (2-4 PLAYERS)
-# ==============================================================================
 
 ## Builds the manifest of body parts to spawn.
 ## Only parts belonging to connected players are created (8, 12, or 16 parts total).
@@ -256,9 +248,8 @@ func is_part_valid(owner_peer_id: int, part_type: int) -> bool:
 	return not (part_type in players[owner_peer_id]["parts_lost"])
 
 
-# ==============================================================================
+
 # BODY PART SACRIFICE & ELIMINATION
-# ==============================================================================
 
 ## Triggered when a player interacts with the central altar to deposit a collected body part.
 ## The server validates the action before updating scores and notifying clients.
@@ -321,9 +312,8 @@ func broadcast_player_elimination(victim_id: int) -> void:
 	player_eliminated.emit(victim_id, victim_name)
 
 
-# ==============================================================================
+
 # BLOOD SHRINE EVENT (MID-MATCH 3:00 MARK)
-# ==============================================================================
 
 ## Initiates the voting phase where players decide whether to accept powerful power-ups
 ## in exchange for losing 20 seconds from the global match clock.
@@ -392,9 +382,8 @@ func broadcast_shrine_result(accepted: bool) -> void:
 	blood_shrine_resolved.emit(accepted)
 
 
-# ==============================================================================
+
 # WIN CONDITIONS & GAME OVER
-# ==============================================================================
 
 ## Checks if only one connected, surviving player remains during an active match.
 func check_last_player_standing() -> void:
