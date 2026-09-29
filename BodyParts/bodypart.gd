@@ -1,5 +1,5 @@
 class_name BodyPart
-extends Area3D
+extends RigidBody3D
 
 ## Base class for all collectible Body Parts.
 ## Inherits from Area3D to provide trigger-based detection when a player enters its collision zone.
@@ -36,12 +36,20 @@ enum PartType {
 ## Safety flag to prevent duplicate collections across frames/ticks
 var is_collected: bool = false
 
+## True while a player is carrying this part. Blocks Area3D detection so the
+## carrier can never trigger it, and is cleared when the part is deposited.
+var is_carried: bool = false
+
+## Collection now happens at the Spell Center. Set true to restore the legacy
+## collect-on-walk-into behaviour.
+@export var auto_collect_on_touch: bool = false
+
 # ===== COLLISION CONFIGURATION =====
 # Recommended Layer Setup:
 # Collision Layer 4: Interactables / BodyParts
-# Collision Mask 1/2: Scans for Player CharacterBody3D
+# Collision Mask: Layer 1 (Floor) + Layer 2 (Player)
 const DEFAULT_COLLISION_LAYER: int = 8  # 1 << 3 (Layer 4)
-const DEFAULT_COLLISION_MASK: int = 2   # 1 << 1 (Layer 2 / Player)
+const DEFAULT_COLLISION_MASK: int = 3   # 1 | 2 (Layer 1 Floor + Layer 2 Player)
 
 func _ready() -> void:
 	# Configure default collision layer and mask if not overridden in inspector
@@ -49,26 +57,39 @@ func _ready() -> void:
 		collision_layer = DEFAULT_COLLISION_LAYER
 		collision_mask = DEFAULT_COLLISION_MASK
 	
-	# Set monitoring/monitorable states for optimal Area3D performance
-	monitoring = true
-	monitorable = false
-	connect("body_entered", Callable(self, "_on_body_entered"))
+	set_carried(false)
+
+	if auto_collect_on_touch:
+		body_entered.connect(_on_body_entered)
+
+## Toggles carried state. While carried, the RigidBody3D is frozen so it
+## stays at the camera position without physics simulation.
+func set_carried(carried: bool) -> void:
+	is_carried = carried
+	if carried:
+		freeze = true
+	else:
+		freeze = false
 
 func _on_body_entered(body: Node) -> void:
 	# Ensure the colliding body is a player character and not the owner
-	if is_collected:
+	if is_collected or is_carried:
 		return
 	if not body is CharacterBody3D:
 		return
-	# Assuming the player script has a 'player_id' property; adjust if different
-	if body.has_method("get") and body.get("player_id", -1) == owner_id:
+	# The owning player cannot claim their own part via touch.
+	# owner_id defaults to -1, which means "unowned", so only a real
+	# matching id is treated as the owner. Godot 4's get() takes one argument
+	# and returns null when the property is absent.
+	if owner_id >= 0 and body.get("player_id") == owner_id:
 		return
 	
 	collect(body)
 
-## Main collection method called when valid collision occurs
+## Main collection method. Called by the Spell Center after a successful
+## deposit, or by _on_body_entered when auto_collect_on_touch is enabled.
 func collect(collector: Node) -> void:
-	if is_collected:
+	if is_collected or is_carried:
 		return
 	is_collected = true
 	print("Body part collected! Type: ", part_type, " Owner ID: ", owner_id, " Collector: ", collector.name)
@@ -111,4 +132,3 @@ func updateCount(collector: Node) -> void:
 			associated_tarot_card.call("apply_effect", collector)
 		elif associated_tarot_card.has_method("apply"):
 			associated_tarot_card.call("apply", collector)
-
