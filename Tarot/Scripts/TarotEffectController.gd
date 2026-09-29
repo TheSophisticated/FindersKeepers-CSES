@@ -11,6 +11,22 @@ func _ready() -> void:
 	if target==null:
 		push_error("TarotEffectController: No target found")
 
+func _get_targets(effect: TarotEffect)->Array[Node]:
+	var targets: Array[Node] = []
+	match effect.target_mode:
+		TarotEffect.TargetMode.SELF:
+			targets.append(target)
+		TarotEffect.TargetMode.ALL_PLAYERS:
+			targets = get_tree().get_nodes_in_group("player")
+		TarotEffect.TargetMode.OPPONENTS:
+			for player in get_tree().get_nodes_in_group("player"):
+				if player != target:
+					targets.append(player)
+		TarotEffect.TargetMode.SINGLE_PLAYER:
+			push_warning("NOT IMPLEMENTED YET")
+		
+	return targets
+
 func apply_effect(effect: TarotEffect)->void:
 	if effect == null :
 		push_warning("TarotEffectController: Cannot apply a null effect")
@@ -19,9 +35,17 @@ func apply_effect(effect: TarotEffect)->void:
 		push_warning("TarotEffectController: Effect has no effect_id")
 		return
 	
+	var targets: Array[Node] = _get_targets(effect)
+	
+	if targets.is_empty():
+		push_warning("TarotEffectController : No valid targets found for "+str(effect.effect_id))
+		return 
+	
 	#Instant effects
 	if effect.effect_type == TarotEffect.EffectType.INSTANT:
-		effect.apply(target)
+		for current_target in targets:
+			if is_instance_valid(current_target):
+				effect.apply(current_target)
 		return
 	
 	#Effect is already active 
@@ -30,8 +54,10 @@ func apply_effect(effect: TarotEffect)->void:
 		return
 	
 	#First Time
-	effect.apply(target)
-	
+	for current_target in targets:
+		if is_instance_valid(current_target):
+			effect.apply(current_target)
+
 	var remaining_time: float = -1.0
 	
 	if effect.effect_type == TarotEffect.EffectType.TIMED:
@@ -40,7 +66,8 @@ func apply_effect(effect: TarotEffect)->void:
 	active_effects[effect.effect_id] = {
 		"effect":effect,
 		"remaining":remaining_time,
-		"stacks":1
+		"stacks":1,
+		"targets":targets
 	}
 	
 	print(
@@ -70,8 +97,13 @@ func _handle_stack(effect:TarotEffect)->void:
 		TarotEffect.StackMode.REFRESH_DURATION:
 			data["remaining"]=effect.duration
 		TarotEffect.StackMode.ADDITIVE:
-			effect.apply(target)
+			var targets: Array[Node] = data["targets"]
+			for current_target in targets:
+				if is_instance_valid(current_target):
+					effect.apply(current_target)
 			data["stacks"]+=1
+
+	var remaining_time: float = -1.0
 
 func remove_effect(effect_id:StringName)->void:
 	if not active_effects.has(effect_id):
@@ -79,9 +111,13 @@ func remove_effect(effect_id:StringName)->void:
 	var data:Dictionary = active_effects[effect_id]
 	var effect: TarotEffect = data["effect"]
 	var stacks: int  = data["stacks"]
+	var targets:Array[Node] = data["targets"]
 	
-	for i in range(stacks):
-		effect.remove(target)
+	for current_target in targets:
+		if not is_instance_valid(current_target):
+			continue
+		for i in range(stacks):
+			effect.remove(current_target)
 	
 	active_effects.erase(effect_id)
 # Called every frame. 'delta' is the elapsed time since the previous frame.

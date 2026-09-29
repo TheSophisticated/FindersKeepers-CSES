@@ -3,7 +3,11 @@ extends Node
 
 @onready var tarot_pickup_1: TarotPickup = $"../TarotPickup"
 @onready var tarot_pickup_2: TarotPickup = $"../TarotPickup2"
+@onready var camera: Camera3D = $Camera3D
 
+@export var normal_fov: float = 75.0
+@export var normal_render_distance: float = 100.0
+@export var input_enabled: bool = true
 @export var normal_speed:float = 5.0
 @export var tarot_capacity: int = 2
 
@@ -14,8 +18,12 @@ var tarot_cards: Array[TarotCard] = []
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	add_to_group("player")
+	
 	current_speed = normal_speed
 	tarot_cards.resize(tarot_capacity)
+	camera.fov = normal_fov
+	camera.far = normal_render_distance
 
 	print("Tarot Test Player")
 	print("normal speed :", normal_speed)
@@ -34,6 +42,23 @@ func remove_speed_modifier(multiplier:float)->void:
 	current_speed = normal_speed
 	print("Demon Speed Removed")
 	print("Current Speed : ",current_speed)
+
+func apply_vision_modifier(multiplier:float)->void:
+	camera.fov = normal_fov * multiplier
+	print(name," → Dark Moon Applied | FOV: ",camera.fov)
+
+func remove_vision_modifier(multiplier:float)->void:
+	camera.fov = normal_fov
+	print(name," → Dark Moon Removed | FOV: ",camera.fov)
+
+func apply_render_distance_modifier(multiplier: float) -> void:
+	camera.far = normal_render_distance * multiplier
+	print(name," → Render distance reduced | Far: ",camera.far)
+
+
+func remove_render_distance_modifier(multiplier: float) -> void:
+	camera.far = normal_render_distance
+	print(name," → Render distance restored | Far: ",camera.far)
 
 func add_tarot_card(card: TarotCard) -> bool:
 	if card == null:
@@ -87,6 +112,8 @@ func use_tarot_card(slot_index: int) -> void:
 	)
 
 func _input(event: InputEvent) -> void:
+	if not input_enabled:
+		return
 	if event is InputEventKey:
 		if event.pressed and not event.echo:
 			if event.keycode == KEY_1:
