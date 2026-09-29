@@ -35,6 +35,7 @@ const ROTATION_LERP_FACTOR = 0.5      # Rotation interpolation factor
 @onready var camera := $Camera3D       # Player camera
 @onready var head_position := $Camera3D/HeadPosition  # Hold point for picked-up objects
 @onready var sync := $MultiplayerSynchronizer # Network sync component
+@onready var effect_controller: TarotEffectController = $TarotEffectController #Effect controller component
 
 # ===== MOVEMENT STATE =====
 enum MovementState { WALKING, SPRINTING, AIRBORNE }
@@ -43,6 +44,7 @@ var is_moving := false                # Whether player is moving
 var wish_dir := Vector3.ZERO          # Desired movement direction
 var current_speed := 0.0              # Current movement speed
 var was_on_floor := true              # Previous frame ground state
+var speed_modifier: float = 1.0 # Used while using demon speed
 
 # ===== JUMP VARIABLES =====
 var jump_buffer_timer := 0.0          # Jump input buffer timer
@@ -53,6 +55,10 @@ var jump_count := 0                   # Current jump count
 # ===== CAMERA EFFECTS =====
 var camera_tilt := 0.0                # Current camera tilt amount
 var raw_input_dir := Vector2.ZERO     # Raw input direction
+var vision_modifier: float  = 1.0
+var render_distance_modifier: float = 1.0
+@export var normal_render_distance: float  = 100.0 
+var dark_moon_environment: Environment
 
 # ===== NETWORK INTERPOLATION =====
 var network_position_buffer = []      # Buffer for network positions
@@ -70,6 +76,18 @@ var look_at_ray: RayCast3D            # Raycast for detecting objects in front o
 var held_object: Node3D = null        # Currently held interactable object
 var held_body_part: BodyPart = null   # Body part being carried, deposited at the spell center
 
+# Called every frame. Checks what the player is looking at.
+func _process(delta):
+	if look_at_ray and look_at_ray.is_colliding():
+		var hit_node = look_at_ray.get_collider()
+		if hit_node == null:
+			return
+
+		if hit_node.is_in_group("interactable"):
+			print("Interactable: ", hit_node.name)
+		else:
+			print("Not interactable: ", hit_node.name, " (", hit_node.get_class(), ")")
+
 func _enter_tree():
 	# Set multiplayer authority based on name
 	if name.contains("_"):
@@ -84,10 +102,15 @@ func _enter_tree():
 			sync.replication_config.add_property("velocity")
 
 func _ready():
+	add_to_group("player")
+	dark_moon_environment = Environment.new()
+	dark_moon_environment.background_mode = Environment.BG_COLOR
+	dark_moon_environment.background_color = Color.BLACK
 	# Setup for local player
 	if is_multiplayer_authority():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		if camera: 
+			camera.far = normal_render_distance
 			camera.current = true
 	current_speed = walk_speed
 	tarot_cards.resize(tarot_capacity)
@@ -134,6 +157,14 @@ func _input(event):
 				pick_up_body_part(hit_node)
 			elif hit_node.is_in_group("interactable"):
 				pick_up_object(hit_node)
+	
+	#Tarot slots
+	if event is InputEventKey:
+		if event.pressed and not event.echo:
+			if event.keycode == KEY_1:
+				use_tarot_card(0)
+			elif event.keycode == KEY_2:
+				use_tarot_card(1)
 
 # ===== TAROT INVENTORY =====
 signal tarot_card_added(card: TarotCard, slot: int)  # Emitted when a card fills a slot
@@ -155,6 +186,72 @@ func add_tarot_card(card: TarotCard) -> bool:
 
 	print("Tarot inventory full.")
 	return false
+
+func use_tarot_card(slot_index: int)->void:
+	if slot_index < 0 or slot_index >= tarot_cards.size():
+		push_warning("Invalid Tarot Card slot: "+str(slot_index))
+		return
+	
+	var card: TarotCard = tarot_cards[slot_index]
+	
+	if card == null:
+		push_warning("Tarot slot is empty: "+str(slot_index))
+		return
+	
+	if card.effect == null:
+		push_warning("Tarot card has no effect: "+card.card_name)
+		return
+	
+	print("Using Tarot card ",card.card_name)
+	
+	var applied: bool = effect_controller.apply_effect(card.effect)
+	
+	if not applied:
+		print("Could not apply Tarot Card: ",card.card_name)
+		return
+	
+	tarot_cards[slot_index] = null
+	print("removed tarot cards : ",card.card_name," | Inventory: ",tarot_cards.size(),"/",tarot_capacity)
+
+func apply_speed_modifier(multiplier: float)->void:
+	speed_modifier *= multiplier
+	
+	print("Speed modifier applied: ",multiplier," | current modifier  : ",speed_modifier)
+
+func remove_speed_modifier(multiplier: float)->void:
+	if multiplier == 0.0:
+		return
+	speed_modifier /= multiplier
+	
+	print("speed modifier removed : ",multiplier , " | current modifier : ",speed_modifier)
+
+func apply_vision_modifier(multiplier: float)->void:
+	vision_modifier *= multiplier
+	camera.environment = dark_moon_environment
+	print("vison modifier applied : ",multiplier, " | current modifier ",vision_modifier)
+
+func remove_vision_modifier(multiplier: float)->void:
+	if multiplier == 0.0:
+		return 
+	vision_modifier /= multiplier
+	print("vison modifier removed : ",multiplier, " | current modifier ",vision_modifier)
+	if is_equal_approx(vision_modifier,1.0):
+		print("Restoring camera environment: null ")
+		camera.environment = null
+
+func apply_render_distance_modifier(multiplier: float)->void:
+	render_distance_modifier *= multiplier
+	camera.far = normal_render_distance*render_distance_modifier
+	
+	print("Render distance modifier applied : ",multiplier," | Far : ",camera.far)
+
+func remove_render_distance_modifier(multiplier: float)->void:
+	if multiplier == 0.0:
+		return
+	render_distance_modifier /= multiplier
+	camera.far = normal_render_distance
+	
+	print("render distance modifer removed : ",multiplier," | Far : ",camera.far)
 
 # ===== PICKUP / DROP =====
 func pick_up_object(target: Node3D) -> void:
@@ -285,10 +382,10 @@ func update_movement_state():
 	if is_on_floor():
 		if Input.is_action_pressed("sprint") and is_moving and raw_input_dir.y < 0:
 			current_state = MovementState.SPRINTING
-			current_speed = sprint_speed
+			current_speed = sprint_speed*speed_modifier
 		else:
 			current_state = MovementState.WALKING
-			current_speed = walk_speed
+			current_speed = walk_speed*speed_modifier
 	else:
 		current_state = MovementState.AIRBORNE
 
@@ -333,10 +430,13 @@ func update_camera_effects(delta):
 	camera.rotation.z = deg_to_rad(camera_tilt)
 	
 	# FOV changes when sprinting
+	var target_fov := fov_normal
 	if current_state == MovementState.SPRINTING and raw_input_dir.y < 0:
-		camera.fov = lerp(camera.fov, fov_sprint, delta * 5.0)
-	else:
-		camera.fov = lerp(camera.fov, fov_normal, delta * 5.0)
+		target_fov = fov_sprint
+	
+	target_fov *= vision_modifier
+	
+	camera.fov = lerp(camera.fov,target_fov,delta*5.0)
 
 # ===== NETWORK UPDATES =====
 func send_network_update():

@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_n4vhh")
+render_distance_multiplier = 0.06
 effect_id = &"dark_moon_effect"
 display_name = "Dark Moon"
 duration = 5.0

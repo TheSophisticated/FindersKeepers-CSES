@@ -6,7 +6,9 @@
 [ext_resource type="Texture2D" uid="uid://d0u76ui7ag1at" path="res://Textures/texture_02.png" id="4_abnra"]
 [ext_resource type="Script" uid="uid://de4ax627pkk2y" path="res://Maps/Scripts/PauseMenu.gd" id="5_d7oxw"]
 [ext_resource type="Script" uid="uid://qxjx26k0iqkt" path="res://Tarot/Scripts/TarotPickup.gd" id="6_tpick"]
-[ext_resource type="Resource" uid="uid://djc8i8kdjfqc2" path="res://Tarot/Cards/Definitions/DemonSpeed.tres" id="7_dcard"]
+
+
+[ext_resource type="Resource" uid="uid://s0fvvca0wbib" path="res://Tarot/Cards/Definitions/DarkMoon.tres" id="7_abnra"]
 [ext_resource type="Script" path="res://Maps/Scripts/TarotInventoryUI.gd" id="8_tinv"]
 [ext_resource type="PackedScene" path="res://BodyParts/SpellCenter.tscn" id="9_center"]
 [ext_resource type="PackedScene" path="res://BodyParts/BodyPart.tscn" id="10_part"]
@@ -408,7 +410,7 @@ spot_angle = 61.2073
 [node name="TarotPickup" type="Area3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1919035921 groups=["interactable"]]
 transform = Transform3D(0.6, 0, 0, 0, 0.05, 0, 0, 0, 0.6, 0, 1, -3)
 script = ExtResource("6_tpick")
-card = ExtResource("7_dcard")
+card = ExtResource("7_abnra")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/WorldObjects/TarotPickup" unique_id=1919035922]
 mesh = SubResource("BoxMesh_tarot")

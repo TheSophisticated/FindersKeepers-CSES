@@ -27,31 +27,30 @@ func _get_targets(effect: TarotEffect)->Array[Node]:
 		
 	return targets
 
-func apply_effect(effect: TarotEffect)->void:
+func apply_effect(effect: TarotEffect)->bool:
 	if effect == null :
 		push_warning("TarotEffectController: Cannot apply a null effect")
-		return 
+		return false
 	if effect.effect_id == &"":
 		push_warning("TarotEffectController: Effect has no effect_id")
-		return
+		return false
 	
 	var targets: Array[Node] = _get_targets(effect)
 	
 	if targets.is_empty():
 		push_warning("TarotEffectController : No valid targets found for "+str(effect.effect_id))
-		return 
+		return false
 	
 	#Instant effects
 	if effect.effect_type == TarotEffect.EffectType.INSTANT:
 		for current_target in targets:
 			if is_instance_valid(current_target):
 				effect.apply(current_target)
-		return
+		return true
 	
 	#Effect is already active 
 	if active_effects.has(effect.effect_id):
-		_handle_stack(effect)
-		return
+		return _handle_stack(effect) 
 	
 	#First Time
 	for current_target in targets:
@@ -77,33 +76,29 @@ func apply_effect(effect: TarotEffect)->void:
 		remaining_time,
 		" | Stacks: 1"
 	)
+	return true
 	
-func _handle_stack(effect:TarotEffect)->void:
+func _handle_stack(effect:TarotEffect)->bool:
 	var data: Dictionary = active_effects[effect.effect_id]
 	
 	match effect.stack_mode:
 		TarotEffect.StackMode.NONE:
-			return
+			return false
 		TarotEffect.StackMode.EXTEND_DURATION:
 			data["remaining"]+=effect.duration
-			print(
-		"Effect Stacked: ",
-		effect.effect_id,
-		" | Remaining: ",
-		data["remaining"],
-		" | Stacks: ",
-		data["stacks"]
-	)
+			print("Effect Stacked: ",effect.effect_id," | Remaining: ",data["remaining"]," | Stacks: ",data["stacks"])
+			return true
 		TarotEffect.StackMode.REFRESH_DURATION:
 			data["remaining"]=effect.duration
+			return true
 		TarotEffect.StackMode.ADDITIVE:
 			var targets: Array[Node] = data["targets"]
 			for current_target in targets:
 				if is_instance_valid(current_target):
 					effect.apply(current_target)
 			data["stacks"]+=1
-
-	var remaining_time: float = -1.0
+			return true
+	return false
 
 func remove_effect(effect_id:StringName)->void:
 	if not active_effects.has(effect_id):

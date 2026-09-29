@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://x7jvc2jhq42u" path="res://Player/Scripts/LocalPlayerController.gd" id="2_luh4h"]
 [ext_resource type="Script" uid="uid://d28ggpbcl23fi" path="res://Networking/RemotePlayerController.gd" id="3_kshrv"]
 [ext_resource type="PackedScene" uid="uid://6yhwxnmq278w" path="res://Models/male_character_ps1-style.glb" id="4_kshrv"]
+[ext_resource type="Script" uid="uid://b362schemplyn" path="res://Tarot/Scripts/TarotEffectController.gd" id="5_3ledp"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hegmd"]
 
@@ -69,3 +70,6 @@ script = ExtResource("3_kshrv")
 
 [node name="Sketchfab_Scene" parent="." unique_id=2103658859 instance=ExtResource("4_kshrv")]
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0.1298219, -1.0984854, -0.18884611)
+
+[node name="TarotEffectController" type="Node" parent="." unique_id=485209888]
+script = ExtResource("5_3ledp")
