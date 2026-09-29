@@ -3,7 +3,19 @@
 [ext_resource type="Script" uid="uid://bcemgv3dalyu2" path="res://Tarot/Tests/TarotTestPlayer.gd" id="1_r5va3"]
 [ext_resource type="Script" uid="uid://b362schemplyn" path="res://Tarot/Scripts/TarotEffectController.gd" id="2_ugvy3"]
 [ext_resource type="Script" uid="uid://qxjx26k0iqkt" path="res://Tarot/Scripts/TarotPickup.gd" id="3_acbn7"]
-[ext_resource type="Resource" uid="uid://djc8i8kdjfqc2" path="res://Tarot/Cards/Definitions/DemonSpeed.tres" id="4_37f0j"]
+[ext_resource type="Resource" uid="uid://s0fvvca0wbib" path="res://Tarot/Cards/Definitions/DarkMoon.tres" id="4_foo6t"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_foo6t"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_3jedb"]
+sky_material = SubResource("ProceduralSkyMaterial_foo6t")
+
+[sub_resource type="Environment" id="Environment_62kai"]
+background_mode = 2
+sky = SubResource("Sky_3jedb")
+glow_enabled = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_mkfg2"]
 
@@ -11,15 +23,25 @@
 
 [node name="TarotTest" type="Node3D" unique_id=1526363546]
 
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=2114001916]
+environment = SubResource("Environment_62kai")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1069852176]
+transform = Transform3D(-0.8660254, -0.43301278, 0.25, 0, 0.49999997, 0.86602545, -0.50000006, 0.75, -0.43301266, 0, 0, 0)
+shadow_enabled = true
+
 [node name="TarotTestPlayer" type="Node" parent="." unique_id=786170852]
 script = ExtResource("1_r5va3")
 
 [node name="TarotEffectController" type="Node" parent="TarotTestPlayer" unique_id=1574527259]
 script = ExtResource("2_ugvy3")
 
+[node name="Camera3D" type="Camera3D" parent="TarotTestPlayer" unique_id=1939257631]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 5)
+
 [node name="TarotPickup" type="Area3D" parent="." unique_id=738219792]
 script = ExtResource("3_acbn7")
-card = ExtResource("4_37f0j")
+card = ExtResource("4_foo6t")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="TarotPickup" unique_id=1055127275]
 mesh = SubResource("BoxMesh_mkfg2")
@@ -29,7 +51,7 @@ shape = SubResource("BoxShape3D_mkfg2")
 
 [node name="TarotPickup2" type="Area3D" parent="." unique_id=1522076465]
 script = ExtResource("3_acbn7")
-card = ExtResource("4_37f0j")
+card = ExtResource("4_foo6t")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="TarotPickup2" unique_id=182546721]
 mesh = SubResource("BoxMesh_mkfg2")
@@ -37,3 +59,14 @@ skeleton = NodePath("../../TarotPickup2")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="TarotPickup2" unique_id=1160380085]
 shape = SubResource("BoxShape3D_mkfg2")
+
+[node name="TarotTestPlayer2" type="Node" parent="." unique_id=1698019822]
+script = ExtResource("1_r5va3")
+input_enabled = false
+
+[node name="TarotEffectController" type="Node" parent="TarotTestPlayer2" unique_id=336920329]
+script = ExtResource("2_ugvy3")
+
+[node name="Camera3D" type="Camera3D" parent="TarotTestPlayer2" unique_id=7311739]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 5)
+current = true

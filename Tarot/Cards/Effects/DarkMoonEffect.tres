@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DarkMoonEffect" format=3 uid="uid://di28yp034v5qq"]
+
+[ext_resource type="Script" uid="uid://bkpfrmcjreh08" path="res://Tarot/Scripts/DarkMoonEffect.gd" id="1_n4vhh"]
+
+[resource]
+script = ExtResource("1_n4vhh")
+effect_id = &"dark_moon_effect"
+display_name = "Dark Moon"
+duration = 5.0
+target_mode = 3
+metadata/_custom_type_script = "uid://bkpfrmcjreh08"
