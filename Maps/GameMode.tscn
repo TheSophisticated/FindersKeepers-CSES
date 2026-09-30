@@ -1,21 +1,19 @@
-[gd_scene format=3 uid="uid://d4cpj11iha5uc"]
+[gd_scene load_steps=27 format=3 uid="uid://d4cpj11iha5uc"]
 
-[ext_resource type="Script" uid="uid://buap128n0gj" path="res://Maps/Scripts/GameMode.gd" id="1_bliyt"]
-[ext_resource type="Script" uid="uid://dddte4pk3pj6w" path="res://scripts/managers/SpawnManager.gd" id="2_abnra"]
+[ext_resource type="Script" path="res://Maps/Scripts/GameMode.gd" id="1_bliyt"]
+[ext_resource type="Script" path="res://scripts/managers/SpawnManager.gd" id="2_abnra"]
 [ext_resource type="Texture2D" uid="uid://biec8m2uv843c" path="res://Textures/texture_03.png" id="2_d7oxw"]
 [ext_resource type="PackedScene" uid="uid://b0u1d8aox07b8" path="res://TarotTest.tscn" id="3_abnra"]
 [ext_resource type="Texture2D" uid="uid://cwcexiteh4s2q" path="res://Textures/texture_02purpl.png" id="3_l8b2n"]
 [ext_resource type="Texture2D" uid="uid://d0u76ui7ag1at" path="res://Textures/texture_02.png" id="4_abnra"]
 [ext_resource type="PackedScene" uid="uid://dvj1t22mv3wkq" path="res://BodyPartTest.tscn" id="4_vlg06"]
-[ext_resource type="Script" uid="uid://de4ax627pkk2y" path="res://Maps/Scripts/PauseMenu.gd" id="5_d7oxw"]
-[ext_resource type="Script" uid="uid://qxjx26k0iqkt" path="res://Tarot/Scripts/TarotPickup.gd" id="6_tpick"]
-
-
+[ext_resource type="Script" path="res://Maps/Scripts/PauseMenu.gd" id="5_d7oxw"]
+[ext_resource type="Script" path="res://Tarot/Scripts/TarotPickup.gd" id="6_tpick"]
 [ext_resource type="Resource" uid="uid://s0fvvca0wbib" path="res://Tarot/Cards/Definitions/DarkMoon.tres" id="7_abnra"]
-[ext_resource type="Resource" uid="uid://drdj54pyceuu" path="res://Tarot/Cards/Definitions/HangedMan.tres" id="11_hanged"]
 [ext_resource type="Script" path="res://Maps/Scripts/TarotInventoryUI.gd" id="8_tinv"]
 [ext_resource type="PackedScene" path="res://BodyParts/SpellCenter.tscn" id="9_center"]
-[ext_resource type="PackedScene" path="res://BodyParts/BodyPart.tscn" id="10_part"]
+[ext_resource type="PackedScene" uid="uid://b662evo73twym" path="res://BodyParts/BodyPart.tscn" id="10_part"]
+[ext_resource type="Resource" uid="uid://drdj54pyceuu" path="res://Tarot/Cards/Definitions/HangedMan.tres" id="11_hanged"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot1"]
 bg_color = Color(0.16, 0.09, 0.24, 0.85)
@@ -81,53 +79,53 @@ uv1_world_triplanar = true
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_tarot"]
 
-[node name="GameMode" type="Node3D" unique_id=109405942]
+[node name="GameMode" type="Node3D"]
 script = ExtResource("1_bliyt")
 
-[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1945485430]
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
 _spawnable_scenes = PackedStringArray("uid://cmov2y6h564hu")
 spawn_path = NodePath("../SubViewportContainer/SubViewport/WorldObjects")
 spawn_limit = 4
 
-[node name="TarotCardSpawner" type="Node3D" parent="." unique_id=2001904792 node_paths=PackedStringArray("spawn_points")]
+[node name="TarotCardSpawner" type="Node3D" parent="." node_paths=PackedStringArray("spawn_points")]
 script = ExtResource("2_abnra")
 object_scene = ExtResource("3_abnra")
 spawn_points = [NodePath("TarotSpawn1"), NodePath("TarotSpawn2"), NodePath("TarotSpawn3")]
 
-[node name="TarotSpawn1" type="Marker3D" parent="TarotCardSpawner" unique_id=264341435]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.7627722, 0.36811894, 0)
+[node name="TarotSpawn1" type="Marker3D" parent="TarotCardSpawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.76277, 0.368119, 0)
 
-[node name="TarotSpawn2" type="Marker3D" parent="TarotCardSpawner" unique_id=1823531587]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6383717, 6.6875515)
+[node name="TarotSpawn2" type="Marker3D" parent="TarotCardSpawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.63837, 6.68755)
 
-[node name="TarotSpawn3" type="Marker3D" parent="TarotCardSpawner" unique_id=319269452]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8062255, 0.7468178, 5.427715)
+[node name="TarotSpawn3" type="Marker3D" parent="TarotCardSpawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.80623, 0.746818, 5.42771)
 
-[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="TarotCardSpawner" unique_id=1650607275]
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="TarotCardSpawner"]
 _spawnable_scenes = PackedStringArray("uid://b0u1d8aox07b8")
 spawn_path = NodePath("../../SubViewportContainer/SubViewport/WorldObjects")
 spawn_limit = 12
 
-[node name="BodyPartSpawner" type="Node3D" parent="." unique_id=1939582008 node_paths=PackedStringArray("spawn_points")]
+[node name="BodyPartSpawner" type="Node3D" parent="." node_paths=PackedStringArray("spawn_points")]
 script = ExtResource("2_abnra")
 object_scene = ExtResource("4_vlg06")
 spawn_points = [NodePath("BodySpawn1"), NodePath("BodySpawn2")]
 object_spawner_type = 1
 
-[node name="BodySpawn1" type="Marker3D" parent="BodyPartSpawner" unique_id=1635047093]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6580038, 2.7431831, 0.077067256)
+[node name="BodySpawn1" type="Marker3D" parent="BodyPartSpawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.658, 2.74318, 0.0770673)
 
-[node name="BodySpawn2" type="Marker3D" parent="BodyPartSpawner" unique_id=536738815]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.2765667, 1.1946555, -5.4059367)
+[node name="BodySpawn2" type="Marker3D" parent="BodyPartSpawner"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.27657, 1.19466, -5.40594)
 
-[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="BodyPartSpawner" unique_id=1745345825]
+[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="BodyPartSpawner"]
 _spawnable_scenes = PackedStringArray("uid://dvj1t22mv3wkq")
 spawn_path = NodePath("../../SubViewportContainer/SubViewport/WorldObjects")
 spawn_limit = 12
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=2026356016]
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="PauseMenu" type="Control" parent="CanvasLayer" unique_id=709917259]
+[node name="PauseMenu" type="Control" parent="CanvasLayer"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -136,7 +134,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("5_d7oxw")
 
-[node name="Panel" type="Panel" parent="CanvasLayer/PauseMenu" unique_id=1240750811]
+[node name="Panel" type="Panel" parent="CanvasLayer/PauseMenu"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -144,7 +142,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PauseContainer" type="VBoxContainer" parent="CanvasLayer/PauseMenu" unique_id=1085893219]
+[node name="PauseContainer" type="VBoxContainer" parent="CanvasLayer/PauseMenu"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -160,23 +158,23 @@ grow_vertical = 2
 scale = Vector2(1.16, 1.16)
 pivot_offset = Vector2(128.452, 149.51)
 
-[node name="Continue" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer" unique_id=496432089]
+[node name="Continue" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer"]
 layout_mode = 2
 text = "Continue"
 
-[node name="Settings" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer" unique_id=480745511]
+[node name="Settings" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer"]
 layout_mode = 2
 text = "Settings"
 
-[node name="BackToMenu" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer" unique_id=1385517830]
+[node name="BackToMenu" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer"]
 layout_mode = 2
 text = "Back To Menu"
 
-[node name="Quit" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer" unique_id=816998469]
+[node name="Quit" type="Button" parent="CanvasLayer/PauseMenu/PauseContainer"]
 layout_mode = 2
 text = "Quit"
 
-[node name="SettingsMenu" type="Panel" parent="CanvasLayer/PauseMenu" unique_id=1924677331]
+[node name="SettingsMenu" type="Panel" parent="CanvasLayer/PauseMenu"]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -193,7 +191,7 @@ grow_vertical = 2
 scale = Vector2(3.655, 3.655)
 pivot_offset = Vector2(80.998, 50.39)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/PauseMenu/SettingsMenu" unique_id=1180077409]
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/PauseMenu/SettingsMenu"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -212,34 +210,34 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 39.85
 
-[node name="ResOptionButton" type="OptionButton" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=1560303543]
+[node name="ResOptionButton" type="OptionButton" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer"]
 layout_mode = 2
 
-[node name="FullScreenCheckButton" type="CheckButton" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=339346614]
+[node name="FullScreenCheckButton" type="CheckButton" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer"]
 layout_mode = 2
 text = "FullScreen"
 
-[node name="VsyncCheckBox" type="CheckBox" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=2070054032]
+[node name="VsyncCheckBox" type="CheckBox" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer"]
 layout_mode = 2
 tooltip_text = "is a graphics technology designed to synchronize the frame rate output of a computer's graphics card with the refresh rate of the monitor"
 text = "Vsync?"
 alignment = 2
 
-[node name="Label" type="Label" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=701731228]
+[node name="Label" type="Label" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Keyboard and Mouse settings"
 
-[node name="MouseSensitivity" type="VBoxContainer" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=687606849]
+[node name="MouseSensitivity" type="VBoxContainer" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer"]
 layout_mode = 2
 
-[node name="Text" type="Label" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/MouseSensitivity" unique_id=1128702265]
+[node name="Text" type="Label" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/MouseSensitivity"]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Sensitivity"
 vertical_alignment = 1
 
-[node name="Sensitivity" type="HSlider" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/MouseSensitivity/Text" unique_id=1587502140]
+[node name="Sensitivity" type="HSlider" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer/MouseSensitivity/Text"]
 layout_mode = 0
 offset_left = 94.285
 offset_top = 4.685
@@ -247,12 +245,12 @@ offset_right = 365.085
 offset_bottom = 20.685
 pivot_offset = Vector2(0, 7.37)
 
-[node name="SettingMenuBack" type="Button" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer" unique_id=1252423802]
+[node name="SettingMenuBack" type="Button" parent="CanvasLayer/PauseMenu/SettingsMenu/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 10
 text = "Back"
 
-[node name="TarotInventory" type="Control" parent="CanvasLayer" unique_id=1919035930]
+[node name="TarotInventory" type="Control" parent="CanvasLayer"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -262,7 +260,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("8_tinv")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/TarotInventory" unique_id=1919035931]
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/TarotInventory"]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -277,45 +275,41 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_constants/separation = 20
 
-[node name="Slot1" type="Panel" parent="CanvasLayer/TarotInventory/HBoxContainer" unique_id=1919035932]
+[node name="Slot1" type="Panel" parent="CanvasLayer/TarotInventory/HBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot1")
 
-[node name="Label" type="Label" parent="CanvasLayer/TarotInventory/HBoxContainer/Slot1" unique_id=1919035934]
+[node name="Label" type="Label" parent="CanvasLayer/TarotInventory/HBoxContainer/Slot1"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
 theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
-text = ""
 
-[node name="Slot2" type="Panel" parent="CanvasLayer/TarotInventory/HBoxContainer" unique_id=1919035933]
+[node name="Slot2" type="Panel" parent="CanvasLayer/TarotInventory/HBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot2")
 
-[node name="Label" type="Label" parent="CanvasLayer/TarotInventory/HBoxContainer/Slot2" unique_id=1919035935]
+[node name="Label" type="Label" parent="CanvasLayer/TarotInventory/HBoxContainer/Slot2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
 theme_override_font_sizes/font_size = 14
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 2
-text = ""
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=596178219]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
 texture_filter = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -325,137 +319,137 @@ grow_vertical = 2
 stretch = true
 stretch_shrink = 4
 
-[node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=2059672986]
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
 handle_input_locally = false
 size = Vector2i(320, 240)
 render_target_update_mode = 4
 
-[node name="WorldObjects" type="Node" parent="SubViewportContainer/SubViewport" unique_id=1195979618]
+[node name="WorldObjects" type="Node" parent="SubViewportContainer/SubViewport"]
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=181823887]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/WorldObjects"]
 transform = Transform3D(0.99027, 0.0455113, -0.131503, 0.139156, -0.323871, 0.935812, 0, -0.945006, -0.327053, 0.523988, 1.30407, -0.0454535)
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=2009336905]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="SubViewportContainer/SubViewport/WorldObjects"]
 environment = SubResource("Environment_l8b2n")
 
-[node name="Floor" type="StaticBody3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1854877067]
+[node name="Floor" type="StaticBody3D" parent="SubViewportContainer/SubViewport/WorldObjects"]
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=1274504003]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor"]
 transform = Transform3D(19.8926, 0, 0, 0, -0.0245266, 0, 0, 0, 19.8926, 0, 0, 0)
 mesh = SubResource("BoxMesh_r2ywu")
 skeleton = NodePath("../CollisionShape3D")
 surface_material_override/0 = SubResource("StandardMaterial3D_bliyt")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=902295024]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor"]
 shape = SubResource("WorldBoundaryShape3D_x14v3")
 
-[node name="Walls" type="Node" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=1068229161]
+[node name="Walls" type="Node" parent="SubViewportContainer/SubViewport/WorldObjects/Floor"]
 
-[node name="Wall" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls" unique_id=677293227]
+[node name="Wall" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.01472, 1.77466, -9.90484)
 use_collision = true
 size = Vector3(19.8679, 3.66162, 0.0744629)
 material = SubResource("StandardMaterial3D_d7oxw")
 
-[node name="Wall2" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls" unique_id=836347892]
+[node name="Wall2" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.01472, 1.77466, 9.95857)
 use_collision = true
 size = Vector3(19.8679, 3.66162, 0.0744629)
 material = SubResource("StandardMaterial3D_d7oxw")
 
-[node name="Wall3" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls" unique_id=779785742]
+[node name="Wall3" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls"]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -9.9164, 1.77466, 0.0551791)
 use_collision = true
 size = Vector3(19.8679, 3.66162, 0.0744629)
 material = SubResource("StandardMaterial3D_d7oxw")
 
-[node name="Wall4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls" unique_id=1751349623]
+[node name="Wall4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Walls"]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 9.911, 1.77466, 0.0551791)
 use_collision = true
 size = Vector3(19.8679, 3.66162, 0.0744629)
 material = SubResource("StandardMaterial3D_d7oxw")
 
-[node name="Boxes" type="Node" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=1428455199]
+[node name="Boxes" type="Node" parent="SubViewportContainer/SubViewport/WorldObjects/Floor"]
 
-[node name="Box" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1223982408 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.292159, 0.517136, -3.3089883)
+[node name="Box" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.29216, 0.517136, -3.30899)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box2" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1130484808 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.292159, 0.517136, -3.3089883)
+[node name="Box2" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.29216, 0.517136, -3.30899)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box3" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1074895579 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.292159, 0.517136, -3.3089883)
+[node name="Box3" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.29216, 0.517136, -3.30899)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1941110537 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.292159, 1.51714, -3.3089883)
+[node name="Box4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.29216, 1.51714, -3.30899)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box5" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=35671662 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.292159, 1.51714, -3.3089883)
+[node name="Box5" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.29216, 1.51714, -3.30899)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box6" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1757795140 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.292159, 1.51714, -3.3089883)
+[node name="Box6" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.29216, 1.51714, -3.30899)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box7" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1123448234 groups=["interactable"]]
+[node name="Box7" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 1)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box8" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1879094278 groups=["interactable"]]
+[node name="Box8" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 2)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box9" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1979951699 groups=["interactable"]]
+[node name="Box9" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 0.517136, 3)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box10" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=2055646923 groups=["interactable"]]
+[node name="Box10" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 3)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box11" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1919035920 groups=["interactable"]]
+[node name="Box11" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 2)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Box12" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=948048474 groups=["interactable"]]
+[node name="Box12" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" groups=["interactable"]]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -6, 1.51714, 1)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
-[node name="Label3D" type="Label3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1770264067]
+[node name="Label3D" type="Label3D" parent="SubViewportContainer/SubViewport/WorldObjects"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.99836, -9.84016)
 text = "GameMode (PlayGround)"
 font_size = 142
 
-[node name="SpotLight3D" type="SpotLight3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1627515835]
+[node name="SpotLight3D" type="SpotLight3D" parent="SubViewportContainer/SubViewport/WorldObjects"]
 transform = Transform3D(0.921526, -0.380833, 0.0758622, 0.386791, 0.917515, -0.0925183, -0.0343706, 0.114601, 0.992817, 0, 1.24717, -4.38749)
 spot_range = 8.19093
 spot_angle = 61.2073
 
-[node name="TarotPickup" type="Area3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1919035921 groups=["interactable"]]
+[node name="TarotPickup" type="Area3D" parent="SubViewportContainer/SubViewport/WorldObjects" groups=["interactable"]]
 transform = Transform3D(0.6, 0, 0, 0, 0.05, 0, 0, 0, 0.6, 0, 1, -3)
 script = ExtResource("6_tpick")
 card = ExtResource("7_abnra")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/WorldObjects/TarotPickup" unique_id=1919035922]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/WorldObjects/TarotPickup"]
 mesh = SubResource("BoxMesh_tarot")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/WorldObjects/TarotPickup" unique_id=1919035923]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/WorldObjects/TarotPickup"]
 shape = SubResource("BoxShape3D_tarot")
 
 [node name="TarotPickup2" type="Area3D" parent="SubViewportContainer/SubViewport/WorldObjects" groups=["interactable"]]
@@ -478,19 +472,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 5)
 [node name="BodyPart2" parent="SubViewportContainer/SubViewport/WorldObjects" instance=ExtResource("10_part")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.5, 0)
 
-[node name="SpawnPoints" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=2094408359]
+[node name="SpawnPoints" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0218, -6.19973)
 
-[node name="SpawnPoint1" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=314873692]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.171586, 1.6293855, 7.3784676)
+[node name="SpawnPoint1" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.17159, 1.62939, 7.37847)
 
-[node name="SpawnPoint2" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=710356747]
+[node name="SpawnPoint2" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.102142)
 
-[node name="SpawnPoint3" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=893433999]
+[node name="SpawnPoint3" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.30116, 0, 10.4345)
 
-[node name="SpawnPoint4" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=1190545838]
+[node name="SpawnPoint4" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.52572, 0, 10.4345)
 
 [connection signal="pressed" from="CanvasLayer/PauseMenu/PauseContainer/Continue" to="CanvasLayer/PauseMenu" method="_on_continue_pressed"]

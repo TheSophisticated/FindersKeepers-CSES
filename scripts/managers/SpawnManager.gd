@@ -19,11 +19,21 @@ func spawn_objects(peer_id : int = -1) -> void:
 
 
 func _spawn_object(spawn_point : Marker3D) -> void:
+	if object_scene == null or spawn_point == null:
+		return
 	print("Spawn_Point: ", spawn_point.global_position)
 	var object := object_scene.instantiate()
 	object.name = "Object_" + str(spawned_objects.size())
-	object.position = spawn_point.global_position
-	get_node("/root/GameMode/SubViewportContainer/SubViewport/WorldObjects").add_child(object, true)
+	
+	var world_node: Node = null
+	if has_node("/root/GameMode/SubViewportContainer/SubViewport/WorldObjects"):
+		world_node = get_node("/root/GameMode/SubViewportContainer/SubViewport/WorldObjects")
+	elif get_tree() and get_tree().current_scene:
+		world_node = get_tree().current_scene.find_child("WorldObjects", true, false)
+	if world_node == null:
+		world_node = get_parent()
+
+	world_node.add_child(object, true)
 	object.global_position = spawn_point.global_position
 	spawned_objects.append(object)
 	

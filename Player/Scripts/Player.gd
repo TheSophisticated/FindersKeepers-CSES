@@ -123,6 +123,7 @@ func _ready():
 	look_at_ray.collide_with_areas = true
 	look_at_ray.collision_mask = 1 | 8  # Layer 1 (interactables) + Layer 4 (BodyParts)
 	look_at_ray.target_position = Vector3(0, 0, -10)  # 10 units forward
+	look_at_ray.add_exception(self)
 	if camera:
 		camera.add_child(look_at_ray)
 
@@ -143,13 +144,15 @@ func _input(event):
 		jump_buffer_timer = 0.15
 
 	# Interact input
-	if event.is_action_pressed("interact"):
+	if event.is_action_pressed("interact") or (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_E):
+		print("[Player] E triggered. held_object: ", held_object != null, ", held_body_part: ", held_body_part != null)
 		if held_object:
 			drop_object()
 		elif held_body_part:
 			drop_body_part()
 		elif look_at_ray and look_at_ray.is_colliding():
 			var hit_node = look_at_ray.get_collider()
+			print("[Player] Ray hit: ", hit_node.name if hit_node else "null", " (", hit_node.get_class() if hit_node else "null", ")")
 			if hit_node == null:
 				return
 			if hit_node is TarotPickup:
@@ -158,6 +161,8 @@ func _input(event):
 				pick_up_body_part(hit_node)
 			elif hit_node.is_in_group("interactable"):
 				pick_up_object(hit_node)
+		else:
+			print("[Player] Ray is not colliding with any object in range")
 	
 	#Tarot slots
 	if event is InputEventKey:
@@ -287,10 +292,13 @@ func drop_object() -> void:
 # happen here; that all waits for deposit_body_part().
 func pick_up_body_part(part: BodyPart) -> void:
 	if not is_multiplayer_authority():
+		print("[Player] pick_up_body_part aborted: not authority")
 		return
 	if held_body_part != null or held_object != null:
+		print("[Player] pick_up_body_part aborted: hands full")
 		return
 	if part.is_collected or part.is_carried:
+		print("[Player] pick_up_body_part aborted: part already collected or carried")
 		return
 
 	held_body_part = part
@@ -298,20 +306,23 @@ func pick_up_body_part(part: BodyPart) -> void:
 	part.reparent(head_position, true)
 	part.position = Vector3(0, 0, -2)
 	part.part_collected.connect(_on_part_collected)
-	print("Carrying body part: ", part.name)
+	print("[Player] SUCCESS: Carrying body part: ", part.name)
 
 # Called by the spell center. Hands the part to BodyPart.collect(), which is
 # where progress, buffs and removal finally happen.
 func deposit_body_part() -> void:
 	if not is_multiplayer_authority():
+		print("[Player] deposit_body_part aborted: not authority")
 		return
 	if held_body_part == null:
+		print("[Player] deposit_body_part aborted: held_body_part is null")
 		return
 
+	print("[Player] Calling held_body_part.collect() for: ", held_body_part.name)
 	held_body_part.set_carried(false)
 	held_body_part.collect(self)
 	held_body_part = null
-	print("Deposited body part")
+	print("[Player] SUCCESS: Deposited body part")
 
 # Returns a carried part to the world without collecting it.
 func drop_body_part() -> void:
