@@ -9,6 +9,7 @@
 
 
 [ext_resource type="Resource" uid="uid://s0fvvca0wbib" path="res://Tarot/Cards/Definitions/DarkMoon.tres" id="7_abnra"]
+[ext_resource type="Resource" uid="uid://drdj54pyceuu" path="res://Tarot/Cards/Definitions/HangedMan.tres" id="11_hanged"]
 [ext_resource type="Script" path="res://Maps/Scripts/TarotInventoryUI.gd" id="8_tinv"]
 [ext_resource type="PackedScene" path="res://BodyParts/SpellCenter.tscn" id="9_center"]
 [ext_resource type="PackedScene" path="res://BodyParts/BodyPart.tscn" id="10_part"]
@@ -416,6 +417,17 @@ card = ExtResource("7_abnra")
 mesh = SubResource("BoxMesh_tarot")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/WorldObjects/TarotPickup" unique_id=1919035923]
+shape = SubResource("BoxShape3D_tarot")
+
+[node name="TarotPickup2" type="Area3D" parent="SubViewportContainer/SubViewport/WorldObjects" groups=["interactable"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1, -3)
+script = ExtResource("6_tpick")
+card = ExtResource("11_hanged")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/WorldObjects/TarotPickup2"]
+mesh = SubResource("BoxMesh_tarot")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/WorldObjects/TarotPickup2"]
 shape = SubResource("BoxShape3D_tarot")
 
 [node name="SpellCenter" parent="SubViewportContainer/SubViewport/WorldObjects" instance=ExtResource("9_center")]
