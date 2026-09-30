@@ -36,6 +36,7 @@ const ROTATION_LERP_FACTOR = 0.5      # Rotation interpolation factor
 @onready var head_position := $Camera3D/HeadPosition  # Hold point for picked-up objects
 @onready var sync := $MultiplayerSynchronizer # Network sync component
 @onready var effect_controller: TarotEffectController = $TarotEffectController #Effect controller component
+@onready var interact_prompt: Label = $InteractPrompt/PromptLabel  # Interaction prompt label
 
 # ===== MOVEMENT STATE =====
 enum MovementState { WALKING, SPRINTING, AIRBORNE }
@@ -76,17 +77,16 @@ var look_at_ray: RayCast3D            # Raycast for detecting objects in front o
 var held_object: Node3D = null        # Currently held interactable object
 var held_body_part: BodyPart = null   # Body part being carried, deposited at the spell center
 
-# Called every frame. Checks what the player is looking at.
+# Called every frame. Checks what the player is looking at and updates interaction prompt.
 func _process(delta):
-	if look_at_ray and look_at_ray.is_colliding():
-		var hit_node = look_at_ray.get_collider()
-		if hit_node == null:
-			return
-
-		if hit_node.is_in_group("interactable"):
-			print("Interactable: ", hit_node.name)
-		else:
-			print("Not interactable: ", hit_node.name, " (", hit_node.get_class(), ")")
+	# Update interaction prompt visibility (local player only)
+	if is_multiplayer_authority() and interact_prompt:
+		var show_prompt = false
+		if look_at_ray and look_at_ray.is_colliding() and not held_object and not held_body_part:
+			var hit_node = look_at_ray.get_collider()
+			if hit_node and (hit_node.is_in_group("interactable") or hit_node is BodyPart or hit_node is TarotPickup):
+				show_prompt = true
+		interact_prompt.visible = show_prompt
 
 func _enter_tree():
 	# Set multiplayer authority based on name
