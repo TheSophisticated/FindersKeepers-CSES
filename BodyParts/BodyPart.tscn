@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://BodyParts/bodypart.gd" id="1_part"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_part"]
+size = Vector3(0.3, 0.3, 0.3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_part"]
+size = Vector3(0.3, 0.3, 0.3)
+
+[node name="BodyPart" type="RigidBody3D" groups=["interactable"]]
+collision_layer = 1
+collision_mask = 3
+script = ExtResource("1_part")
+part_type = 2
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_part")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_part")

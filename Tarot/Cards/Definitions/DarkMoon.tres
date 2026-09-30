@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="TarotCard" format=3 uid="uid://s0fvvca0wbib"]
+
+[ext_resource type="Script" uid="uid://ddrmv7b3k80g5" path="res://Tarot/Scripts/TarotCard.gd" id="1_1v5y7"]
+[ext_resource type="Resource" uid="uid://di28yp034v5qq" path="res://Tarot/Cards/Effects/DarkMoonEffect.tres" id="1_023nt"]
+
+[resource]
+script = ExtResource("1_1v5y7")
+card_id = &"dark_moon"
+card_name = "Dark Moon"
+description = "Reduces vision of all opponents for a limited time ."
+effect = ExtResource("1_023nt")
+metadata/_custom_type_script = "uid://ddrmv7b3k80g5"

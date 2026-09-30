@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://bn1hghcvd4jw"]
+
+[ext_resource type="PackedScene" uid="uid://cmov2y6h564hu" path="res://Player/_Player.tscn" id="1_18atk"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_acm8i"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_acm8i"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_acm8i"]
+size = Vector3(20, 1, 20)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_acm8i"]
+size = Vector3(20, 1, 20)
+
+[node name="Node3D" type="Node3D" unique_id=203329695]
+
+[node name="CharacterBody3D" type="CharacterBody3D" parent="." unique_id=758018818]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="CharacterBody3D" unique_id=1462902556]
+mesh = SubResource("CapsuleMesh_acm8i")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D" unique_id=2113809805]
+shape = SubResource("CapsuleShape3D_acm8i")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1957499983]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D" unique_id=837811096]
+mesh = SubResource("BoxMesh_acm8i")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D/MeshInstance3D" unique_id=261603261]
+shape = SubResource("BoxShape3D_acm8i")
+
+[node name="Player" parent="." unique_id=611918509 instance=ExtResource("1_18atk")]
