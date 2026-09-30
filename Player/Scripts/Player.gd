@@ -46,6 +46,7 @@ var wish_dir := Vector3.ZERO          # Desired movement direction
 var current_speed := 0.0              # Current movement speed
 var was_on_floor := true              # Previous frame ground state
 var speed_modifier: float = 1.0 # Used while using demon speed
+var input_multiplier: float  = 1.0 # Used for inverting the controls while using hanged man 
 
 # ===== JUMP VARIABLES =====
 var jump_buffer_timer := 0.0          # Jump input buffer timer
@@ -168,6 +169,7 @@ func _input(event):
 
 # ===== TAROT INVENTORY =====
 signal tarot_card_added(card: TarotCard, slot: int)  # Emitted when a card fills a slot
+signal tarot_card_removed(slot: int)
 
 var tarot_cards: Array[TarotCard] = []  # Fixed-size slots, empty slots hold null
 
@@ -211,6 +213,7 @@ func use_tarot_card(slot_index: int)->void:
 		return
 	
 	tarot_cards[slot_index] = null
+	tarot_card_removed.emit(slot_index)
 	print("removed tarot cards : ",card.card_name," | Inventory: ",tarot_cards.size(),"/",tarot_capacity)
 
 func apply_speed_modifier(multiplier: float)->void:
@@ -252,6 +255,16 @@ func remove_render_distance_modifier(multiplier: float)->void:
 	camera.far = normal_render_distance
 	
 	print("render distance modifer removed : ",multiplier," | Far : ",camera.far)
+
+func apply_input_modifier(multiplier:float)->void:
+	input_multiplier  *= multiplier
+	print("Input modifier applied ",multiplier," | current modifier : ",input_multiplier)
+
+func remove_input_modifier(multiplier: float)->void:
+	if multiplier == 0.0:
+		return
+	input_multiplier /= multiplier
+	print("Input modifier removed ",multiplier," | current modifier : ",input_multiplier)
 
 # ===== PICKUP / DROP =====
 func pick_up_object(target: Node3D) -> void:
@@ -334,7 +347,7 @@ func _physics_process(delta):
 # ===== LOCAL MOVEMENT =====
 func process_local_movement(delta):
 	# Get input direction
-	raw_input_dir = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	raw_input_dir = Input.get_vector("move_left", "move_right", "move_forward", "move_back")*input_multiplier
 	is_moving = raw_input_dir.length() > 0.1
 	wish_dir = (transform.basis * Vector3(raw_input_dir.x, 0, raw_input_dir.y)).normalized()
 	

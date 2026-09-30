@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="HangedManEffect" format=3 uid="uid://b2dokjanvqhrb"]
+
+[ext_resource type="Script" uid="uid://m0ptk04r40l3" path="res://Tarot/Scripts/HangedManEffect.gd" id="1_4b6vw"]
+
+[resource]
+script = ExtResource("1_4b6vw")
+effect_id = &"hanged_man_effect"
+display_name = "Hanged Man"
+target_mode = 2
+metadata/_custom_type_script = "uid://m0ptk04r40l3"

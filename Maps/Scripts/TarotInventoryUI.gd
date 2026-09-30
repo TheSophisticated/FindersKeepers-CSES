@@ -39,12 +39,16 @@ func _try_bind_local_player() -> void:
 		if child.has_method("add_tarot_card") and child.is_multiplayer_authority():
 			_player = child
 			_player.tarot_card_added.connect(_on_tarot_card_added)
+			_player.tarot_card_removed.connect(_on_tarot_card_removed)
 			refresh_slots()
 			return
 
 	call_deferred("_try_bind_local_player")
 
 func _on_tarot_card_added(_card: TarotCard, _slot: int) -> void:
+	refresh_slots()
+
+func _on_tarot_card_removed(_slot: int)->void:
 	refresh_slots()
 
 # Redraws every slot from the player's inventory.
