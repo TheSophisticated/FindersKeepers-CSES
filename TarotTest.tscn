@@ -2,7 +2,15 @@
 
 [sub_resource type="SphereMesh" id="SphereMesh_tagav"]
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_0j048"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
 [node name="Node3D" type="Node3D" unique_id=518107162]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=100936634]
 mesh = SubResource("SphereMesh_tagav")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=91704673]
+replication_config = SubResource("SceneReplicationConfig_0j048")

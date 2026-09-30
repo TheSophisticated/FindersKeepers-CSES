@@ -10,20 +10,20 @@ enum spawnerType{
 @export var objects_to_spawn = 1
 @export var object_spawner_type : spawnerType
 
-
 var spawned_objects : Array[Node] = []
 
-func spawn_objects() -> void:
-	if not multiplayer.is_server():
-		return
-	
+func spawn_objects(peer_id : int = -1) -> void: 
 	clear_objects()
 	for i in range(len(spawn_points)):
-		spawn_object(spawn_points[i])
+		_spawn_object(spawn_points[i])
 
-func spawn_object(spawn_point : Marker3D) -> void:
+
+func _spawn_object(spawn_point : Marker3D) -> void:
+	print("Spawn_Point: ", spawn_point.global_position)
 	var object := object_scene.instantiate()
-	add_child(object)
+	object.name = "Object_" + str(spawned_objects.size())
+	object.position = spawn_point.global_position
+	get_node("/root/GameMode/SubViewportContainer/SubViewport/WorldObjects").add_child(object, true)
 	object.global_position = spawn_point.global_position
 	spawned_objects.append(object)
 	
@@ -41,6 +41,11 @@ func _ready() -> void:
 		GameManager.tarot_card_spawner = self
 	if  object_spawner_type == spawnerType.BodyPartSpawner:
 		GameManager.body_part_spawner = self
+
+	if multiplayer.is_server():
+		#Whenever a client connects, call spawn_objects
+		multiplayer.peer_connected.connect(spawn_objects);
+		
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
