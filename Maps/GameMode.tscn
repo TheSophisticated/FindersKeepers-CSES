@@ -96,10 +96,11 @@ _spawnable_scenes = PackedStringArray("uid://cmov2y6h564hu")
 spawn_path = NodePath("../SubViewportContainer/SubViewport/WorldObjects")
 spawn_limit = 4
 
-[node name="TarotCardSpawner" type="Node3D" parent="." unique_id=1817543051]
+[node name="TarotCardSpawner" type="Node3D" parent="." unique_id=1817543051 node_paths=PackedStringArray("spawn_points")]
 script = ExtResource("2_abnra")
 object_scene = ExtResource("3_abnra")
 object_scenes = Array[PackedScene]([ExtResource("4_gdwpl"), ExtResource("5_oaoby"), ExtResource("6_yjxwv")])
+spawn_points = [NodePath("TarotSpawn1"), NodePath("TarotSpawn2"), NodePath("TarotSpawn3")]
 
 [node name="TarotSpawn1" type="Marker3D" parent="TarotCardSpawner" unique_id=191008190]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.76277, 0.368119, 0)
@@ -115,9 +116,10 @@ _spawnable_scenes = PackedStringArray("uid://b0u1d8aox07b8")
 spawn_path = NodePath("../../SubViewportContainer/SubViewport/WorldObjects")
 spawn_limit = 12
 
-[node name="BodyPartSpawner" type="Node3D" parent="." unique_id=488715404]
+[node name="BodyPartSpawner" type="Node3D" parent="." unique_id=488715404 node_paths=PackedStringArray("spawn_points")]
 script = ExtResource("2_abnra")
 object_scene = ExtResource("10_part")
+spawn_points = [NodePath("BodySpawn1"), NodePath("BodySpawn2"), NodePath("BodySpawn3"), NodePath("BodySpawn4"), NodePath("BodySpawn5"), NodePath("BodySpawn6"), NodePath("BodySpawn7"), NodePath("BodySpawn8"), NodePath("BodySpawn9"), NodePath("BodySpawn10"), NodePath("BodySpawn11"), NodePath("BodySpawn12")]
 object_spawner_type = 1
 
 [node name="BodySpawn1" type="Marker3D" parent="BodyPartSpawner" unique_id=2062795408]
