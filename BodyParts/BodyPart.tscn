@@ -1,6 +1,6 @@
-[gd_scene load_steps=4 format=3 uid="uid://b662evo73twym"]
+[gd_scene format=3 uid="uid://b662evo73twym"]
 
-[ext_resource type="Script" path="res://BodyParts/bodypart.gd" id="1_part"]
+[ext_resource type="Script" uid="uid://c2tg4bbt5rqq8" path="res://BodyParts/bodypart.gd" id="1_part"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_part"]
 size = Vector3(0.3, 0.3, 0.3)
@@ -8,13 +8,21 @@ size = Vector3(0.3, 0.3, 0.3)
 [sub_resource type="BoxShape3D" id="BoxShape3D_part"]
 size = Vector3(0.3, 0.3, 0.3)
 
-[node name="BodyPart" type="RigidBody3D" groups=["interactable"]]
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1h14b"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
+[node name="BodyPart" type="RigidBody3D" unique_id=1864461176 groups=["interactable"]]
 collision_mask = 3
 script = ExtResource("1_part")
 part_type = 2
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1097405808]
 mesh = SubResource("BoxMesh_part")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1508604823]
 shape = SubResource("BoxShape3D_part")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=622153700]
+replication_config = SubResource("SceneReplicationConfig_1h14b")

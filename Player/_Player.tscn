@@ -33,13 +33,16 @@ properties/6/replication_mode = 1
 properties/7/path = NodePath(".:position:z")
 properties/7/spawn = true
 properties/7/replication_mode = 1
+properties/8/path = NodePath("Camera3D/HeadPosition:position")
+properties/8/spawn = true
+properties/8/replication_mode = 1
 
 [node name="Player" type="CharacterBody3D" unique_id=611918509]
 safe_margin = 0.08
 script = ExtResource("1_cb6jr")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=459706199]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.11025223, 0.8036157, -0.39806548)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.11025223, 0.6265694, -0.362756)
 fov = 70.5
 
 [node name="HeadPosition" type="Node3D" parent="Camera3D" unique_id=1095777352]
@@ -75,11 +78,10 @@ transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0.12
 script = ExtResource("5_3ledp")
 
 [node name="InteractPrompt" type="CanvasLayer" parent="." unique_id=1234567890]
-layer = 1
 
 [node name="PromptLabel" type="Label" parent="InteractPrompt" unique_id=1234567891]
-layout_mode = 2
-anchors_preset = 8
+visible = false
+anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
@@ -88,9 +90,7 @@ offset_left = -100.0
 offset_top = -80.0
 offset_right = 100.0
 offset_bottom = -40.0
+theme_override_font_sizes/font_size = 20
+text = "Press E to interact"
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "Press E to interact"
-visible = false
-theme_override_font_sizes/font_size = 20
-mouse_filter = 2

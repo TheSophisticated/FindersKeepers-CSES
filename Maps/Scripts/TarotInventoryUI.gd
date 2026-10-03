@@ -23,6 +23,13 @@ func _ready() -> void:
 # Players are spawned by GameMode, and a node's _ready() runs before its
 # parent's, so the local player does not exist yet when this runs. Retry
 # until it shows up (this also covers players that join later).
+
+func _process(_delta : float ) -> void:
+	if is_instance_valid(_player):
+		set_process(false)
+		return
+	_try_bind_local_player()
+
 func _try_bind_local_player() -> void:
 	if is_instance_valid(_player):
 		return
@@ -30,7 +37,6 @@ func _try_bind_local_player() -> void:
 	var scene := get_tree().current_scene
 	var world: Node = scene.get("world") if scene != null else null
 	if world == null:
-		call_deferred("_try_bind_local_player")
 		return
 
 	for child in world.get_children():
@@ -43,7 +49,6 @@ func _try_bind_local_player() -> void:
 			refresh_slots()
 			return
 
-	call_deferred("_try_bind_local_player")
 
 func _on_tarot_card_added(_card: TarotCard, _slot: int) -> void:
 	refresh_slots()

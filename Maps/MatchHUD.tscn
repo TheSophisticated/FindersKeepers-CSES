@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://c6matchhud12345"]
+[gd_scene format=3 uid="uid://caov5h7gc5ts"]
 
 [ext_resource type="Script" path="res://Maps/Scripts/MatchHUD.gd" id="1_hud"]
 

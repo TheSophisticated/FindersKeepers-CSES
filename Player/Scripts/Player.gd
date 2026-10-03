@@ -32,7 +32,8 @@ const POSITION_LERP_FACTOR = 0.3      # Position interpolation factor
 const ROTATION_LERP_FACTOR = 0.5      # Rotation interpolation factor
 
 # ===== NODE REFERENCES =====
-@onready var camera := $Camera3D       # Player camera
+@onready var camera := $Camera3D # Player camera
+var pitch = 0.0 
 @onready var head_position := $Camera3D/HeadPosition  # Hold point for picked-up objects
 @onready var sync := $MultiplayerSynchronizer # Network sync component
 @onready var effect_controller: TarotEffectController = $TarotEffectController #Effect controller component
@@ -136,8 +137,8 @@ func _input(event):
 	if event is InputEventMouseMotion:
 		rotate_y(-event.relative.x * mouse_sensitivity)
 		if camera:
-			camera.rotate_x(-event.relative.y * mouse_sensitivity)
-			camera.rotation.x = clamp(camera.rotation.x, deg_to_rad(-90), deg_to_rad(90))
+			pitch = clamp(pitch - event.relative.y * mouse_sensitivity, deg_to_rad(-89), deg_to_rad(89))
+			camera.rotation.x = pitch
 	
 	# Jump input buffering
 	if event.is_action_pressed("jump"):
@@ -147,7 +148,7 @@ func _input(event):
 	if event.is_action_pressed("interact") or (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_E):
 		print("[Player] E triggered. held_object: ", held_object != null, ", held_body_part: ", held_body_part != null)
 		if held_object:
-			drop_object()
+			drop_object.rpc() ##TODO: Add Validation Checks here
 		elif held_body_part:
 			drop_body_part()
 		elif look_at_ray and look_at_ray.is_colliding():
@@ -160,7 +161,7 @@ func _input(event):
 			elif hit_node is BodyPart:
 				pick_up_body_part(hit_node)
 			elif hit_node.is_in_group("interactable"):
-				pick_up_object(hit_node)
+				request_pick_up.rpc_id(1, hit_node.get_path())
 		else:
 			print("[Player] Ray is not colliding with any object in range")
 	
@@ -272,17 +273,58 @@ func remove_input_modifier(multiplier: float)->void:
 	print("Input modifier removed ",multiplier," | current modifier : ",input_multiplier)
 
 # ===== PICKUP / DROP =====
-func pick_up_object(target: Node3D) -> void:
-	if not is_multiplayer_authority():
+@rpc("any_peer", "call_local", "reliable")
+func request_pick_up(target: NodePath) -> void:
+	if not multiplayer.is_server():
 		return
+
+	if target.is_empty():
+		print("Empty Node Path!")
+		return
+
+	var id = multiplayer.get_remote_sender_id();
+	##Adjust for Host Calling the Function
+	if id == 0:
+		id = 1;
+
+	##Verify request from the Same Player
+	if id != player_id:
+		return
+
+	##Check if Player is already holding an object
+	if held_object != null:
+		return
+
+	##Check if that object exists or is not held by someone else
+	if get_node_or_null(target) == null:
+		return
+
+	pick_up_object.rpc(target)
+
+@rpc("any_peer", "call_local", "reliable")
+func pick_up_object(targetPath: NodePath) -> void:
+	if multiplayer.get_remote_sender_id() != 1 && multiplayer.get_remote_sender_id() != 0:
+		return
+	
+	var target = get_node_or_null(targetPath)
+	if target == null:
+		print("NULL Target")
+		return
+
 	held_object = target
+	if target is CSGBox3D:
+		target.use_collision = false
+
 	target.reparent(head_position, true)
 	target.position = Vector3(0, 0, -2)
 	print("Picked up: ", target.name)
 
+@rpc("any_peer", "call_local", "reliable")
 func drop_object() -> void:
 	if not held_object:
 		return
+	if held_object is CSGBox3D:
+		held_object.use_collision = true
 	held_object.reparent(get_parent(), true)
 	held_object = null
 	print("Dropped object")
