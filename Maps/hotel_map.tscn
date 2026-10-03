@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://dtwfcjaoj0u2r"]
+
+[ext_resource type="PackedScene" uid="uid://g0040eung7qw" path="res://Maps/dependencies/hotel/hotel_map.glb" id="1_goo6m"]
+
+[node name="hotel_map" unique_id=1092620386 instance=ExtResource("1_goo6m")]
