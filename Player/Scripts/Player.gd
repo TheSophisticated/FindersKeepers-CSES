@@ -127,6 +127,8 @@ func _ready():
 	look_at_ray.add_exception(self)
 	if camera:
 		camera.add_child(look_at_ray)
+		
+	GameManager.player_eliminated.connect(_on_player_eliminated)
 
 # ===== INPUT HANDLING =====
 func _input(event):
@@ -338,9 +340,13 @@ func drop_object() -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func pick_up_body_part(partPath : NodePath) -> void:
-	var part = get_node_or_null(partPath)
+	var part := get_node_or_null(partPath)
 	if part == null:
 		print("Part is NULL! FAILED")
+		return
+		
+	if part.owner_id == player_id:
+		print("You cant pick up your own parts!")
 		return
 
 	if held_body_part != null or held_object != null:
@@ -585,3 +591,13 @@ func set_input_enabled(enabled: bool):
 	input_enabled = enabled
 	if is_multiplayer_authority():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED if enabled else Input.MOUSE_MODE_VISIBLE)
+		
+
+# Hanlde Player Elimination
+func _on_player_eliminated(peer_id : int, name : String) -> void:
+	if peer_id != player_id:
+		return
+	set_input_enabled(false)
+	collision_layer = 0
+	collision_mask = 0
+	hide()

@@ -115,7 +115,7 @@ spawn_limit = 12
 [node name="BodyPartSpawner" type="Node3D" parent="." unique_id=488715404 node_paths=PackedStringArray("spawn_points")]
 script = ExtResource("2_abnra")
 object_scene = ExtResource("10_part")
-spawn_points = [NodePath("BodySpawn1"), NodePath("BodySpawn2")]
+spawn_points = [NodePath("BodySpawn1"), NodePath("BodySpawn2"), NodePath("BodySpawn3"), NodePath("BodySpawn4"), NodePath("BodySpawn5"), NodePath("BodySpawn6"), NodePath("BodySpawn7"), NodePath("BodySpawn8"), NodePath("BodySpawn9"), NodePath("BodySpawn10"), NodePath("BodySpawn11"), NodePath("BodySpawn12")]
 object_spawner_type = 1
 
 [node name="BodySpawn1" type="Marker3D" parent="BodyPartSpawner" unique_id=2062795408]
@@ -127,7 +127,37 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.27657, 1.19466, -5.40594)
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="BodyPartSpawner" unique_id=459146891]
 _spawnable_scenes = PackedStringArray("uid://b662evo73twym")
 spawn_path = NodePath("../../SubViewportContainer/SubViewport/WorldObjects")
-spawn_limit = 12
+spawn_limit = 16
+
+[node name="BodySpawn3" type="Marker3D" parent="BodyPartSpawner" unique_id=862312077]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.922364, 0.9458449, 0.0770673)
+
+[node name="BodySpawn4" type="Marker3D" parent="BodyPartSpawner" unique_id=896890286]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.658, -0.14317584, 6.6173573)
+
+[node name="BodySpawn5" type="Marker3D" parent="BodyPartSpawner" unique_id=1934552842]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.3712816, -0.74878955, 0.0770673)
+
+[node name="BodySpawn6" type="Marker3D" parent="BodyPartSpawner" unique_id=1471741227]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.202872, -0.76984715, 7.5132303)
+
+[node name="BodySpawn7" type="Marker3D" parent="BodyPartSpawner" unique_id=1634469481]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.658, 0.6893594, -1.1977473)
+
+[node name="BodySpawn8" type="Marker3D" parent="BodyPartSpawner" unique_id=572494259]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8165834, 1.0242503, 6.756608)
+
+[node name="BodySpawn9" type="Marker3D" parent="BodyPartSpawner" unique_id=872558581]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.225506, -1.2951343, -4.039358)
+
+[node name="BodySpawn10" type="Marker3D" parent="BodyPartSpawner" unique_id=1492744978]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.489099, -0.20751977, 0.0770673)
+
+[node name="BodySpawn11" type="Marker3D" parent="BodyPartSpawner" unique_id=1814621766]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.920284, -8.038242, 10.67398)
+
+[node name="BodySpawn12" type="Marker3D" parent="BodyPartSpawner" unique_id=1141298404]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5612562, 0.8590057, 0.0770673)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=151192934]
 
@@ -471,12 +501,6 @@ shape = SubResource("BoxShape3D_tarot")
 
 [node name="SpellCenter" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=689938534 instance=ExtResource("9_center")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.75, -6)
-
-[node name="BodyPart" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=733002765 instance=ExtResource("10_part")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 5)
-
-[node name="BodyPart2" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=544339423 instance=ExtResource("10_part")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0.5, 0)
 
 [node name="SpawnPoints" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=1560531572]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0218, -6.19973)

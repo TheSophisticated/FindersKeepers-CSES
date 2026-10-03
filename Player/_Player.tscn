@@ -37,6 +37,13 @@ properties/8/path = NodePath("Camera3D/HeadPosition:position")
 properties/8/spawn = true
 properties/8/replication_mode = 1
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3ledp"]
+bg_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [node name="Player" type="CharacterBody3D" unique_id=611918509]
 safe_margin = 0.08
 script = ExtResource("1_cb6jr")
@@ -94,3 +101,30 @@ theme_override_font_sizes/font_size = 20
 text = "Press E to interact"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="Crosshair" type="CanvasLayer" parent="." unique_id=1591649975]
+
+[node name="Control" type="Control" parent="Crosshair" unique_id=1424546615]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="Crosshair/Control" unique_id=852440401]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_right = 8.0
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="Crosshair/Control/CenterContainer" unique_id=397250270]
+custom_minimum_size = Vector2(2, 2)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_3ledp")

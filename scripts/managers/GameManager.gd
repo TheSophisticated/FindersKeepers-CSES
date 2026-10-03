@@ -35,7 +35,7 @@ const BLOOD_SHRINE_TRIGGER_TIME: float = 180.0 # Triggers halfway through (at 3:
 const SHRINE_PENALTY_SECONDS: float = 20.0     # Time stripped if players accept the deal
 const TIMER_SYNC_INTERVAL: float = 0.5         # Sync timer over network twice a second
 
-
+const PLAYER_COLOR_VALUES: Array[Color] = [Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW]
 
 # SIGNALS
 # UI, player controllers, audio, and VFX systems connect to these events.
@@ -446,3 +446,11 @@ func conclude_match(winner_id: int) -> void:
 func broadcast_game_over(winner_id: int, winner_name: String) -> void:
 	current_state = MatchState.GAME_OVER
 	game_over_announced.emit(winner_id, winner_name)
+
+# Helper Functions
+func get_player_color(peer_id : int) -> String:
+	if not players.has(peer_id):
+		return "UNKNOWN"
+		
+	var c : int = players[peer_id]["color"]
+	return PlayerColor.keys()[c].capitalize()

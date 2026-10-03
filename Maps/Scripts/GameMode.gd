@@ -49,34 +49,38 @@ func _ready():
 
 func _on_spell_center_deposited(collector: Node, part: Node) -> void:
 	print("GameMode: SpellCenter deposit event triggered by ", collector.name if collector else "unknown")
-	var depositor_id: int = 1
-	if collector:
-		if collector.get("player_id") != null and collector.player_id > 0:
-			depositor_id = collector.player_id
-		elif collector.name.contains("_"):
-			depositor_id = collector.name.get_slice("_", 1).to_int()
+	if collector == null or  not collector.is_multiplayer_authority():
+		return
+	#var depositor_id: int = 1
+	#if collector:
+		#if collector.get("player_id") != null and collector.player_id > 0:
+			#depositor_id = collector.player_id
+		#elif collector.name.contains("_"):
+			#depositor_id = collector.name.get_slice("_", 1).to_int()
 
 	var victim_id: int = part.get("owner_id") if (part and part.get("owner_id") != null) else -1
 	var part_type: int = part.get("part_type") if (part and part.get("part_type") != null) else 0
 
-	# 1. Update GameManager state
-	if GameManager:
-		if not GameManager.players.has(depositor_id):
-			GameManager.register_player(depositor_id, "Player_" + str(depositor_id))
-		if GameManager.players.has(depositor_id):
-			GameManager.players[depositor_id]["parts_deposited"] += 1
-			print("GameMode: Incremented GameManager parts_deposited to ", GameManager.players[depositor_id]["parts_deposited"])
-		
-		# Broadcast or emit directly
-		if GameManager.has_method("broadcast_part_deposit"):
-			GameManager.broadcast_part_deposit(depositor_id, victim_id, part_type)
-		elif GameManager.has_signal("part_deposited_broadcast"):
-			GameManager.part_deposited_broadcast.emit(depositor_id, victim_id, part_type)
+	GameManager.request_deposit_part.rpc_id(1, part_type, victim_id)
 
-	# 2. Directly notify MatchHUD
-	var hud = $CanvasLayer.get_node_or_null("MatchHUD")
-	if hud and hud.has_method("_on_part_deposited"):
-		hud._on_part_deposited(depositor_id, victim_id, part_type)
+	## 1. Update GameManager state
+	#if GameManager:
+		#if not GameManager.players.has(depositor_id):
+			#GameManager.register_player(depositor_id, "Player_" + str(depositor_id))
+		#if GameManager.players.has(depositor_id):
+			#GameManager.players[depositor_id]["parts_deposited"] += 1
+			#print("GameMode: Incremented GameManager parts_deposited to ", GameManager.players[depositor_id]["parts_deposited"])
+		#
+		## Broadcast or emit directly
+		#if GameManager.has_method("broadcast_part_deposit"):
+			#GameManager.broadcast_part_deposit(depositor_id, victim_id, part_type)
+		#elif GameManager.has_signal("part_deposited_broadcast"):
+			#GameManager.part_deposited_broadcast.emit(depositor_id, victim_id, part_type)
+#
+	## 2. Directly notify MatchHUD
+	#var hud = $CanvasLayer.get_node_or_null("MatchHUD")
+	#if hud and hud.has_method("_on_part_deposited"):
+		#hud._on_part_deposited(depositor_id, victim_id, part_type)
 
 # Called when a new peer connects
 func _on_peer_connected(peer_id: int):

@@ -80,7 +80,7 @@ func _on_part_deposited(depositor_id: int, victim_id: int, part_type: int) -> vo
 	
 	var part_names: Array[String] = ["Head", "Hands", "Torso", "Legs"]
 	var p_name: String = part_names[part_type] if part_type >= 0 and part_type < part_names.size() else "Body Part"
-	var dep_name: String = GameManager.players[depositor_id]["name"] if (GameManager and GameManager.players.has(depositor_id)) else ("Player " + str(depositor_id))
+	var dep_name: String = GameManager.get_player_color(depositor_id) if (GameManager and GameManager.players.has(depositor_id)) else ("Player " + str(depositor_id))
 	
 	_show_banner("%s sacrificed a %s!" % [dep_name, p_name])
 

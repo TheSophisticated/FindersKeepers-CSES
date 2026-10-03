@@ -12,6 +12,15 @@ size = Vector3(0.3, 0.3, 0.3)
 properties/0/path = NodePath(".:position")
 properties/0/spawn = true
 properties/0/replication_mode = 1
+properties/1/path = NodePath(".:part_type")
+properties/1/spawn = true
+properties/1/replication_mode = 0
+properties/2/path = NodePath(".:owner_id")
+properties/2/spawn = true
+properties/2/replication_mode = 0
+properties/3/path = NodePath(".:part_color")
+properties/3/spawn = true
+properties/3/replication_mode = 0
 
 [node name="BodyPart" type="RigidBody3D" unique_id=1864461176 groups=["interactable"]]
 collision_mask = 3

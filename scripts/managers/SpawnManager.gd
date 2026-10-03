@@ -14,16 +14,32 @@ var spawned_objects : Array[Node] = []
 
 func spawn_objects(peer_id : int = -1) -> void: 
 	clear_objects()
+	
+	if object_spawner_type == spawnerType.BodyPartSpawner:
+		var n := 0
+		for pid in GameManager.players.keys():
+			for t in 4:
+				_spawn_object(spawn_points[n % spawn_points.size()], pid, t)
+				n += 1
+		return
+	
 	for i in range(len(spawn_points)):
 		_spawn_object(spawn_points[i])
 
 
-func _spawn_object(spawn_point : Marker3D) -> void:
+func _spawn_object(spawn_point : Marker3D, owner_id : int = -1, part_type : int = -1) -> void:
 	if object_scene == null or spawn_point == null:
 		return
 	print("Spawn_Point: ", spawn_point.global_position)
 	var object := object_scene.instantiate()
 	object.name = "Object_" + str(spawned_objects.size())
+	
+	if owner_id >= 0:
+		object.owner_id = owner_id
+		object.part_type = part_type
+		var c: int= GameManager.players[owner_id]["color"]
+		object.part_color = GameManager.PLAYER_COLOR_VALUES[c]
+		
 	
 	var world_node: Node = null
 	if has_node("/root/GameMode/SubViewportContainer/SubViewport/WorldObjects"):

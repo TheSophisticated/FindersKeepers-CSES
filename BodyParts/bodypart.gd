@@ -44,6 +44,11 @@ var is_carried: bool = false
 ## collect-on-walk-into behaviour.
 @export var auto_collect_on_touch: bool = false
 
+@export var part_color : Color = Color.WHITE:
+	set(value):
+		part_color = value
+		_apply_color()
+
 # ===== COLLISION CONFIGURATION =====
 # Recommended Layer Setup:
 # Collision Layer 4: Interactables / BodyParts
@@ -132,3 +137,12 @@ func updateCount(collector: Node) -> void:
 			associated_tarot_card.call("apply_effect", collector)
 		elif associated_tarot_card.has_method("apply"):
 			associated_tarot_card.call("apply", collector)
+
+#Handle Body Part Colors
+func _apply_color() -> void:
+	var mesh := get_node_or_null("MeshInstance3D") as MeshInstance3D
+	if mesh == null:
+		return
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = part_color
+	mesh.material_override = mat
