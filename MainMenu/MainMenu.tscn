@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://d0u76ui7ag1at" path="res://Textures/texture_02.png" id="2_430ii"]
 [ext_resource type="Texture2D" uid="uid://biec8m2uv843c" path="res://Textures/texture_03.png" id="3_3p42x"]
 [ext_resource type="Script" uid="uid://yxesc61whepc" path="res://MainMenu/Scripts/MainMenu.gd" id="4_lbqne"]
+[ext_resource type="Shader" uid="uid://j4jans2k8tmo" path="res://Models/materials/glass.gdshader" id="5_430ii"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_otibh"]
 
@@ -67,6 +68,20 @@ albedo_texture = ExtResource("3_3p42x")
 uv1_triplanar = true
 uv1_world_triplanar = true
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7i7wy"]
+shader = ExtResource("5_430ii")
+shader_parameter/blur_radius = 3.0
+shader_parameter/glass_tint = Color(0, 0, 0, 0.45490196)
+shader_parameter/noise_strength = 0.008
+shader_parameter/noise_scale = 500.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bsanu"]
+shader = ExtResource("5_430ii")
+shader_parameter/blur_radius = 3.0
+shader_parameter/glass_tint = Color(0, 0, 0, 0.4)
+shader_parameter/noise_strength = 0.008
+shader_parameter/noise_scale = 500.0
+
 [node name="MainMenu" type="Node3D" unique_id=100439646]
 
 [node name="WorldObjects" type="Node" parent="." unique_id=1327173978]
@@ -90,7 +105,7 @@ skeleton = NodePath("../..")
 surface_material_override/0 = SubResource("StandardMaterial3D_3clmd")
 
 [node name="Camera3D" type="Camera3D" parent="WorldObjects" unique_id=2010412339]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.184813, 0.875543, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.013966382, 0.875543, 0.7272005)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="WorldObjects" unique_id=980528273]
 environment = SubResource("Environment_b76km")
@@ -143,15 +158,17 @@ grow_vertical = 2
 script = ExtResource("4_lbqne")
 
 [node name="MenuPanel" type="Panel" parent="MainMenu" unique_id=311374784]
+material = SubResource("ShaderMaterial_7i7wy")
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -132.71
+offset_left = -132.71002
 offset_top = -141.745
-offset_right = 132.71
+offset_right = 132.71002
+offset_bottom = -30.553528
 grow_horizontal = 2
 grow_vertical = 0
 scale = Vector2(1.765, 1.765)
@@ -165,7 +182,7 @@ anchor_right = 0.5
 offset_left = -127.5
 offset_top = 4.675873
 offset_right = 127.5
-offset_bottom = 134.98749
+offset_bottom = 106.658875
 grow_horizontal = 2
 
 [node name="Join" type="Button" parent="MainMenu/MenuPanel/VBoxContainer" unique_id=709027244]
@@ -193,7 +210,7 @@ theme_override_font_sizes/font_size = 10
 text = "Quit"
 
 [node name="SettingsMenu" type="Panel" parent="MainMenu" unique_id=1337196912]
-visible = false
+material = SubResource("ShaderMaterial_bsanu")
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
