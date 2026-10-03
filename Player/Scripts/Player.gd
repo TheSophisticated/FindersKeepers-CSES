@@ -150,16 +150,16 @@ func _input(event):
 		if held_object:
 			drop_object.rpc() ##TODO: Add Validation Checks here
 		elif held_body_part:
-			drop_body_part()
+			drop_body_part.rpc()
 		elif look_at_ray and look_at_ray.is_colliding():
 			var hit_node = look_at_ray.get_collider()
 			print("[Player] Ray hit: ", hit_node.name if hit_node else "null", " (", hit_node.get_class() if hit_node else "null", ")")
 			if hit_node == null:
 				return
 			if hit_node is TarotPickup:
-				hit_node.collect(self)
+				hit_node.collect.rpc(self.get_path())
 			elif hit_node is BodyPart:
-				pick_up_body_part(hit_node)
+				pick_up_body_part.rpc(hit_node.get_path())
 			elif hit_node.is_in_group("interactable"):
 				request_pick_up.rpc_id(1, hit_node.get_path())
 		else:
@@ -169,9 +169,9 @@ func _input(event):
 	if event is InputEventKey:
 		if event.pressed and not event.echo:
 			if event.keycode == KEY_1:
-				use_tarot_card(0)
+				use_tarot_card.rpc(0)
 			elif event.keycode == KEY_2:
-				use_tarot_card(1)
+				use_tarot_card.rpc(1)
 
 # ===== TAROT INVENTORY =====
 signal tarot_card_added(card: TarotCard, slot: int)  # Emitted when a card fills a slot
@@ -180,6 +180,8 @@ signal tarot_card_removed(slot: int)
 var tarot_cards: Array[TarotCard] = []  # Fixed-size slots, empty slots hold null
 
 # Stores a card in the first empty slot. Returns true if it fit.
+
+@rpc("any_peer", "call_local", "reliable")
 func add_tarot_card(card: TarotCard) -> bool:
 	if card == null:
 		push_warning("Cannot add a null Tarot card.")
@@ -195,6 +197,7 @@ func add_tarot_card(card: TarotCard) -> bool:
 	print("Tarot inventory full.")
 	return false
 
+@rpc("any_peer", "call_local", "reliable")
 func use_tarot_card(slot_index: int)->void:
 	if slot_index < 0 or slot_index >= tarot_cards.size():
 		push_warning("Invalid Tarot Card slot: "+str(slot_index))
@@ -332,10 +335,14 @@ func drop_object() -> void:
 # ===== BODY PART CARRY =====
 # Carries a body part to the spell center. No buffs, progress or removal
 # happen here; that all waits for deposit_body_part().
-func pick_up_body_part(part: BodyPart) -> void:
-	if not is_multiplayer_authority():
-		print("[Player] pick_up_body_part aborted: not authority")
+
+@rpc("any_peer", "call_local", "reliable")
+func pick_up_body_part(partPath : NodePath) -> void:
+	var part = get_node_or_null(partPath)
+	if part == null:
+		print("Part is NULL! FAILED")
 		return
+
 	if held_body_part != null or held_object != null:
 		print("[Player] pick_up_body_part aborted: hands full")
 		return
@@ -352,10 +359,10 @@ func pick_up_body_part(part: BodyPart) -> void:
 
 # Called by the spell center. Hands the part to BodyPart.collect(), which is
 # where progress, buffs and removal finally happen.
+
+@rpc("any_peer", "call_local", "reliable")
 func deposit_body_part() -> void:
-	if not is_multiplayer_authority():
-		print("[Player] deposit_body_part aborted: not authority")
-		return
+	
 	if held_body_part == null:
 		print("[Player] deposit_body_part aborted: held_body_part is null")
 		return
@@ -367,6 +374,7 @@ func deposit_body_part() -> void:
 	print("[Player] SUCCESS: Deposited body part")
 
 # Returns a carried part to the world without collecting it.
+@rpc("any_peer", "call_local", "reliable")
 func drop_body_part() -> void:
 	if not held_body_part:
 		return

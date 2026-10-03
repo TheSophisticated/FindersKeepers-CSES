@@ -78,6 +78,13 @@ uv1_world_triplanar = true
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_tarot"]
 
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_2q7m2"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_obcad"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_tagav"]
+size = Vector3(1.0625, 1, 1.1732178)
+
 [node name="GameMode" type="Node3D" unique_id=1344084929]
 script = ExtResource("1_bliyt")
 
@@ -485,6 +492,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.30116, 0, 10.4345)
 
 [node name="SpawnPoint4" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=933366168]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.52572, 0, 11.024586)
+
+[node name="RigidBody3D" type="RigidBody3D" parent="." unique_id=1630302830]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.94105387, 0)
+physics_material_override = SubResource("PhysicsMaterial_2q7m2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RigidBody3D" unique_id=1127134142]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.044709027, -0.021501064, 0)
+mesh = SubResource("BoxMesh_obcad")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RigidBody3D" unique_id=1720842359]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.03125, 0, -0.022399902)
+shape = SubResource("BoxShape3D_tagav")
 
 [connection signal="pressed" from="CanvasLayer/PauseMenu/PauseContainer/Continue" to="CanvasLayer/PauseMenu" method="_on_continue_pressed"]
 [connection signal="pressed" from="CanvasLayer/PauseMenu/PauseContainer/Settings" to="CanvasLayer/PauseMenu" method="_on_settings_pressed"]

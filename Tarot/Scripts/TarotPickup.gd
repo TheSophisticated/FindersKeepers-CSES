@@ -3,7 +3,9 @@ extends Area3D
 
 @export var card:TarotCard
 
-func collect(player:Node)->bool:
+@rpc("any_peer", "call_local", "reliable")
+func collect(playerPath : NodePath)->bool:
+	var player = get_node_or_null(playerPath)
 	if card==null:
 		push_warning("TarotPicckup : No Tarot Card assigned")
 		return false
