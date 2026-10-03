@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://bdux4ohva6vk8"]
+
+[ext_resource type="Script" uid="uid://qxjx26k0iqkt" path="res://Tarot/Scripts/TarotPickup.gd" id="1_sv62t"]
+[ext_resource type="Resource" uid="uid://djc8i8kdjfqc2" path="res://Tarot/Cards/Definitions/DemonSpeed.tres" id="2_sv62t"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qw86s"]
+
+[sub_resource type="TextMesh" id="TextMesh_v1n8c"]
+text = "This is a Tarot card"
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_0j048"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+
+[node name="Node3D" type="Node3D" unique_id=518107162]
+
+[node name="TarotPickup" type="Area3D" parent="." unique_id=418096463]
+script = ExtResource("1_sv62t")
+card = ExtResource("2_sv62t")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TarotPickup" unique_id=438030471]
+shape = SubResource("BoxShape3D_qw86s")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TarotPickup" unique_id=378934052]
+mesh = SubResource("TextMesh_v1n8c")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="TarotPickup" unique_id=91704673]
+root_path = NodePath("../..")
+replication_config = SubResource("SceneReplicationConfig_0j048")

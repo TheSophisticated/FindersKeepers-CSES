@@ -6,6 +6,7 @@ enum spawnerType{
 }
 
 @export var object_scene : PackedScene
+@export var object_scenes : Array[PackedScene] = []
 @export var spawn_points : Array[Marker3D]
 @export var objects_to_spawn = 1
 @export var object_spawner_type : spawnerType
@@ -24,23 +25,39 @@ func spawn_objects(peer_id : int = -1) -> void:
 		return
 	
 	for i in range(len(spawn_points)):
-		_spawn_object(spawn_points[i])
+		var scene_to_spawn: PackedScene = object_scene
+		
+		if object_scenes.size() == spawn_points.size():
+			scene_to_spawn = object_scenes[i]
+		
+		_spawn_object(spawn_points[i],-1,-1,scene_to_spawn)
 
 
-func _spawn_object(spawn_point : Marker3D, owner_id : int = -1, part_type : int = -1) -> void:
-	if object_scene == null or spawn_point == null:
+func _spawn_object(
+	spawn_point: Marker3D,
+	owner_id: int = -1,
+	part_type: int = -1,
+	scene_to_spawn: PackedScene = null
+) -> void:
+	if spawn_point == null:
 		return
+
+	if scene_to_spawn == null:
+		scene_to_spawn = object_scene
+
+	if scene_to_spawn == null:
+		return
+
 	print("Spawn_Point: ", spawn_point.global_position)
-	var object := object_scene.instantiate()
+	var object := scene_to_spawn.instantiate()
 	object.name = "Object_" + str(spawned_objects.size())
-	
+
 	if owner_id >= 0:
 		object.owner_id = owner_id
 		object.part_type = part_type
-		var c: int= GameManager.players[owner_id]["color"]
+		var c: int = GameManager.players[owner_id]["color"]
 		object.part_color = GameManager.PLAYER_COLOR_VALUES[c]
-		
-	
+
 	var world_node: Node = null
 	if has_node("/root/GameMode/SubViewportContainer/SubViewport/WorldObjects"):
 		world_node = get_node("/root/GameMode/SubViewportContainer/SubViewport/WorldObjects")
@@ -51,8 +68,7 @@ func _spawn_object(spawn_point : Marker3D, owner_id : int = -1, part_type : int 
 
 	world_node.add_child(object, true)
 	object.global_position = spawn_point.global_position
-	spawned_objects.append(object)
-	
+	spawned_objects.append(object)	
 
 func clear_objects():
 	for object in spawned_objects:
