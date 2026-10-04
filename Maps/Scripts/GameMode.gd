@@ -5,6 +5,9 @@ extends Node3D
 
 @onready var world: Node = $SubViewportContainer/SubViewport/WorldObjects
 @onready var spawn_points: Node = $SubViewportContainer/SubViewport/SpawnPoints
+@onready var tod: TimeOfDay = $SubViewportContainer/SubViewport/Sky3D/TimeOfDay
+
+
 
 # Called when the node enters the scene tree
 func _enter_tree():
@@ -16,6 +19,12 @@ func _enter_tree():
 # Called when the node is ready
 func _ready():
 	print("GameMode ready")
+	
+
+	# Must happen here, not the Inspector — TimeOfDay._ready() forces 18:30
+	tod.set_time(17, 0, 0)      # hour, minute, second
+	tod.minutes_per_day = 5.0   # one full cycle per 5 real minutes = one match
+
 	
 	# If running standalone (e.g. F6) without an active peer, initialize local server peer
 	if multiplayer != null and not multiplayer.has_multiplayer_peer():

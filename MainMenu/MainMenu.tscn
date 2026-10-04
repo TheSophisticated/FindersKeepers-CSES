@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" uid="uid://d0u76ui7ag1at" path="res://Textures/texture_02.png" id="2_430ii"]
 [ext_resource type="Texture2D" uid="uid://biec8m2uv843c" path="res://Textures/texture_03.png" id="3_3p42x"]
 [ext_resource type="Script" uid="uid://yxesc61whepc" path="res://MainMenu/Scripts/MainMenu.gd" id="4_lbqne"]
+[ext_resource type="Shader" uid="uid://j4jans2k8tmo" path="res://Materials/glass.gdshader" id="5_430ii"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_otibh"]
 
@@ -66,6 +67,13 @@ material = SubResource("StandardMaterial3D_bsanu")
 albedo_texture = ExtResource("3_3p42x")
 uv1_triplanar = true
 uv1_world_triplanar = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qsudm"]
+shader = ExtResource("5_430ii")
+shader_parameter/blur_radius = 3.0
+shader_parameter/glass_tint = Color(0, 0, 0, 0.4)
+shader_parameter/noise_strength = 0.008
+shader_parameter/noise_scale = 500.0
 
 [node name="MainMenu" type="Node3D" unique_id=100439646]
 
@@ -143,6 +151,7 @@ grow_vertical = 2
 script = ExtResource("4_lbqne")
 
 [node name="MenuPanel" type="Panel" parent="MainMenu" unique_id=311374784]
+material = SubResource("ShaderMaterial_qsudm")
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5

@@ -34,7 +34,7 @@ func apply_settings():
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		get_window().size = settings.get("resolution", Vector2i(1152, 648))
+		# get_window().size = settings.get("resolution", Vector2i(1152, 648))
 		center_window()
 	
 	if settings.get("vsync", true):
