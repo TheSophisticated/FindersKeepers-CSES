@@ -32,10 +32,6 @@ func _init() -> void:
 func _ready() -> void:
 	dome_path = dome_path
 	
-	
-	# Set starting time
-	#set_time(18, 30, 0) 
-	
 	_previous_minute = floori(fmod(current_time, 1.0) * 60.0)
 	_previous_hour = floori(current_time)
 	
@@ -48,8 +44,6 @@ func _ready() -> void:
 
 
 func _on_timeout() -> void:
-	if not game_time_enabled:
-		return
 	if system_sync:
 		_update_time_from_os()
 	else:
@@ -86,7 +80,7 @@ var _sky_dome: SkyDome
 @export_group("General")
 
 ## Allows time to progress in the editor. 
-@export var editor_time_enabled: bool = false :
+@export var editor_time_enabled: bool = true :
 	set(value):
 		editor_time_enabled = value
 		if Engine.is_editor_hint():
@@ -97,7 +91,7 @@ var _sky_dome: SkyDome
 
 
 ## Allows time to progress in game. 
-@export var game_time_enabled: bool = false :
+@export var game_time_enabled: bool = true :
 	set(value):
 		game_time_enabled = value
 		if not Engine.is_editor_hint():

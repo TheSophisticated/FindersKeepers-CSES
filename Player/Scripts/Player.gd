@@ -79,8 +79,23 @@ var look_at_ray: RayCast3D            # Raycast for detecting objects in front o
 var held_object: Node3D = null        # Currently held interactable object
 var held_body_part: BodyPart = null   # Body part being carried, deposited at the spell center
 
+
+
+var _t := 0.0
+
+
+func flicker_lights(delta) -> void:
+	# Calls hotel.set_light() on a stuttery pattern.
+	var hotel := get_node("/root/GameMode/SubViewportContainer/SubViewport/WorldObjects/hotel_map")
+	_t -= delta
+	if _t > 0.0:
+		return
+	_t = randf_range(0.03, 0.12) if hotel.is_light_on() else randf_range(0.05, 0.4)
+	hotel.set_light(not hotel.is_light_on())
+	
 # Called every frame. Checks what the player is looking at and updates interaction prompt.
 func _process(delta):
+	
 	# Update interaction prompt visibility (local player only)
 	if is_multiplayer_authority() and interact_prompt:
 		var show_prompt = false
@@ -601,3 +616,4 @@ func _on_player_eliminated(peer_id : int, name : String) -> void:
 	collision_layer = 0
 	collision_mask = 0
 	hide()
+	

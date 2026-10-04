@@ -1,5 +1,55 @@
 [gd_scene format=3 uid="uid://dtwfcjaoj0u2r"]
 
 [ext_resource type="PackedScene" uid="uid://g0040eung7qw" path="res://Maps/dependencies/hotel/hotel_map.glb" id="1_goo6m"]
+[ext_resource type="Script" uid="uid://bfwa8vrvvur0s" path="res://Maps/hotel.gd" id="2_6igk3"]
+[ext_resource type="PackedScene" uid="uid://dcvak6fv0mtvl" path="res://Models/Chandelier_01_4k.glb" id="2_a72ny"]
+[ext_resource type="Script" uid="uid://nmcriasb46s7" path="res://Models/chandelier_01_4k.gd" id="3_gadmj"]
 
 [node name="hotel_map" unique_id=1092620386 instance=ExtResource("1_goo6m")]
+script = ExtResource("2_6igk3")
+
+[node name="Chandelier_01_4k" parent="." index="342" unique_id=1439130657 instance=ExtResource("2_a72ny")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 14, 14.670507, -20)
+script = ExtResource("3_gadmj")
+
+[node name="Chandelier_01" parent="Chandelier_01_4k" index="0" unique_id=2118814233]
+transparency = 0.01
+cast_shadow = 0
+
+[node name="BulbLight" type="OmniLight3D" parent="Chandelier_01_4k" index="1" unique_id=1774967221]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.26642036, -0.40920162, -0.13115788)
+light_color = Color(1, 0.82, 0.55, 1)
+shadow_enabled = true
+omni_range = 4096.0
+
+[node name="BulbLight2" type="OmniLight3D" parent="Chandelier_01_4k" index="2" unique_id=1237988287]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.40842438, 0.32046032)
+light_color = Color(1, 0.82, 0.55, 1)
+shadow_enabled = true
+omni_range = 4096.0
+
+[node name="BulbLight3" type="OmniLight3D" parent="Chandelier_01_4k" index="3" unique_id=1918142723]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.015142441, -0.4272251, -0.29310513)
+light_color = Color(1, 0.82, 0.55, 1)
+shadow_enabled = true
+omni_range = 4096.0
+
+[node name="BulbLight4" type="OmniLight3D" parent="Chandelier_01_4k" index="4" unique_id=269809268]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25117445, -0.40460157, 0.1587658)
+light_color = Color(1, 0.82, 0.55, 1)
+shadow_enabled = true
+omni_range = 4096.0
+
+[node name="BulbLight5" type="OmniLight3D" parent="Chandelier_01_4k" index="5" unique_id=821919433]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2541132, -0.4160037, -0.15309238)
+light_color = Color(1, 0.82, 0.55, 1)
+shadow_enabled = true
+omni_range = 4096.0
+
+[node name="BulbLight6" type="OmniLight3D" parent="Chandelier_01_4k" index="6" unique_id=1415407516]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.23108482, -0.4337554, 0.14785767)
+light_color = Color(1, 0.82, 0.55, 1)
+shadow_enabled = true
+omni_range = 4096.0
+
+[editable path="Chandelier_01_4k"]
