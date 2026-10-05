@@ -14,7 +14,8 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="First Person Multiplayer"
+config/name="Finders Keepers"
+config/version="1.0"
 run/main_scene="uid://cw2rwrq4aokcc"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
