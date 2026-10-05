@@ -26,6 +26,7 @@
 [ext_resource type="Script" uid="uid://deo0gxkmk2ahd" path="res://addons/sky_3d/src/Sky3D.gd" id="25_bi25i"]
 [ext_resource type="Script" uid="uid://b4tkplvh7fq40" path="res://addons/sky_3d/src/SkyDome.gd" id="26_i1qka"]
 [ext_resource type="Script" uid="uid://cjmkcj8hwm7ts" path="res://addons/sky_3d/src/TimeOfDay.gd" id="27_iydpi"]
+[ext_resource type="Script" uid="uid://drt1xiau8h0cy" path="res://Maps/Scripts/RenderScaler.gd" id="28_rscal"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot1"]
 bg_color = Color(0.16, 0.09, 0.24, 0.85)
@@ -126,8 +127,8 @@ shader_parameter/cirrus_absorption = 2.0
 shader_parameter/cirrus_sky_tint_fade = 0.5
 shader_parameter/cirrus_size = 1.0
 shader_parameter/cirrus_uv = Vector2(0.16, 0.11)
-shader_parameter/cirrus_position1 = Vector2(0.77204746, 0.77204746)
-shader_parameter/cirrus_position2 = Vector2(0.77204746, 0.77204746)
+shader_parameter/cirrus_position1 = Vector2(0.7335825, 0.7335825)
+shader_parameter/cirrus_position2 = Vector2(0.7335825, 0.7335825)
 shader_parameter/cirrus_texture = ExtResource("19_fehfy")
 shader_parameter/cumulus_visible = true
 shader_parameter/cumulus_intensity = 0.6
@@ -137,7 +138,7 @@ shader_parameter/cumulus_absorption = 2.0
 shader_parameter/cumulus_noise_freq = 2.7
 shader_parameter/cumulus_sky_tint_fade = 0.0
 shader_parameter/cumulus_size = 0.5
-shader_parameter/cumulus_position = Vector2(8.860194, 8.860194)
+shader_parameter/cumulus_position = Vector2(18.667568, 18.667568)
 shader_parameter/cumulus_texture = ExtResource("20_3pguu")
 shader_parameter/cumulus_partial_mie_phase = Vector3(0.957564, 1.042436, 0.412)
 shader_parameter/cumulus_mie_intensity = 1.0
@@ -441,12 +442,15 @@ vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=1172187167]
-texture_filter = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("28_rscal")
+pixel_size = 8
+lock_aspect_ratio = true
+aspect_ratio = Vector2(4, 3)
 
 [node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=1945453894]
 handle_input_locally = false
