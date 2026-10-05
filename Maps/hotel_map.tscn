@@ -13,7 +13,6 @@ transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 14, 14.670507, -20)
 script = ExtResource("3_gadmj")
 
 [node name="Chandelier_01" parent="Chandelier_01_4k" index="0" unique_id=2118814233]
-transparency = 0.01
 cast_shadow = 0
 
 [node name="BulbLight" type="OmniLight3D" parent="Chandelier_01_4k" index="1" unique_id=1774967221]
