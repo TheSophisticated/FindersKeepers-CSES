@@ -6,7 +6,12 @@ extends Node3D
 @onready var world: Node = $SubViewportContainer/SubViewport/WorldObjects
 @onready var spawn_points: Node = $SubViewportContainer/SubViewport/SpawnPoints
 @onready var tod: TimeOfDay = $SubViewportContainer/SubViewport/Sky3D/TimeOfDay
+@onready var sub_viewport: SubViewport = $SubViewportContainer/SubViewport
 
+# inside _ready(), after the existing setup:
+
+func _on_window_size_changed() -> void:
+	sub_viewport.size = get_window().size
 
 
 # Called when the node enters the scene tree
@@ -20,11 +25,16 @@ func _enter_tree():
 func _ready():
 	print("GameMode ready")
 	
+	sub_viewport.size = get_window().size
+	if not get_window().size_changed.is_connected(_on_window_size_changed):
+		get_window().size_changed.connect(_on_window_size_changed)
+
 
 	# Must happen here, not the Inspector — TimeOfDay._ready() forces 18:30
 	tod.set_time(17, 0, 0)      # hour, minute, second
 	tod.minutes_per_day = 5.0   # one full cycle per 5 real minutes = one match
 	tod.pause()
+	
 
 	
 	# If running standalone (e.g. F6) without an active peer, initialize local server peer
@@ -56,6 +66,7 @@ func _ready():
 		spawn_player(multiplayer.get_unique_id())
 		GameManager.start_match()
 		print("Match Started")
+	
 
 func _on_spell_center_deposited(collector: Node, part: Node) -> void:
 	print("GameMode: SpellCenter deposit event triggered by ", collector.name if collector else "unknown")

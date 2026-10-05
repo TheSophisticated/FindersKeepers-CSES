@@ -126,8 +126,8 @@ shader_parameter/cirrus_absorption = 2.0
 shader_parameter/cirrus_sky_tint_fade = 0.5
 shader_parameter/cirrus_size = 1.0
 shader_parameter/cirrus_uv = Vector2(0.16, 0.11)
-shader_parameter/cirrus_position1 = Vector2(0.9939025, 0.9939025)
-shader_parameter/cirrus_position2 = Vector2(0.9939025, 0.9939025)
+shader_parameter/cirrus_position1 = Vector2(0.77204746, 0.77204746)
+shader_parameter/cirrus_position2 = Vector2(0.77204746, 0.77204746)
 shader_parameter/cirrus_texture = ExtResource("19_fehfy")
 shader_parameter/cumulus_visible = true
 shader_parameter/cumulus_intensity = 0.6
@@ -137,7 +137,7 @@ shader_parameter/cumulus_absorption = 2.0
 shader_parameter/cumulus_noise_freq = 2.7
 shader_parameter/cumulus_sky_tint_fade = 0.0
 shader_parameter/cumulus_size = 0.5
-shader_parameter/cumulus_position = Vector2(19.969315, 19.969315)
+shader_parameter/cumulus_position = Vector2(8.860194, 8.860194)
 shader_parameter/cumulus_texture = ExtResource("20_3pguu")
 shader_parameter/cumulus_partial_mie_phase = Vector3(0.957564, 1.042436, 0.412)
 shader_parameter/cumulus_mie_intensity = 1.0
@@ -161,10 +161,13 @@ ambient_light_sky_contribution = 0.7
 reflected_light_source = 2
 tonemap_mode = 3
 tonemap_white = 6.0
+ssr_enabled = true
 ssao_enabled = true
 ssil_enabled = true
 sdfgi_enabled = true
 sdfgi_use_occlusion = true
+glow_enabled = true
+volumetric_fog_enabled = true
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_3pguu"]
 
@@ -184,6 +187,7 @@ spawn_path = NodePath("../SubViewportContainer/SubViewport/WorldObjects")
 spawn_limit = 4
 
 [node name="TarotCardSpawner" type="Node3D" parent="." unique_id=1817543051 node_paths=PackedStringArray("spawn_points")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1076427, 0.29578447, 0.2094624)
 script = ExtResource("2_abnra")
 object_scene = ExtResource("3_abnra")
 object_scenes = Array[PackedScene]([ExtResource("4_gdwpl"), ExtResource("5_oaoby"), ExtResource("6_yjxwv")])
@@ -213,7 +217,7 @@ object_spawner_type = 1
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.658, 2.74318, 0.0770673)
 
 [node name="BodySpawn2" type="Marker3D" parent="BodyPartSpawner" unique_id=1848621869]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.27657, 1.19466, -5.40594)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.27657, 1.9649309, -7.4764166)
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="BodyPartSpawner" unique_id=459146891]
 _spawnable_scenes = PackedStringArray("uid://b662evo73twym")
@@ -443,7 +447,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=1945453894]
 handle_input_locally = false
@@ -453,10 +456,11 @@ render_target_update_mode = 4
 [node name="WorldObjects" type="Node" parent="SubViewportContainer/SubViewport" unique_id=1331820642]
 
 [node name="Floor" type="StaticBody3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=2077773364]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.33017176, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3864888, 0)
+visible = false
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=2146812558]
-transform = Transform3D(19.8926, 0, 0, 0, -0.0245266, 0, 0, 0, 19.8926, 0, 0, 0)
+transform = Transform3D(-19.8926, 0, 0, 0, -0.0245266, 0, 0, 0, -19.8926, 0, 0.00602448, 0)
 mesh = SubResource("BoxMesh_r2ywu")
 skeleton = NodePath("../CollisionShape3D")
 surface_material_override/0 = SubResource("StandardMaterial3D_bliyt")
@@ -482,17 +486,17 @@ use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
 [node name="Box4" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1613979193 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.29216, 1.51714, -3.30899)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5519204, 3.5039105, -3.30899)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
 [node name="Box5" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1764110501 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.29216, 1.51714, -3.30899)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.7898796, 5.309104, -6.491474)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
 [node name="Box6" type="CSGBox3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor/Boxes" unique_id=1751231144 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.29216, 1.51714, -3.30899)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.29216, 1.51714, -1.8076415)
 use_collision = true
 material = SubResource("StandardMaterial3D_l8b2n")
 
@@ -563,10 +567,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.39428, -0.8185804, 11.657
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0218, -6.19973)
 
 [node name="SpawnPoint1" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=1757836481]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.17159, 1.62939, 7.37847)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.17159, 1.62939, 8.162987)
 
 [node name="SpawnPoint2" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=1160767251]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.4466405)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.9869041, 2.205394, -1.4466405)
 
 [node name="SpawnPoint3" type="Marker3D" parent="SubViewportContainer/SubViewport/SpawnPoints" unique_id=1598305161]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.30116, 0, 10.4345)

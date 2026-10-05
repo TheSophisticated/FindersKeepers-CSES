@@ -5,72 +5,76 @@ extends EditorScenePostImport
 ## Bakes simplified static collision for imported map geometry.
 ##
 ## The source GLB ships no collision. A raw trimesh of every triangle is far
-## too heavy to be playable, so this decimates vertices onto a grid, drops
-## small props entirely, and merges what remains into spatial chunks to keep
-## the physics broadphase small.
+## too heavy to play against, so this decimates vertices onto a grid, drops
+## small decor, and merges what remains into spatial chunks.
+##
+## Tuning lives in Maps/Scripts/collision_baker_settings.tres -- a
+## CollisionBakerSettings resource, edited in the Inspector.
 ## ============================================================
 
-## Layer 1 is this project's "world / floor" layer (see bodypart.gd).
-const COLLISION_LAYER: int = 1
-
-## Meshes whose name contains any of these get no collision.
-const SKIP_PATTERNS: PackedStringArray = [
-	"glass", "canvas", "nor_gl",
-]
-
-## Collision vertex snap resolution, in metres. This is the main quality knob:
-## bigger cells = far fewer triangles = smoother physics.
-##   0.10 = faithful, heavy     0.25 = good default
-##   0.40 = cheap              0.75 = blocky, very cheap
-const DECIMATE_CELL: float = 0.25
-
-## Meshes whose world AABB is smaller than this on any axis get no collision.
-## Most of a hotel kit is decor the player walks past; skipping it is the
-## single biggest win available.
-const MIN_EXTENT: float = 0.5
-
-## Collision is merged into cubes of this size, so the broadphase gets a
-## manageable number of bodies instead of one per mesh.
-const CHUNK: float = 12.0
+const SETTINGS_PATH: String = "res://Maps/Scripts/collision_baker_settings.tres"
 
 
 func _post_import(scene: Node) -> Object:
+	var cfg := _load_settings()
+	if not cfg.enabled:
+		return scene
+
 	var chunks: Dictionary = {}
 	var meshes := 0
 	var tris_in := 0
 	var tris_out := 0
 
 	for mi in _collect_meshes(scene):
-		if mi.mesh == null or _is_skipped(mi.name):
+		if mi.mesh == null or _is_skipped(mi.name, cfg.skip_name_patterns):
 			continue
 
-		var tris := _world_triangles(mi, scene)
-		if tris.is_empty():
+		var raw := _world_triangles(mi, scene)
+		if raw.is_empty():
 			continue
 
-		tris_in += tris.size() / 3
-		var bounds := _bounds(tris)
-		if bounds.size.length() < MIN_EXTENT:
+		var bounds := _bounds(raw)
+		if bounds.size.length() < cfg.min_extent:
 			continue
 
-		tris = _decimate(tris, DECIMATE_CELL)
+		tris_in += raw.size() / 3
+		var tris := _decimate(raw, _cell_for(bounds, raw.size() / 3, cfg))
+		# Too lossy to be a faithful stand-in -- keep the original rather than
+		# leave a hole where a wall used to be.
+		if float(tris.size()) < float(raw.size()) * (1.0 - cfg.max_tri_loss):
+			tris = raw
 		if tris.is_empty():
 			continue
 
 		meshes += 1
 		tris_out += tris.size() / 3
-		_merge_into(chunks, bounds, tris)
+		_merge_into(chunks, bounds, tris, cfg.chunk_size)
 
 	for key: Vector3i in chunks:
-		_add_chunk_body(scene, key, chunks[key])
+		var tris: PackedVector3Array = chunks[key]
+		_add_chunk_body(scene, key, tris, cfg)
 
-	print_rich("[CollisionBaker] %s: %d meshes, %d -> %d tris (%.0f%%), %d bodies" % [
-		scene.name, meshes, tris_in, tris_out,
-		100.0 * float(tris_out) / maxf(float(tris_in), 1.0), chunks.size()])
+	if cfg.verbose:
+		print_rich("[CollisionBaker] %s: %d meshes, %d -> %d tris (%.1f%%), %d bodies" % [
+			scene.name, meshes, tris_in, tris_out,
+			100.0 * float(tris_out) / maxf(float(tris_in), 1.0), chunks.size()])
 	return scene
 
 
-## ===== INTERNAL =====
+## ===== SETTINGS =====
+
+func _load_settings() -> CollisionBakerSettings:
+	if ResourceLoader.exists(SETTINGS_PATH):
+		var res: Resource = load(SETTINGS_PATH)
+		if res is CollisionBakerSettings:
+			return res as CollisionBakerSettings
+		push_error("[CollisionBaker] %s is not a CollisionBakerSettings -- using defaults." % SETTINGS_PATH)
+	else:
+		push_warning("[CollisionBaker] %s not found -- using defaults. Create one: FileSystem dock, right-click Maps/Scripts, New > Resource > CollisionBakerSettings." % SETTINGS_PATH)
+	return CollisionBakerSettings.new()
+
+
+## ===== COLLECTION =====
 
 ## Depth-first collect of every MeshInstance3D under `scene`.
 func _collect_meshes(scene: Node) -> Array[MeshInstance3D]:
@@ -85,13 +89,15 @@ func _collect_meshes(scene: Node) -> Array[MeshInstance3D]:
 	return out
 
 
-func _is_skipped(node_name: String) -> bool:
+func _is_skipped(node_name: String, patterns: PackedStringArray) -> bool:
 	var lower := node_name.to_lower()
-	for pattern in SKIP_PATTERNS:
-		if lower.contains(pattern):
+	for pattern in patterns:
+		if lower.contains(pattern.to_lower()):
 			return true
 	return false
 
+
+## ===== GEOMETRY =====
 
 ## Scene-relative transform. global_transform is unreliable during import
 ## because the scene is not in the tree yet.
@@ -105,7 +111,7 @@ func _relative_transform(node: Node3D, root: Node) -> Transform3D:
 
 
 ## Mesh.get_faces() already returns flat triangle vertices in mesh-local space,
-## which is the same layout ConcavePolygonShape3D.set_faces() wants.
+## which is the exact layout ConcavePolygonShape3D.set_faces() wants.
 func _world_triangles(mi: MeshInstance3D, root: Node) -> PackedVector3Array:
 	var xf := _relative_transform(mi, root)
 	var src := mi.mesh.get_faces()
@@ -123,17 +129,28 @@ func _bounds(tris: PackedVector3Array) -> AABB:
 	return out
 
 
+## Picks a grid cell for one mesh. Two rules keep surfaces intact:
+##
+##  - cheap meshes pass through untouched, so nothing is degraded for no gain;
+##  - the cell never exceeds half the mesh's thinnest dimension. A slab
+##    thinner than one cell would quantise its two faces onto the same grid
+##    plane, every triangle would collapse, and the surface would be deleted.
+func _cell_for(bounds: AABB, tri_count: int, cfg: CollisionBakerSettings) -> float:
+	if tri_count <= cfg.pass_through_tris:
+		return 0.0
+	var thinnest := minf(bounds.size.x, minf(bounds.size.y, bounds.size.z))
+	return clampf(thinnest * 0.5, cfg.min_cell, cfg.decimate_cell)
+
+
 ## Vertex-clustering decimation: snap every vertex onto a `cell`-sized grid,
-## merge the ones that land together, and discard triangles that collapse.
-## It never invents geometry, only removes it -- exactly what a collision
-## proxy wants.
+## merge the ones landing together, then discard triangles that collapsed.
+## It never invents geometry, only removes it -- what a collision proxy wants.
 func _decimate(tris: PackedVector3Array, cell: float) -> PackedVector3Array:
 	if cell <= 0.0:
 		return tris
 
 	var inv := 1.0 / cell
 	var index_of: Dictionary = {}   # Vector3i cell -> index into `pos`
-	var keys: Array[Vector3] = []
 	var pos: Array[Vector3] = []
 	var out := PackedVector3Array()
 
@@ -142,11 +159,12 @@ func _decimate(tris: PackedVector3Array, cell: float) -> PackedVector3Array:
 		for k in 3:
 			var v: Vector3 = tris[i + k]
 			var c := Vector3i(floor(v.x * inv), floor(v.y * inv), floor(v.z * inv))
-			if not index_of.has(c):
-				index_of[c] = pos.size()
-				keys.append(c)
+			var idx: int = index_of[c] if index_of.has(c) else -1
+			if idx < 0:
+				idx = pos.size()
+				index_of[c] = idx
 				pos.append(v)
-			tri.append(pos[index_of[c]])
+			tri.append(pos[idx])
 		# Skip triangles that decayed into a point or an edge.
 		if tri[0] == tri[1] or tri[1] == tri[2] or tri[0] == tri[2]:
 			continue
@@ -156,27 +174,30 @@ func _decimate(tris: PackedVector3Array, cell: float) -> PackedVector3Array:
 	return out
 
 
+## ===== OUTPUT =====
+
 ## Buckets triangles into a coarse grid so each physics body covers one region.
-func _merge_into(chunks: Dictionary, bounds: AABB, tris: PackedVector3Array) -> void:
+func _merge_into(chunks: Dictionary, bounds: AABB, tris: PackedVector3Array, chunk_size: float) -> void:
 	var c := bounds.get_center()
-	var key := Vector3i(floor(c.x / CHUNK), floor(c.y / CHUNK), floor(c.z / CHUNK))
+	var key := Vector3i(
+		floor(c.x / chunk_size),
+		floor(c.y / chunk_size),
+		floor(c.z / chunk_size))
 	var merged: PackedVector3Array = chunks[key] if chunks.has(key) else PackedVector3Array()
 	merged.append_array(tris)
 	chunks[key] = merged
 
 
-## Vertices are already in scene space, so the body sits at the origin with
-## an identity transform rather than being parented under a mesh.
-func _add_chunk_body(root: Node, key: Vector3i, tris: PackedVector3Array) -> void:
+## Vertices are already in scene space, so the body sits at the origin with an
+## identity transform rather than being parented under a mesh.
+func _add_chunk_body(root: Node, key: Vector3i, tris: PackedVector3Array, cfg: CollisionBakerSettings) -> void:
 	var shape := ConcavePolygonShape3D.new()
 	shape.set_faces(tris)
-	# Left off deliberately: enabling it duplicates every triangle. Turn it on
-	# only if you fall through single-sided geometry.
-	shape.backface_collision = false
+	shape.backface_collision = cfg.backface_collision
 
 	var body := StaticBody3D.new()
 	body.name = "Collision_%d_%d_%d" % [key.x, key.y, key.z]
-	body.collision_layer = COLLISION_LAYER
+	body.collision_layer = cfg.collision_layer
 	body.collision_mask = 0  # static geometry is only collided against
 	root.add_child(body)
 	body.owner = root

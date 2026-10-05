@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CollisionBakerSettings" format=3 uid="uid://cixmq6ksntm5r"]
+
+[ext_resource type="Script" uid="uid://c378qvy332tvi" path="res://Maps/Scripts/collision_baker_settings.gd" id="1_qsmwu"]
+
+[resource]
+script = ExtResource("1_qsmwu")
+decimate_cell = 0.75
+pass_through_tris = 200
+skip_name_patterns = PackedStringArray("glass", "canvas", "nor_gl")
+metadata/_custom_type_script = "uid://c378qvy332tvi"

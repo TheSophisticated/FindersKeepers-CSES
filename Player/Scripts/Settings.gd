@@ -3,7 +3,7 @@ extends Node
 
 var settings := {
 	"mouse_sensitivity": 0.002,
-	"resolution": Vector2i(1152, 648),
+	"resolution": Vector2i(1280, 960),
 	"fullscreen": false,
 	"vsync": true
 }
@@ -34,7 +34,7 @@ func apply_settings():
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	else:
 		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		# get_window().size = settings.get("resolution", Vector2i(1152, 648))
+		get_window().size = settings.get("resolution", Vector2i(1280, 960))
 		center_window()
 	
 	if settings.get("vsync", true):
