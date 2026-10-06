@@ -15,7 +15,7 @@
 [ext_resource type="PackedScene" path="res://BodyParts/SpellCenter.tscn" id="9_center"]
 [ext_resource type="PackedScene" uid="uid://b662evo73twym" path="res://BodyParts/BodyPart.tscn" id="10_part"]
 [ext_resource type="Resource" uid="uid://drdj54pyceuu" path="res://Tarot/Cards/Definitions/HangedMan.tres" id="11_hanged"]
-[ext_resource type="PackedScene" uid="uid://dtwfcjaoj0u2r" path="res://Maps/hotel_map.tscn" id="17_oaoby"]
+[ext_resource type="PackedScene" uid="uid://7ppfwl1wnbvg" path="res://Maps/mansion.tscn" id="17_amo7d"]
 [ext_resource type="Shader" uid="uid://cvd0x7lon1ur6" path="res://addons/sky_3d/shaders/SkyMaterial.gdshader" id="18_amo7d"]
 [ext_resource type="Texture2D" uid="uid://cfqk60lpl5ljv" path="res://addons/sky_3d/assets/resources/SNoise.tres" id="19_fehfy"]
 [ext_resource type="Texture2D" uid="uid://cecwdqjol0ckd" path="res://addons/sky_3d/assets/textures/noiseClouds.png" id="20_3pguu"]
@@ -84,12 +84,12 @@ shader_parameter/atm_darkness = 0.5
 shader_parameter/atm_sun_intensity = 18.0
 shader_parameter/atm_day_tint = Color(0.807843, 0.909804, 1, 1)
 shader_parameter/atm_horizon_light_tint = Color(0.980392, 0.635294, 0.462745, 1)
-shader_parameter/atm_night_tint = Color(0.08349786, 0.09903261, 0.12427602, 0.49516305)
+shader_parameter/atm_night_tint = Color(0, 0, 0, 0)
 shader_parameter/atm_level_params = Vector3(1, 0, 0)
 shader_parameter/atm_thickness = 0.7
 shader_parameter/atm_beta_ray = Vector3(5.804544e-06, 1.3562913e-05, 3.311258e-05)
 shader_parameter/atm_beta_mie = Vector3(3.038e-08, 3.038e-08, 3.038e-08)
-shader_parameter/sun_light_color = Color(0.98, 0.523, 0.294, 1)
+shader_parameter/sun_light_color = Color(1, 1, 1, 1)
 shader_parameter/sun_disk_color = Color(0.996094, 0.541334, 0.140076, 1)
 shader_parameter/sun_disk_intensity = 30.0
 shader_parameter/sun_disk_size = 0.02
@@ -103,7 +103,7 @@ shader_parameter/moon_texture_flip_u = false
 shader_parameter/moon_texture_flip_v = false
 shader_parameter/moon_size = 0.07
 shader_parameter/atm_moon_mie_tint = Color(0.137255, 0.184314, 0.292196, 1)
-shader_parameter/atm_moon_mie_intensity = 0.34661411851644514
+shader_parameter/atm_moon_mie_intensity = 0.0
 shader_parameter/atm_moon_partial_mie_phase = Vector3(0.36, 1.64, 1.6)
 shader_parameter/starmap_color = Color(0.709804, 0.709804, 0.709804, 0.854902)
 shader_parameter/starmap_texture = ExtResource("24_kdu3y")
@@ -111,7 +111,7 @@ shader_parameter/starmap_flip_u = false
 shader_parameter/starmap_flip_v = false
 shader_parameter/starmap_alignment = Vector3(2.68288, -0.25891, 0.40101)
 shader_parameter/star_rotation_offset = 9.38899
-shader_parameter/star_rotation = -7.8475495862535345
+shader_parameter/star_rotation = -8.657411973111843
 shader_parameter/star_tilt = -1.2915436464758039
 shader_parameter/star_field_color = Color(1, 1, 1, 1)
 shader_parameter/star_field_texture = ExtResource("23_vmqyc")
@@ -127,8 +127,8 @@ shader_parameter/cirrus_absorption = 2.0
 shader_parameter/cirrus_sky_tint_fade = 0.5
 shader_parameter/cirrus_size = 1.0
 shader_parameter/cirrus_uv = Vector2(0.16, 0.11)
-shader_parameter/cirrus_position1 = Vector2(0.7335825, 0.7335825)
-shader_parameter/cirrus_position2 = Vector2(0.7335825, 0.7335825)
+shader_parameter/cirrus_position1 = Vector2(0.21427996, 0.21427996)
+shader_parameter/cirrus_position2 = Vector2(0.21427996, 0.21427996)
 shader_parameter/cirrus_texture = ExtResource("19_fehfy")
 shader_parameter/cumulus_visible = true
 shader_parameter/cumulus_intensity = 0.6
@@ -138,7 +138,7 @@ shader_parameter/cumulus_absorption = 2.0
 shader_parameter/cumulus_noise_freq = 2.7
 shader_parameter/cumulus_sky_tint_fade = 0.0
 shader_parameter/cumulus_size = 0.5
-shader_parameter/cumulus_position = Vector2(18.667568, 18.667568)
+shader_parameter/cumulus_position = Vector2(51.070183, 51.070183)
 shader_parameter/cumulus_texture = ExtResource("20_3pguu")
 shader_parameter/cumulus_partial_mie_phase = Vector3(0.957564, 1.042436, 0.412)
 shader_parameter/cumulus_mie_intensity = 1.0
@@ -148,7 +148,7 @@ shader_parameter/azimuthal_grid_rotation_offset = 0.03
 shader_parameter/show_equatorial_grid = false
 shader_parameter/equatorial_grid_color = Color(0, 0.75, 1, 1)
 shader_parameter/equatorial_grid_rotation_offset = 0.03
-shader_parameter/moon_matrix = Basis(0.929209, -0.35523897, -0.101863146, -0.15745646, -0.13120538, -0.9787711, 0.3343326, 0.9255218, -0.17785183)
+shader_parameter/moon_matrix = Basis(0.9226154, 0.3707787, 0.10631908, 0.16179922, -0.12180465, -0.9792775, -0.35014513, 0.920699, -0.17237055)
 
 [sub_resource type="Sky" id="Sky_amo7d"]
 sky_material = SubResource("ShaderMaterial_gase3")
@@ -157,18 +157,11 @@ sky_material = SubResource("ShaderMaterial_gase3")
 background_mode = 2
 sky = SubResource("Sky_amo7d")
 ambient_light_source = 3
-ambient_light_color = Color(0.35, 0.2435359, 0.2083766, 1)
-ambient_light_sky_contribution = 0.7
+ambient_light_color = Color(0.93963367, 0.93963367, 0.93963367, 1)
 reflected_light_source = 2
 tonemap_mode = 3
 tonemap_white = 6.0
-ssr_enabled = true
-ssao_enabled = true
-ssil_enabled = true
-sdfgi_enabled = true
 sdfgi_use_occlusion = true
-glow_enabled = true
-volumetric_fog_enabled = true
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_3pguu"]
 
@@ -188,7 +181,7 @@ spawn_path = NodePath("../SubViewportContainer/SubViewport/WorldObjects")
 spawn_limit = 4
 
 [node name="TarotCardSpawner" type="Node3D" parent="." unique_id=1817543051 node_paths=PackedStringArray("spawn_points")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1076427, 0.29578447, 0.2094624)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1076427, 4.417614, -3.4061177)
 script = ExtResource("2_abnra")
 object_scene = ExtResource("3_abnra")
 object_scenes = Array[PackedScene]([ExtResource("4_gdwpl"), ExtResource("5_oaoby"), ExtResource("6_yjxwv")])
@@ -209,6 +202,7 @@ spawn_path = NodePath("../../SubViewportContainer/SubViewport/WorldObjects")
 spawn_limit = 12
 
 [node name="BodyPartSpawner" type="Node3D" parent="." unique_id=488715404 node_paths=PackedStringArray("spawn_points")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8760922, -4.4956474)
 script = ExtResource("2_abnra")
 object_scene = ExtResource("10_part")
 spawn_points = [NodePath("BodySpawn1"), NodePath("BodySpawn2"), NodePath("BodySpawn3"), NodePath("BodySpawn4"), NodePath("BodySpawn5"), NodePath("BodySpawn6"), NodePath("BodySpawn7"), NodePath("BodySpawn8"), NodePath("BodySpawn9"), NodePath("BodySpawn10"), NodePath("BodySpawn11"), NodePath("BodySpawn12")]
@@ -448,8 +442,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("28_rscal")
-pixel_size = 8
-lock_aspect_ratio = true
 aspect_ratio = Vector2(4, 3)
 
 [node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=1945453894]
@@ -461,7 +453,6 @@ render_target_update_mode = 4
 
 [node name="Floor" type="StaticBody3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=2077773364]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3864888, 0)
-visible = false
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/WorldObjects/Floor" unique_id=2146812558]
 transform = Transform3D(-19.8926, 0, 0, 0, -0.0245266, 0, 0, 0, -19.8926, 0, 0.00602448, 0)
@@ -540,7 +531,7 @@ text = "GameMode (PlayGround)"
 font_size = 142
 
 [node name="TarotPickup" type="Area3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1660027506 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.9967477, -3)
 script = ExtResource("6_tpick")
 card = ExtResource("7_abnra")
 
@@ -551,7 +542,7 @@ mesh = SubResource("BoxMesh_tarot")
 shape = SubResource("BoxShape3D_tarot")
 
 [node name="TarotPickup2" type="Area3D" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1873848666 groups=["interactable"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1, -3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 1.8153989, -3)
 script = ExtResource("6_tpick")
 card = ExtResource("11_hanged")
 
@@ -562,10 +553,10 @@ mesh = SubResource("BoxMesh_tarot")
 shape = SubResource("BoxShape3D_tarot")
 
 [node name="SpellCenter" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=689938534 instance=ExtResource("9_center")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.75, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9998918, 1.2133296, -6)
 
-[node name="hotel_map" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=1092620386 instance=ExtResource("17_oaoby")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14.39428, -0.8185804, 11.657669)
+[node name="Mansion2" parent="SubViewportContainer/SubViewport/WorldObjects" unique_id=305392773 instance=ExtResource("17_amo7d")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7934399, 0.29126334, -22.574158)
 
 [node name="SpawnPoints" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=1560531572]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0218, -6.19973)
@@ -587,35 +578,34 @@ environment = SubResource("Environment_fehfy")
 camera_attributes = SubResource("CameraAttributesPractical_3pguu")
 script = ExtResource("25_bi25i")
 editor_time_enabled = false
-current_time = 4.915
+game_time_enabled = false
 wind_speed = 4.5
 wind_direction = 2.35619451204804
 metadata/_custom_type_script = "uid://deo0gxkmk2ahd"
 
 [node name="SunLight" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/Sky3D" unique_id=1071115293]
-transform = Transform3D(0.023389991, 0.19510967, 0.9805025, 0, 0.98077077, -0.19516306, -0.9997264, 0.004564862, 0.02294022, 0.9805025, -0.19516306, 0.02294022)
-light_color = Color(0.98, 0.523, 0.294, 1)
-light_energy = 0.0
+transform = Transform3D(0.2785805, -0.51827115, 0.8085716, 0, 0.84189993, 0.5396337, -0.96041286, -0.15033142, 0.2345369, 0.8085716, 0.5396337, 0.2345369)
+shadow_enabled = true
 
 [node name="MoonLight" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/Sky3D" unique_id=1089854432]
-transform = Transform3D(0, -0.94245523, 0.33433256, -0.18871121, 0.32832548, 0.92552173, -0.98203266, -0.0630923, -0.17785186, 0.33433256, 0.92552173, -0.17785186)
+transform = Transform3D(0, -0.93669546, -0.35014516, -0.18401988, -0.34416556, 0.92069906, -0.9829225, 0.06443367, -0.17237058, -0.35014516, 0.92069906, -0.17237058)
 light_color = Color(0.572549, 0.776471, 0.956863, 1)
 light_energy = 0.0
 
 [node name="SkyDome" type="Node" parent="SubViewportContainer/SubViewport/Sky3D" unique_id=2109151403]
 script = ExtResource("26_i1qka")
-sun_azimuth = -1.5941885
-sun_altitude = -1.76722
-moon_azimuth = -1.0819081
-moon_altitude = -0.38838536
+sun_azimuth = -1.8531121
+sun_altitude = -1.0007944
+moon_azimuth = -5.169844
+moon_altitude = -0.4009284
 wind_speed = 4.5
 wind_direction = 2.35619451204804
 
 [node name="TimeOfDay" type="Node" parent="SubViewportContainer/SubViewport/Sky3D" unique_id=1543161610]
 script = ExtResource("27_iydpi")
 editor_time_enabled = false
+game_time_enabled = false
 dome_path = NodePath("../SkyDome")
-current_time = 4.915
 day = 4
 month = 10
 year = 2026

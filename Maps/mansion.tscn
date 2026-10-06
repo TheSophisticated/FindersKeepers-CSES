@@ -1,0 +1,5 @@
+[gd_scene format=3 uid="uid://7ppfwl1wnbvg"]
+
+[ext_resource type="PackedScene" uid="uid://dtwh0p1gtnt8n" path="res://Maps/dependencies/mansion/mansion_interior_lowpoly.glb" id="1_e6juf"]
+
+[node name="mansion_interior_lowpoly" unique_id=1954270327 instance=ExtResource("1_e6juf")]

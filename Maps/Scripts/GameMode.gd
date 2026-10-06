@@ -15,14 +15,16 @@ func _enter_tree():
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 
+func get_game_time() -> String:
+	if tod:
+		return tod.game_time
+	return ""
+
 # Called when the node is ready
 func _ready():
 	print("GameMode ready")
 	
-	# Must happen here, not the Inspector — TimeOfDay._ready() forces 18:30
-	tod.set_time(17, 0, 0)      # hour, minute, second
-	tod.minutes_per_day = 5.0   # one full cycle per 5 real minutes = one match
-	tod.pause()
+	
 	
 
 	

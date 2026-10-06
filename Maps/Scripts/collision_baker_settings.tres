@@ -4,7 +4,11 @@
 
 [resource]
 script = ExtResource("1_qsmwu")
-decimate_cell = 0.75
-pass_through_tris = 200
-skip_name_patterns = PackedStringArray("glass", "canvas", "nor_gl")
+decimate_cell = 0.09999999999999999
+min_cell = 0.05
+pass_through_tris = 5000
+max_tri_loss = 0.3
+skip_name_patterns = PackedStringArray()
+chunk_size = 8.0
+backface_collision = true
 metadata/_custom_type_script = "uid://c378qvy332tvi"
