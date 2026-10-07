@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cb27bkmg7kfjb"]
+
+[ext_resource type="PackedScene" uid="uid://dxlp46cxmhet2" path="res://Maps/dependencies/garage/garage.glb" id="1_mgtst"]
+
+[node name="garage" unique_id=352538222 instance=ExtResource("1_mgtst")]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0)

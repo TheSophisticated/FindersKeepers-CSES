@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://cmtlv2wyaewl5"]
+
+[ext_resource type="PackedScene" uid="uid://dd45jtosp0l0i" path="res://Maps/dependencies/church/church.glb" id="1_juo6n"]
+
+[node name="church" unique_id=1824352235 instance=ExtResource("1_juo6n")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+
+[node name="Sketchfab_model" parent="." index="0" unique_id=1515915322]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0)
