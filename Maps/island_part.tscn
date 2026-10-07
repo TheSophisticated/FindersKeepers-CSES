@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://g6jvwmoxqc4u"]
+
+[ext_resource type="PackedScene" uid="uid://b7rc1o8gm3p7x" path="res://Maps/dependencies/island part/island_part.glb" id="1_8wbl4"]
+
+[node name="island_part" unique_id=1574973063 instance=ExtResource("1_8wbl4")]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)

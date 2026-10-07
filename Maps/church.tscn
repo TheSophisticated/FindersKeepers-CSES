@@ -1,9 +1,169 @@
 [gd_scene format=3 uid="uid://cmtlv2wyaewl5"]
 
 [ext_resource type="PackedScene" uid="uid://dd45jtosp0l0i" path="res://Maps/dependencies/church/church.glb" id="1_juo6n"]
+[ext_resource type="PackedScene" uid="uid://ccrcynsbpixdq" path="res://Models/chandelier_01_4k.tscn" id="2_g0733"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_g0733"]
 
 [node name="church" unique_id=1824352235 instance=ExtResource("1_juo6n")]
-transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+transform = Transform3D(4, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0)
 
 [node name="Sketchfab_model" parent="." index="0" unique_id=1515915322]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0)
+
+[node name="Chandelier_01_4k" parent="." index="7" unique_id=1439130657 instance=ExtResource("2_g0733")]
+transform = Transform3D(0.01, 0, 0, 0, -4.3711387e-10, -0.01, 0, 0.01, -4.3711387e-10, 0, 3.8068953, -0.3961387)
+
+[node name="CSGMesh3D" type="CSGMesh3D" parent="." index="8" unique_id=1645496198]
+transform = Transform3D(21.824585, 0, 0, 0, 1.0720052, 0, 0, 0, 31.439735, 0.44165087, -0.56216395, 0.57530904)
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D4" type="CSGMesh3D" parent="CSGMesh3D" index="0" unique_id=1712720112]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, 0.46125612, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D4" index="0" unique_id=195247738]
+transform = Transform3D(0.7278196, 0, 0, 0, 1, 0, 0, 0, 0.50299054, -0.03367872, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D5" type="CSGMesh3D" parent="CSGMesh3D" index="1" unique_id=808765997]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, 0.3628937, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D5" index="0" unique_id=446756279]
+transform = Transform3D(0.7483149, 0, 0, 0, 1, 0, 0, 0, 0.5198538, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D6" type="CSGMesh3D" parent="CSGMesh3D" index="2" unique_id=711523148]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, 0.27821916, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D6" index="0" unique_id=1766881723]
+transform = Transform3D(0.7682369, 0, 0, 0, 1, 0, 0, 0, 0.5375699, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D7" type="CSGMesh3D" parent="CSGMesh3D" index="3" unique_id=1464176729]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, 0.19065787, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D7" index="0" unique_id=605537479]
+transform = Transform3D(0.7879214, 0, 0, 0, 1, 0, 0, 0, 0.558033, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D8" type="CSGMesh3D" parent="CSGMesh3D" index="4" unique_id=18730502]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, 0.10751526, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D8" index="0" unique_id=1202769076]
+transform = Transform3D(0.81328315, 0, 0, 0, 1, 0, 0, 0, 0.57652265, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D9" type="CSGMesh3D" parent="CSGMesh3D" index="5" unique_id=1256844671]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, 0.020982943, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D9" index="0" unique_id=564334395]
+transform = Transform3D(0.8381315, 0, 0, 0, 1, 0, 0, 0, 0.591108, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D10" type="CSGMesh3D" parent="CSGMesh3D" index="6" unique_id=50454091]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, -0.07574215, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D10" index="0" unique_id=1876169856]
+transform = Transform3D(0.8608334, 0, 0, 0, 1, 0, 0, 0, 0.6099112, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D11" type="CSGMesh3D" parent="CSGMesh3D" index="7" unique_id=268657179]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, -0.162546, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D11" index="0" unique_id=868854302]
+transform = Transform3D(0.8784192, 0, 0, 0, 1, 0, 0, 0, 0.6347523, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D12" type="CSGMesh3D" parent="CSGMesh3D" index="8" unique_id=375481474]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, -0.25967923, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D12" index="0" unique_id=650004832]
+transform = Transform3D(0.8931707, 0, 0, 0, 1, 0, 0, 0, 0.65805763, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D13" type="CSGMesh3D" parent="CSGMesh3D" index="9" unique_id=1627379492]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, -0.34676597, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D13" index="0" unique_id=2136538418]
+transform = Transform3D(0.91268116, 0, 0, 0, 1, 0, 0, 0, 0.6815253, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D14" type="CSGMesh3D" parent="CSGMesh3D" index="10" unique_id=1308891653]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, -0.44481128, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D14" index="0" unique_id=1699544751]
+transform = Transform3D(0.93859345, 0, 0, 0, 1, 0, 0, 0, 0.6988306, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D15" type="CSGMesh3D" parent="CSGMesh3D" index="11" unique_id=1640529860]
+transform = Transform3D(1, 0, 0, 0, 0.0983944, 0, 0, 0, 1.0000001, 0, -0.52771884, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D3" type="CSGMesh3D" parent="CSGMesh3D/CSGMesh3D15" index="0" unique_id=1427460095]
+transform = Transform3D(0.91268116, 0, 0, 0, 1, 0, 0, 0, 0.6815253, -0.033678718, 0, 0)
+operation = 2
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")
+
+[node name="CSGMesh3D2" type="CSGMesh3D" parent="." index="9" unique_id=541075550]
+transform = Transform3D(22.161985, 0, 0, 0, 1.0720052, 0, 0, 0, 22.536823, 0.44165087, -1.6191521, 0.57530904)
+use_collision = true
+mesh = SubResource("BoxMesh_g0733")

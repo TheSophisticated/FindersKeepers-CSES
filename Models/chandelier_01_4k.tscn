@@ -83,47 +83,46 @@ blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_4n2k0")
 
 [node name="Chandelier_01_4k" type="Node3D" unique_id=1439130657]
-transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 14, 14.670507, -20)
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0)
 script = ExtResource("1_rmuqb")
 
 [node name="Chandelier_01" type="MeshInstance3D" parent="." unique_id=2118814233]
-transparency = 0.01
 cast_shadow = 0
 mesh = SubResource("ArrayMesh_keiks")
 skeleton = NodePath("")
 
 [node name="BulbLight" type="OmniLight3D" parent="." unique_id=951554616]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.26642036, -0.40920162, -0.13115788)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.605394, 16.085451, 44.83795)
 light_color = Color(1, 0.82, 0.55, 1)
 shadow_enabled = true
 omni_range = 4096.0
 
 [node name="BulbLight2" type="OmniLight3D" parent="." unique_id=738733397]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.40842438, 0.32046032)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.349987, -12.43696, 44.3345)
 light_color = Color(1, 0.82, 0.55, 1)
 shadow_enabled = true
 omni_range = 4096.0
 
 [node name="BulbLight3" type="OmniLight3D" parent="." unique_id=1315926668]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.015142441, -0.4272251, -0.29310513)
+transform = Transform3D(0.99995077, 4.3386575e-10, 0.009925691, -4.3386575e-10, 1, -2.1529445e-12, -0.009925691, -2.1529445e-12, 0.99995077, -26.595633, -15.735252, 46.140106)
 light_color = Color(1, 0.82, 0.55, 1)
 shadow_enabled = true
 omni_range = 4096.0
 
 [node name="BulbLight4" type="OmniLight3D" parent="." unique_id=1380306395]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25117445, -0.40460157, 0.1587658)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.395033, 15.13825, 47.479355)
 light_color = Color(1, 0.82, 0.55, 1)
 shadow_enabled = true
 omni_range = 4096.0
 
 [node name="BulbLight5" type="OmniLight3D" parent="." unique_id=1984037745]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2541132, -0.4160037, -0.15309238)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.4055014, -28.784254, 46.419544)
 light_color = Color(1, 0.82, 0.55, 1)
 shadow_enabled = true
 omni_range = 4096.0
 
 [node name="BulbLight6" type="OmniLight3D" parent="." unique_id=1741466269]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.23108482, -0.4337554, 0.14785767)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7533932, 30.724604, 46.498035)
 light_color = Color(1, 0.82, 0.55, 1)
 shadow_enabled = true
 omni_range = 4096.0

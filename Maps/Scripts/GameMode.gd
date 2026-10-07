@@ -19,10 +19,7 @@ func _enter_tree():
 func _ready():
 	print("GameMode ready")
 	
-	# Must happen here, not the Inspector — TimeOfDay._ready() forces 18:30
-	tod.set_time(17, 0, 0)      # hour, minute, second
-	tod.minutes_per_day = 5.0   # one full cycle per 5 real minutes = one match
-	tod.pause()
+	
 	
 
 	

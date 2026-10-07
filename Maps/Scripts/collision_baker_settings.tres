@@ -6,5 +6,5 @@
 script = ExtResource("1_qsmwu")
 decimate_cell = 0.75
 pass_through_tris = 200
-skip_name_patterns = PackedStringArray("glass", "canvas", "nor_gl")
+skip_name_patterns = PackedStringArray("plants", "grass")
 metadata/_custom_type_script = "uid://c378qvy332tvi"
