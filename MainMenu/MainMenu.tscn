@@ -253,7 +253,7 @@ alignment = 2
 [node name="Label" type="Label" parent="MainMenu/SettingsMenu/VBoxContainer" unique_id=1000210950]
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Keyboard and Mouse settings"
+text = "Sensitivity Settings"
 
 [node name="MouseSensitivity" type="VBoxContainer" parent="MainMenu/SettingsMenu/VBoxContainer" unique_id=1097293130]
 layout_mode = 2
@@ -261,16 +261,37 @@ layout_mode = 2
 [node name="Text" type="Label" parent="MainMenu/SettingsMenu/VBoxContainer/MouseSensitivity" unique_id=80340920]
 layout_mode = 2
 size_flags_horizontal = 0
-text = "Sensitivity"
+text = "Mouse Sensitivity"
 vertical_alignment = 1
 
 [node name="Sensitivity" type="HSlider" parent="MainMenu/SettingsMenu/VBoxContainer/MouseSensitivity/Text" unique_id=523955850]
 layout_mode = 0
-offset_left = 94.285
+offset_left = 135.0
 offset_top = 4.685
 offset_right = 365.085
 offset_bottom = 20.685
 pivot_offset = Vector2(0, 7.37)
+
+[node name="ControllerSensitivity" type="VBoxContainer" parent="MainMenu/SettingsMenu/VBoxContainer" unique_id=1097293131]
+layout_mode = 2
+
+[node name="Text" type="Label" parent="MainMenu/SettingsMenu/VBoxContainer/ControllerSensitivity" unique_id=80340921]
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Controller Look"
+vertical_alignment = 1
+
+[node name="Sensitivity" type="HSlider" parent="MainMenu/SettingsMenu/VBoxContainer/ControllerSensitivity/Text" unique_id=523955851]
+layout_mode = 0
+offset_left = 135.0
+offset_top = 4.685
+offset_right = 365.085
+offset_bottom = 20.685
+pivot_offset = Vector2(0, 7.37)
+min_value = 0.5
+max_value = 10.0
+step = 0.1
+value = 3.0
 
 [node name="SettingMenuBack" type="Button" parent="MainMenu/SettingsMenu/VBoxContainer" unique_id=1597936907]
 layout_mode = 2

@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://dtwh0p1gtnt8n"
-path="res://.godot/imported/mansion_interior_lowpoly.glb-1b8b885128f291e60417ccb03f56e4df.scn"
+valid=false
 
 [deps]
 
 source_file="res://Maps/dependencies/mansion/mansion_interior_lowpoly.glb"
-dest_files=["res://.godot/imported/mansion_interior_lowpoly.glb-1b8b885128f291e60417ccb03f56e4df.scn"]
 
 [params]
 

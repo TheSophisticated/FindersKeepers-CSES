@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://csc8aup6psewq"
-path="res://.godot/imported/Fast Run.glb-179ba3af9c5049729914f8b051d20150.scn"
+valid=false
 
 [deps]
 
 source_file="res://Player/Fast Run.glb"
-dest_files=["res://.godot/imported/Fast Run.glb-179ba3af9c5049729914f8b051d20150.scn"]
 
 [params]
 

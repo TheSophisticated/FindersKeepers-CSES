@@ -3,6 +3,7 @@ extends Node
 
 var settings := {
 	"mouse_sensitivity": 0.002,
+	"controller_sensitivity": 3.0,
 	"resolution": Vector2i(1280, 960),
 	"fullscreen": false,
 	"vsync": true
@@ -23,8 +24,9 @@ func load_settings():
 		var file = FileAccess.open("user://settings.dat", FileAccess.READ)
 		if file:
 			var loaded_settings = file.get_var()
-			if loaded_settings:
-				settings = loaded_settings
+			if loaded_settings and loaded_settings is Dictionary:
+				for key in loaded_settings:
+					settings[key] = loaded_settings[key]
 			file.close()
 	apply_settings()
 
@@ -50,6 +52,8 @@ func apply_sensitivity():
 		for player in get_tree().get_nodes_in_group("player"):
 			if player.is_multiplayer_authority():
 				player.mouse_sensitivity = settings.get("mouse_sensitivity", 0.002)
+				if "controller_sensitivity" in player:
+					player.controller_sensitivity = settings.get("controller_sensitivity", 3.0)
 
 func center_window():
 	var screen_size = DisplayServer.screen_get_size()
@@ -65,5 +69,5 @@ func set_setting(key: String, value):
 		apply_settings()
 	else:
 		# For sensitivity, only update players
-		if key == "mouse_sensitivity":
+		if key == "mouse_sensitivity" or key == "controller_sensitivity":
 			apply_sensitivity()

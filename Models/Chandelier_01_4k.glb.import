@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://dcvak6fv0mtvl"
-path="res://.godot/imported/Chandelier_01_4k.glb-eaaa85d7f99e48a1356450e68f6b7c0b.scn"
+valid=false
 
 [deps]
 
 source_file="res://Models/Chandelier_01_4k.glb"
-dest_files=["res://.godot/imported/Chandelier_01_4k.glb-eaaa85d7f99e48a1356450e68f6b7c0b.scn"]
 
 [params]
 

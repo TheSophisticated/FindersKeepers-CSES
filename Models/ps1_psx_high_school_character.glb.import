@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://jv0k8kbyvt55"
-path="res://.godot/imported/ps1_psx_high_school_character.glb-79199f7e772ad22987c692eaaa6df8d8.scn"
+valid=false
 
 [deps]
 
 source_file="res://Models/ps1_psx_high_school_character.glb"
-dest_files=["res://.godot/imported/ps1_psx_high_school_character.glb-79199f7e772ad22987c692eaaa6df8d8.scn"]
 
 [params]
 

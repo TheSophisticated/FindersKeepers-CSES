@@ -66,9 +66,10 @@ func refresh_slots() -> void:
 		if i < _player.tarot_cards.size():
 			card = _player.tarot_cards[i]
 
+		var button_hint: String = "[LB]" if i == 0 else "[RB]"
 		if card == null:
-			slot_labels[i].text = ""
+			slot_labels[i].text = button_hint
 			slot_panels[i].modulate = Color(1, 1, 1, 0.4)
 		else:
-			slot_labels[i].text = card.card_name
+			slot_labels[i].text = "%s\n%s" % [button_hint, card.card_name]
 			slot_panels[i].modulate = Color(1, 1, 1, 1)

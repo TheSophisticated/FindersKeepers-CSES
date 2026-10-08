@@ -14,6 +14,7 @@ extends CharacterBody3D
 
 @export_category("Camera Settings")
 @export var mouse_sensitivity := 0.01 # Mouse sensitivity
+@export var controller_sensitivity := 3.0 # Controller stick look sensitivity (rad/s)
 @export var camera_tilt_amount := 8.0  # Amount of camera tilt when strafing
 @export var fov_normal := 80.0         # Normal field of view
 @export var fov_sprint := 120.0        # Sprinting field of view
@@ -95,6 +96,9 @@ func flicker_lights(delta) -> void:
 	
 # Called every frame. Checks what the player is looking at and updates interaction prompt.
 func _process(delta):
+	# Update controller camera look (local player only)
+	if is_multiplayer_authority() and input_enabled:
+		process_controller_look(delta)
 	
 	# Update interaction prompt visibility (local player only)
 	if is_multiplayer_authority() and interact_prompt:
@@ -104,6 +108,14 @@ func _process(delta):
 			if hit_node and (hit_node.is_in_group("interactable") or hit_node is BodyPart or hit_node is TarotPickup):
 				show_prompt = true
 		interact_prompt.visible = show_prompt
+
+func process_controller_look(delta: float) -> void:
+	var look_dir = Input.get_vector("look_left", "look_right", "look_up", "look_down")
+	if look_dir.length_squared() > 0.001:
+		rotate_y(-look_dir.x * controller_sensitivity * delta)
+		if camera:
+			pitch = clamp(pitch - look_dir.y * controller_sensitivity * delta, deg_to_rad(-89), deg_to_rad(89))
+			camera.rotation.x = pitch
 
 func _enter_tree():
 	# Set multiplayer authority based on name
@@ -129,6 +141,12 @@ func _ready():
 		if camera: 
 			camera.far = normal_render_distance
 			camera.current = true
+		if interact_prompt:
+			interact_prompt.text = "Press [X] to interact"
+		var settings_node = get_node_or_null("/root/Settings")
+		if settings_node and "settings" in settings_node:
+			mouse_sensitivity = settings_node.settings.get("mouse_sensitivity", 0.002)
+			controller_sensitivity = settings_node.settings.get("controller_sensitivity", 3.0)
 	current_speed = walk_speed
 	tarot_cards.resize(tarot_capacity)
 	
@@ -162,8 +180,8 @@ func _input(event):
 		jump_buffer_timer = 0.15
 
 	# Interact input
-	if event.is_action_pressed("interact") or (event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_E):
-		print("[Player] E triggered. held_object: ", held_object != null, ", held_body_part: ", held_body_part != null)
+	if event.is_action_pressed("interact"):
+		print("[Player] Interact triggered. held_object: ", held_object != null, ", held_body_part: ", held_body_part != null)
 		if held_object:
 			drop_object.rpc() ##TODO: Add Validation Checks here
 		elif held_body_part:
@@ -182,13 +200,11 @@ func _input(event):
 		else:
 			print("[Player] Ray is not colliding with any object in range")
 	
-	#Tarot slots
-	if event is InputEventKey:
-		if event.pressed and not event.echo:
-			if event.keycode == KEY_1:
-				use_tarot_card.rpc(0)
-			elif event.keycode == KEY_2:
-				use_tarot_card.rpc(1)
+	# Tarot slots
+	if event.is_action_pressed("tarot_slot_1"):
+		use_tarot_card.rpc(0)
+	elif event.is_action_pressed("tarot_slot_2"):
+		use_tarot_card.rpc(1)
 
 # ===== TAROT INVENTORY =====
 signal tarot_card_added(card: TarotCard, slot: int)  # Emitted when a card fills a slot

@@ -10,6 +10,7 @@ var wish_dir := Vector3.ZERO  # Direction player wants to move
 var raw_input_dir := Vector2.ZERO  # Raw input from keyboard/gamepad
 var enabled: bool = false  # Whether controls are active
 var mouse_sensitivity := 0.002  # Mouse sensitivity for camera control
+var controller_sensitivity := 3.0  # Controller sensitivity for camera control
 
 # Movement state constants (matches Player's MovementState enum)
 const STATE_WALKING = 0
@@ -45,6 +46,9 @@ func _physics_process(delta):
 	# Only process if enabled, player exists, and we have authority
 	if not enabled or not player or not player.is_multiplayer_authority():
 		return
+	
+	# Handle stick camera look
+	handle_controller_look(delta)
 	
 	# Handle various movement aspects
 	handle_input()
@@ -171,3 +175,13 @@ func handle_jump(delta: float):
 		player.coyote_timer = 0
 		if "jump_count" in player:
 			player.jump_count += 1
+
+func handle_controller_look(delta: float):
+	var look_dir = Input.get_vector("look_left", "look_right", "look_up", "look_down")
+	if look_dir.length_squared() > 0.001:
+		player.rotate_y(-look_dir.x * controller_sensitivity * delta)
+		if player.has_node("Camera3D"):
+			var camera = player.get_node("Camera3D")
+			var pitch = clamp(camera.rotation.x - look_dir.y * controller_sensitivity * delta, deg_to_rad(-90), deg_to_rad(90))
+			camera.rotation.x = pitch
+

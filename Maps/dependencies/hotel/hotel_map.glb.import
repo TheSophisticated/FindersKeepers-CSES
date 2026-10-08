@@ -4,12 +4,11 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://g0040eung7qw"
-path="res://.godot/imported/hotel_map.glb-abcc0d606f0c30fa1bd14550a921bf1c.scn"
+valid=false
 
 [deps]
 
 source_file="res://Maps/dependencies/hotel/hotel_map.glb"
-dest_files=["res://.godot/imported/hotel_map.glb-abcc0d606f0c30fa1bd14550a921bf1c.scn"]
 
 [params]
 

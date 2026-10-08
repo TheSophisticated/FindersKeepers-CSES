@@ -40,6 +40,29 @@ func _ready() -> void:
 		menu_btn.pressed.connect(_on_menu_pressed)
 	if banner_timer and not banner_timer.timeout.is_connected(_on_banner_timeout):
 		banner_timer.timeout.connect(_on_banner_timeout)
+	
+	if shrine_accept_btn and shrine_decline_btn:
+		shrine_accept_btn.focus_neighbor_right = shrine_decline_btn.get_path()
+		shrine_accept_btn.focus_neighbor_left = shrine_decline_btn.get_path()
+		shrine_decline_btn.focus_neighbor_left = shrine_accept_btn.get_path()
+		shrine_decline_btn.focus_neighbor_right = shrine_accept_btn.get_path()
+
+	_setup_focus_styling()
+
+func _setup_focus_styling() -> void:
+	var focus_box := StyleBoxFlat.new()
+	focus_box.draw_center = false
+	focus_box.border_width_left = 2
+	focus_box.border_width_top = 2
+	focus_box.border_width_right = 2
+	focus_box.border_width_bottom = 2
+	focus_box.border_color = Color(1.0, 0.84, 0.0, 1.0)
+	focus_box.corner_radius_top_left = 4
+	focus_box.corner_radius_top_right = 4
+	focus_box.corner_radius_bottom_right = 4
+	focus_box.corner_radius_bottom_left = 4
+	for btn in find_children("*", "Button", true, false):
+		btn.add_theme_stylebox_override("focus", focus_box)
 
 	# Connect to GameManager signals
 	if GameManager:
@@ -116,6 +139,8 @@ func _on_shrine_prompt_started() -> void:
 		shrine_decline_btn.disabled = false
 		shrine_status_label.text = ""
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	if shrine_accept_btn:
+		shrine_accept_btn.grab_focus()
 
 func _on_shrine_accept() -> void:
 	if shrine_accept_btn:
@@ -156,6 +181,8 @@ func _on_game_over(winner_id: int, winner_name: String) -> void:
 					winner_label.text = "VICTORY!\nYou survived and sacrificed the most parts!"
 				else:
 					winner_label.text = "GAME OVER\nWinner: %s" % winner_name
+	if menu_btn:
+		menu_btn.grab_focus()
 
 func _on_menu_pressed() -> void:
 	get_tree().change_scene_to_file("res://MainMenu/MainMenu.tscn")
