@@ -1,9 +1,9 @@
 class_name TarotTestPlayer
 extends Node
 
-@onready var tarot_pickup_1: TarotPickup = $"../TarotPickup"
-@onready var tarot_pickup_2: TarotPickup = $"../TarotPickup2"
-@onready var camera: Camera3D = $Camera3D
+@onready var tarot_pickup_1: TarotPickup = get_node("../TarotPickup")
+@onready var tarot_pickup_2: TarotPickup = get_node("../TarotPickup2")
+@onready var camera: Camera3D = get_node("Camera3D")
 
 @export var normal_fov: float = 75.0
 @export var normal_render_distance: float = 100.0
@@ -12,9 +12,9 @@ extends Node
 @export var tarot_capacity: int = 2
 
 var current_speed:float
-var tarot_cards: Array[TarotCard] = []
+var tarot_cards: Array = []
 
-@onready var effect_controller: TarotEffectController = $TarotEffectController
+@onready var effect_controller: TarotEffectController = get_node("TarotEffectController")
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
@@ -129,5 +129,5 @@ func collect_test_pickup(pickup: TarotPickup) -> void:
 	if pickup == null:
 		push_warning("Tarot Pickup not found ")
 		return 
-	if not pickup.collect(self):
+	if not pickup.collect(get_path()):
 		print("could not collect tarot pickup")

@@ -2,15 +2,21 @@
 
 [ext_resource type="PackedScene" uid="uid://g6jvwmoxqc4u" path="res://Maps/island_part.tscn" id="1_acmjk"]
 [ext_resource type="PackedScene" uid="uid://cmtlv2wyaewl5" path="res://Maps/church.tscn" id="1_u3all"]
-[ext_resource type="PackedScene" uid="uid://cb27bkmg7kfjb" path="res://Maps/garage.tscn" id="2_acmjk"]
+[ext_resource type="Terrain3DMaterial" uid="uid://b1qjnxhsachen" path="res://Materials/terrain_3d_material.tres" id="3_acmjk"]
+[ext_resource type="Terrain3DAssets" uid="uid://kmpahs6qjdnm" path="res://Materials/terrain_3d_assets.tres" id="4_vv64y"]
 
 [node name="main_map" type="Node3D" unique_id=268275247]
 
 [node name="island_part" parent="." unique_id=1574973063 instance=ExtResource("1_acmjk")]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, -0.19026947, -0.22542572, 0.20471954)
 
-[node name="garage" parent="." unique_id=352538222 instance=ExtResource("2_acmjk")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 88.1174, 137.93149, -128.48914)
-
 [node name="church" parent="." unique_id=1824352235 instance=ExtResource("1_u3all")]
 transform = Transform3D(-1.7484555e-07, 0, -4, 0, 4, 0, 4, 0, -1.7484555e-07, -97.34478, 13.464863, 40.984276)
+
+[node name="Terrain3D" type="Terrain3D" parent="." unique_id=677699343]
+data_directory = "res://Maps/terrain_data"
+material = ExtResource("3_acmjk")
+assets = ExtResource("4_vv64y")
+show_checkered = true
+top_level = true
+metadata/_edit_lock_ = true
