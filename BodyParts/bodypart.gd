@@ -40,6 +40,7 @@ var is_collected: bool = false
 ## carrier can never trigger it, and is cleared when the part is deposited.
 var is_carried: bool = false
 
+
 ## Collection now happens at the Spell Center. Set true to restore the legacy
 ## collect-on-walk-into behaviour.
 @export var auto_collect_on_touch: bool = false
@@ -56,7 +57,107 @@ var is_carried: bool = false
 const DEFAULT_COLLISION_LAYER: int = 8  # 1 << 3 (Layer 4)
 const DEFAULT_COLLISION_MASK: int = 3   # 1 | 2 (Layer 1 Floor + Layer 2 Player)
 
+
+@export_group("Visual Model")
+@export var character_folder: String = "Player1"
+
+
+
+func _load_part_visual() -> void:
+	var part_name: String
+	var model_scale: Vector3
+	var model_position: Vector3
+	var collision_radius: float
+
+	match part_type:
+		PartType.HEAD:
+			part_name = "head"
+			model_scale = Vector3(1.6, 1.6, 1.6)
+			model_position = Vector3(-0.03, -2.788, 0.085)
+			collision_radius = 0.4
+
+		PartType.HANDS:
+			part_name = "hands"
+			model_scale = Vector3(0.6,0.6,0.6)
+			model_position = Vector3(0.0, -0.83,0.1)
+			collision_radius = 0.5
+
+		PartType.TORSO:
+			part_name = "torso"
+			model_scale = Vector3(0.6,0.6,0.6)
+			model_position = Vector3(0,-0.944, 0.133)
+			collision_radius = 0.5
+
+		PartType.LEGS:
+			part_name = "legs"
+			model_scale = Vector3(0.5,0.5,0.5)
+			model_position = Vector3(-0.035, -0.494, 0.12)
+			collision_radius = 0.5
+
+		_:
+			push_error("Invalid body part type: " + str(part_type))
+			return
+
+	var model_path := "res://Models/characters/SplitParts/%s/%s_fixed.tscn" % [
+		character_folder,
+		part_name
+	]
+
+	var packed_model := load(model_path) as PackedScene
+	if packed_model == null:
+		push_error("Could not load body-part model: " + model_path)
+		return
+
+	# Remove existing visual children while preserving physics
+	# and multiplayer nodes.
+	for child in get_children():
+		if child is CollisionShape3D \
+		or child is MultiplayerSynchronizer:
+			continue
+
+		remove_child(child)
+		child.free()
+
+	# Instance the selected model.
+	var model := packed_model.instantiate()
+	model.name = "PartVisualModel"
+	model.position = model_position
+	model.scale = model_scale
+	add_child(model)
+
+	# Disable imported static colliders inside the visual model.
+	for node in model.find_children("*", "StaticBody3D", true, false):
+		node.collision_layer = 0
+		node.collision_mask = 0
+
+	# Configure the collision shape.
+	var collision := get_node_or_null("CollisionShape3D") as CollisionShape3D
+	print("BodyPart position: ", global_position)
+	print("Collider position: ", collision.global_position)
+	print("Collider radius: ", collision.shape.radius)
+
+	if collision != null:
+		if collision.shape is SphereShape3D:
+			# Duplicate the resource so other body parts
+			# don't accidentally share a modified shape.
+			var sphere := collision.shape.duplicate() as SphereShape3D
+			sphere.radius = collision_radius
+			sphere.margin = 0.04
+			collision.shape = sphere
+		else:
+			push_warning(
+				"CollisionShape3D must use SphereShape3D "
+				+ "for radius settings."
+			)
+	else:
+		push_warning("CollisionShape3D was not found.")
+
+
 func _ready() -> void:
+	# Prevent body parts from pushing the player back through
+	# rigid-body collision response.
+	lock_rotation = false
+	_load_part_visual()
 	# Configure default collision layer and mask if not overridden in inspector
 	if collision_layer == 1 and collision_mask == 1:
 		collision_layer = DEFAULT_COLLISION_LAYER

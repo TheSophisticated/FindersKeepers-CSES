@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://ckhnej0nikseg"]
+
+[ext_resource type="PackedScene" uid="uid://d3u5ce835yf0w" path="res://Models/characters/SplitParts/Player1/head.glb" id="1_mnfvw"]
+
+[node name="head2" unique_id=243596335 instance=ExtResource("1_mnfvw")]
+transform = Transform3D(3.5000002, 0, 0, 0, 3.5000002, 0, 0, 0, 3.5, -0.0045125484, -5.078738, 0)
+metadata/_edit_group_ = true

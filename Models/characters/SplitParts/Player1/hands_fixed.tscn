@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://c68c1wybce3tm"]
+
+[ext_resource type="PackedScene" uid="uid://dpy1ljvu0stn6" path="res://Models/characters/SplitParts/Player1/hands.glb" id="1_lg6nl"]
+
+[node name="hands2" unique_id=1168593935 instance=ExtResource("1_lg6nl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.8390669, 0)
