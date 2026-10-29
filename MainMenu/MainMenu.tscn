@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://biec8m2uv843c" path="res://Textures/texture_03.png" id="3_3p42x"]
 [ext_resource type="Script" uid="uid://yxesc61whepc" path="res://MainMenu/Scripts/MainMenu.gd" id="4_lbqne"]
 [ext_resource type="Shader" uid="uid://j4jans2k8tmo" path="res://Materials/glass.gdshader" id="5_430ii"]
+[ext_resource type="Texture2D" path="res://main_menu.png" id="6_menubg"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_otibh"]
 
@@ -136,6 +137,17 @@ spot_angle = 53.8341
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.226774, 0, -5.05958)
 omni_range = 20.203
 omni_attenuation = -0.028
+
+[node name="Background" type="TextureRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_menubg")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="MainMenu" type="Control" parent="." unique_id=464080270]
 layout_mode = 3
