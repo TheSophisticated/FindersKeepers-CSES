@@ -26,8 +26,8 @@ extends CharacterBody3D
 @export var sway_smoothness := 10.0    # Camera sway smoothing
 
 @export_category("Network Settings")
-@export var network_update_rate := 10.0 # Network updates per second
-@export var interpolation_time := 0.15  # Network interpolation smoothing time
+@export var network_update_rate := 20.0 # Network updates per second
+@export var interpolation_time := 0.12  # Network interpolation smoothing time
 
 @export_category("Tarot Settings")
 @export var tarot_capacity: int = 2     # Max tarot cards this player can carry
@@ -105,6 +105,7 @@ const PICKUP_ASSIST_RADIUS := 0.5
 var held_object: Node3D = null        # Currently held interactable object
 var held_body_part: BodyPart = null   # Body part being carried, deposited at the spell center
 var hovered_body_part: BodyPart = null # Body part which is being hovered
+var _reticle_dot: ColorRect = null    # Central retro crosshair dot
 var _t := 0.0
 
 func show_tarot_notification(message: String) -> void:
@@ -135,6 +136,7 @@ func _process(delta):
 	var current_hovered_part: BodyPart = null
 	var ray_hit = look_at_ray.get_collider() if look_at_ray and look_at_ray.is_colliding() else null
 	var pickup_target = _get_pickup_target()
+	var is_hovering_actionable := false
 
 	if not held_object and not held_body_part and (ray_hit != null or pickup_target != null):
 		# Show Tarot tooltip for a directly targeted or assisted Tarot pickup.
@@ -159,19 +161,39 @@ func _process(delta):
 		elif ray_hit is BodyPart:
 			current_hovered_part = ray_hit as BodyPart
 
-		# Preserve existing interaction prompts.
+		# Preserve existing interaction prompts with contextual labels.
 		if interact_prompt:
 			if ray_hit is CharacterBody3D and ray_hit.is_in_group("player"):
 				var is_in_range := global_position.distance_to(ray_hit.global_position) <= 3.0
-				interact_prompt.text = "Q - Push Player" if is_in_range else ""
+				interact_prompt.text = "[Q] / [B] — Push Player" if is_in_range else ""
 				interact_prompt.visible = is_in_range
+				is_hovering_actionable = is_in_range
+			elif current_hovered_part != null:
+				var part_names := ["Head", "Hands", "Torso", "Legs"]
+				var p_idx := clampi(int(current_hovered_part.part_type), 0, 3)
+				interact_prompt.text = "[E] / [X] — Collect %s" % part_names[p_idx]
+				interact_prompt.visible = true
+				is_hovering_actionable = true
+			elif tarot_target != null and tarot_target.card != null:
+				interact_prompt.text = "[E] / [X] — Take %s" % tarot_target.card.card_name
+				interact_prompt.visible = true
+				is_hovering_actionable = true
 			else:
-				interact_prompt.text = "Press [X] to interact"
+				interact_prompt.text = "[E] / [X] — Interact"
 				interact_prompt.visible = pickup_target != null
+				is_hovering_actionable = (pickup_target != null)
 	else:
 		if interact_prompt:
-			interact_prompt.visible = false
+			if held_body_part != null:
+				interact_prompt.text = "Carrying Body Part — Deliver to Church Altar | [E] Drop"
+				interact_prompt.visible = true
+			else:
+				interact_prompt.visible = false
 		tarot_tooltip.hide_tooltip()
+
+	if _reticle_dot:
+		_reticle_dot.color = Color(1.0, 0.3, 0.25, 0.95) if is_hovering_actionable else Color(1.0, 0.96, 0.85, 0.55)
+		_reticle_dot.scale = Vector2(1.5, 1.5) if is_hovering_actionable else Vector2.ONE
 
 	# Hide the previously hovered body part.
 	if hovered_body_part != current_hovered_part:
@@ -217,7 +239,8 @@ func _ready():
 			camera.far = normal_render_distance
 			camera.current = true
 		if interact_prompt:
-			interact_prompt.text = "Press [X] to interact"
+			interact_prompt.text = "[E] / [X] — Interact"
+			_setup_reticle()
 		var settings_node = get_node_or_null("/root/Settings")
 		if settings_node and "settings" in settings_node:
 			mouse_sensitivity = settings_node.settings.get("mouse_sensitivity", 0.002)
@@ -226,6 +249,8 @@ func _ready():
 		# Godot makes the first Camera3D that enters a viewport current, so a
 		# remote player spawned before ours would otherwise hijack our view.
 		camera.current = false
+		if has_node("InteractPrompt"):
+			$InteractPrompt.visible = false
 	current_speed = walk_speed
 	tarot_cards.resize(tarot_capacity)
 	if is_multiplayer_authority():
@@ -264,6 +289,24 @@ func _ready():
 	if animation_controller and animation_controller.has_method("setup"):
 		animation_controller.default_character_id = character_id
 		animation_controller.setup(self)
+
+func _setup_reticle() -> void:
+	if not has_node("InteractPrompt"):
+		return
+	var prompt_layer: CanvasLayer = $InteractPrompt
+	_reticle_dot = ColorRect.new()
+	_reticle_dot.name = "ReticleDot"
+	_reticle_dot.custom_minimum_size = Vector2(4, 4)
+	_reticle_dot.size = Vector2(4, 4)
+	_reticle_dot.pivot_offset = Vector2(2, 2)
+	_reticle_dot.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_reticle_dot.offset_left = -2
+	_reticle_dot.offset_top = -2
+	_reticle_dot.offset_right = 2
+	_reticle_dot.offset_bottom = 2
+	_reticle_dot.color = Color(1.0, 0.96, 0.85, 0.55)
+	_reticle_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	prompt_layer.add_child(_reticle_dot)
 
 # ===== INPUT HANDLING =====
 func _input(event):
@@ -740,6 +783,8 @@ func drop_body_part() -> void:
 func _on_part_collected(_collector: Node, _owner_id: int, _part_type: int) -> void:
 	held_body_part = null
 
+var _net_send_accumulator: float = 0.0
+
 # ===== PHYSICS PROCESS =====
 func _physics_process(delta):
 	if not input_enabled:
@@ -751,7 +796,11 @@ func _physics_process(delta):
 		process_local_movement(delta)
 		move_and_slide()
 		update_character_facing(delta)
-		send_network_update()
+		_net_send_accumulator += delta
+		var send_interval := 1.0 / maxf(network_update_rate, 5.0)
+		if _net_send_accumulator >= send_interval:
+			_net_send_accumulator = fmod(_net_send_accumulator, send_interval)
+			send_network_update()
 		update_camera_effects(delta)
 	else:
 		# Remote player movement interpolation
@@ -974,25 +1023,32 @@ func send_network_update():
 		Time.get_ticks_msec() / 1000.0)
 
 @rpc("unreliable_ordered", "any_peer", "call_remote", 1)
-func _receive_network_update(pos: Vector3, vel: Vector3, rot: Vector3, timestamp: float):
+func _receive_network_update(pos: Vector3, vel: Vector3, rot: Vector3, _sender_timestamp: float):
 	if is_multiplayer_authority(): return
 
-	# Store update for interpolation
+	var local_arrival_time := Time.get_ticks_msec() / 1000.0
+	velocity = vel
+
+	# Store update using local arrival time to avoid cross-machine uptime desync
 	network_position_buffer.append(pos)
 	network_rotation_buffer.append(rot)
-	network_timestamp_buffer.append(timestamp)
+	network_timestamp_buffer.append(local_arrival_time)
 
 	# Maintain buffer size
-	if network_position_buffer.size() > 5:
+	if network_position_buffer.size() > 8:
 		network_position_buffer.pop_front()
 		network_rotation_buffer.pop_front()
 		network_timestamp_buffer.pop_front()
 
-	last_network_update_time = Time.get_ticks_msec() / 1000.0
+	last_network_update_time = local_arrival_time
 
 # ===== REMOTE PLAYER INTERPOLATION =====
 func process_remote_movement(delta):
-	if network_position_buffer.size() < 2:
+	if network_position_buffer.is_empty():
+		return
+	if network_position_buffer.size() == 1:
+		global_position = network_position_buffer[0]
+		rotation = network_rotation_buffer[0]
 		return
 
 	var current_time = Time.get_ticks_msec() / 1000.0
@@ -1022,20 +1078,27 @@ func process_remote_movement(delta):
 	var next_time = network_timestamp_buffer[next_index]
 	var time_diff = next_time - prev_time
 
-	var t = 1.0  if time_diff < 0.001 else clamp((render_time - prev_time) / (next_time - prev_time), 0.0, 1.0)
+	var t = 1.0 if time_diff < 0.001 else clamp((render_time - prev_time) / time_diff, 0.0, 1.0)
 
-	# Interpolate position and rotation
-	var target_pos = network_position_buffer[prev_index].lerp(
+	# Interpolate position and yaw angle safely across -PI/PI wraparound
+	var target_pos: Vector3 = network_position_buffer[prev_index].lerp(
 		network_position_buffer[next_index], t)
-	var target_rot = network_rotation_buffer[prev_index].lerp(
-		network_rotation_buffer[next_index], t)
+	var prev_rot: Vector3 = network_rotation_buffer[prev_index]
+	var next_rot: Vector3 = network_rotation_buffer[next_index]
+	var target_rot := Vector3(
+		lerp_angle(prev_rot.x, next_rot.x, t),
+		lerp_angle(prev_rot.y, next_rot.y, t),
+		lerp_angle(prev_rot.z, next_rot.z, t)
+	)
 
 	if not target_pos.is_finite() or not target_rot.is_finite():
 		return
 
-	# Apply with smoothing
-	global_position = global_position.lerp(target_pos, POSITION_LERP_FACTOR)
-	rotation = rotation.lerp(target_rot, ROTATION_LERP_FACTOR)
+	# Apply with framerate-independent exponential smoothing
+	var pos_weight := 1.0 - exp(-18.0 * delta)
+	var rot_weight := 1.0 - exp(-22.0 * delta)
+	global_position = global_position.lerp(target_pos, pos_weight)
+	rotation.y = lerp_angle(rotation.y, target_rot.y, rot_weight)
 
 func update_character_facing(delta: float) -> void:
 	var model := animation_controller.character_node as Node3D if animation_controller else null

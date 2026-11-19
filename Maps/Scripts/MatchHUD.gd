@@ -100,24 +100,28 @@ func _on_match_timer_updated(time_remaining: float) -> void:
 		timer_label.add_theme_color_override("font_color", Color.WHITE)
  
 func _on_part_deposited(depositor_id: int, victim_id: int, part_type: int) -> void:
-	# The counter tracks how many of the local player's own parts were sacrificed.
-	if victim_id == multiplayer.get_unique_id():
-		_update_score_display()
+	_update_score_display()
+	_update_player_legend()
 	
 	var part_names: Array[String] = ["Head", "Hands", "Torso", "Legs"]
 	var p_name: String = part_names[part_type] if part_type >= 0 and part_type < part_names.size() else "Body Part"
-	var dep_name: String = GameManager.get_player_color(depositor_id) if (GameManager and GameManager.players.has(depositor_id)) else ("Player " + str(depositor_id))
+	var dep_name: String = _display_name(depositor_id, GameManager.get_player_color(depositor_id) if (GameManager and GameManager.players.has(depositor_id)) else ("Player " + str(depositor_id)))
+	var vic_name: String = _display_name(victim_id, "Player " + str(victim_id))
 	
-	_show_banner("%s sacrificed a %s!" % [dep_name, p_name])
+	_show_banner("%s sacrificed %s's %s!" % [dep_name, vic_name, p_name], Color(1.0, 0.78, 0.3))
  
 func _update_score_display() -> void:
 	var my_id: int = multiplayer.get_unique_id()
+	var my_deposited: int = 0
 	if GameManager and GameManager.players.has(my_id):
 		local_parts_lost = GameManager.players[my_id]["parts_lost"].size()
+		my_deposited = int(GameManager.players[my_id].get("parts_deposited", 0))
 	if score_label:
-		score_label.text = "Your Parts Sacrificed: %d/4" % local_parts_lost
+		score_label.text = "Your Parts Lost: %d/4   |   Parts Sacrificed: %d" % [local_parts_lost, my_deposited]
  
 func _on_player_eliminated(peer_id: int, player_name: String) -> void:
+	_update_score_display()
+	_update_player_legend()
 	_show_banner("ELIMINATED: %s was completely sacrificed!" % _display_name(peer_id, player_name), Color(1.0, 0.3, 0.3))
  
 # Roster names are "Player_<peer_id>"; show the player number ("Player 2") instead.
@@ -182,14 +186,27 @@ func _on_game_over(winner_id: int, winner_name: String) -> void:
 	if game_over_panel:
 		game_over_panel.visible = true
 		if winner_label:
+			var summary := ""
 			if winner_id == -1:
-				winner_label.text = "Game Over!\nMatch ended in a Draw!"
+				summary = "GAME OVER — DRAW!"
 			else:
 				var is_local_winner: bool = (winner_id == multiplayer.get_unique_id())
 				if is_local_winner:
-					winner_label.text = "VICTORY!\nYou survived and sacrificed the most parts!"
+					summary = "VICTORY!\nYou survived and conquered the ritual!"
 				else:
-					winner_label.text = "GAME OVER\nWinner: %s" % _display_name(winner_id, winner_name)
+					summary = "GAME OVER\nWinner: %s" % _display_name(winner_id, winner_name)
+			if GameManager and not GameManager.players.is_empty():
+				summary += "\n\n— Match Summary —"
+				var pids: Array = GameManager.players.keys()
+				pids.sort()
+				for pid in pids:
+					var pdata: Dictionary = GameManager.players[pid]
+					var pname := _display_name(pid, str(pid))
+					var dep_cnt := int(pdata.get("parts_deposited", 0))
+					var lost_cnt: int = (pdata.get("parts_lost", []) as Array).size()
+					var status_str := "ALIVE" if bool(pdata.get("is_alive", true)) else "SACRIFICED"
+					summary += "\n%s: %d Sacrificed | %d/4 Parts Lost (%s)" % [pname, dep_cnt, lost_cnt, status_str]
+			winner_label.text = summary
 	if menu_btn:
 		menu_btn.grab_focus()
  
@@ -209,28 +226,60 @@ func _update_player_legend() -> void:
 	player_ids.sort()
  
 	var local_id: int = multiplayer.get_unique_id()
+	const PART_CODES: Array[String] = ["H", "A", "T", "L"]
+	const PART_TOOLTIPS: Array[String] = ["Head", "Arms/Hands", "Torso", "Legs"]
  
 	for peer_id in player_ids:
 		var player_data: Dictionary = GameManager.players[peer_id]
 		var display_number: int = GameManager.get_player_display_number(peer_id)
-		var color_index: int = int(player_data["color"])
+		var color_index: int = clampi(int(player_data.get("color", 0)), 0, GameManager.PLAYER_COLOR_VALUES.size() - 1)
 		var player_color: Color = GameManager.PLAYER_COLOR_VALUES[color_index]
+		var parts_lost: Array = player_data.get("parts_lost", [])
+		var is_alive: bool = bool(player_data.get("is_alive", true))
+		var deposited_count: int = int(player_data.get("parts_deposited", 0))
  
 		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 5)
 		var color_swatch := ColorRect.new()
-		color_swatch.color = player_color
-		color_swatch.custom_minimum_size = Vector2(14, 14)
+		color_swatch.color = player_color if is_alive else Color(0.35, 0.1, 0.1, 0.8)
+		color_swatch.custom_minimum_size = Vector2(12, 12)
 		row.add_child(color_swatch)
  
 		var label := Label.new()
-		label.text = "Player %d" % display_number
+		label.text = "P%d" % display_number
 		if peer_id == local_id:
 			label.text += " (YOU)"
+		if not is_alive:
+			label.text += " [DEAD]"
+			label.add_theme_color_override("font_color", Color(0.75, 0.3, 0.3))
+		else:
+			label.add_theme_color_override("font_color", player_color.lightened(0.35))
 		row.add_child(label)
+
+		# Retro Body Part Silhouette Badges: [H] [A] [T] [L]
+		for part_idx in range(4):
+			var badge := Label.new()
+			var is_lost := (part_idx in parts_lost)
+			badge.text = "[✕]" if is_lost else ("[%s]" % PART_CODES[part_idx])
+			badge.tooltip_text = "%s (%s)" % [PART_TOOLTIPS[part_idx], "Sacrificed" if is_lost else "Intact"]
+			badge.add_theme_font_size_override("font_size", 11)
+			if is_lost:
+				badge.add_theme_color_override("font_color", Color(0.9, 0.2, 0.2, 0.65))
+			else:
+				badge.add_theme_color_override("font_color", Color(0.85, 0.95, 0.85, 0.95))
+			row.add_child(badge)
+
+		if deposited_count > 0:
+			var score_badge := Label.new()
+			score_badge.text = "★%d" % deposited_count
+			score_badge.add_theme_font_size_override("font_size", 11)
+			score_badge.add_theme_color_override("font_color", Color(1.0, 0.84, 0.25))
+			row.add_child(score_badge)
  
 		player_legend_rows.add_child(row)
  
 func _on_match_state_changed(new_state: GameManager.MatchState) -> void:
 	if new_state == GameManager.MatchState.IN_PROGRESS:
+		_update_score_display()
 		_update_player_legend()
  

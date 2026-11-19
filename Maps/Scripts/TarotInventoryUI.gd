@@ -17,6 +17,7 @@ extends Control
 # Untyped so we can access the Player's tarot members dynamically.
 var _player = null
 var _slot_art: Array[TextureRect] = []
+var _active_effects_label: Label = null
 
 func _ready() -> void:
 	for i in range(slot_panels.size()):
@@ -34,6 +35,20 @@ func _ready() -> void:
 		slot_labels[i].add_theme_color_override("font_shadow_color", Color(0.05, 0.02, 0.04, 0.95))
 		slot_labels[i].add_theme_constant_override("shadow_offset_x", 1)
 		slot_labels[i].add_theme_constant_override("shadow_offset_y", 2)
+
+	_active_effects_label = Label.new()
+	_active_effects_label.name = "ActiveEffectsStatus"
+	_active_effects_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_active_effects_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	_active_effects_label.offset_top = -26.0
+	_active_effects_label.offset_bottom = -4.0
+	_active_effects_label.add_theme_font_size_override("font_size", 13)
+	_active_effects_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+	_active_effects_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+	_active_effects_label.add_theme_constant_override("shadow_offset_x", 1)
+	_active_effects_label.add_theme_constant_override("shadow_offset_y", 1)
+	add_child(_active_effects_label)
+
 	_try_bind_local_player()
 
 # Players are spawned by GameMode, and a node's _ready() runs before its
@@ -41,10 +56,28 @@ func _ready() -> void:
 # until it shows up (this also covers players that join later).
 
 func _process(_delta : float ) -> void:
-	if is_instance_valid(_player):
-		set_process(false)
+	if not is_instance_valid(_player):
+		_try_bind_local_player()
 		return
-	_try_bind_local_player()
+	_update_active_effects_display()
+
+func _update_active_effects_display() -> void:
+	if _active_effects_label == null or not is_instance_valid(_player):
+		return
+	var badges: PackedStringArray = []
+	var ec = _player.get("effect_controller")
+	if ec != null and "active_effects" in ec:
+		for eid in ec.active_effects.keys():
+			var edata: Dictionary = ec.active_effects[eid]
+			var rem := float(edata.get("remaining", -1.0))
+			if rem > 0.0:
+				badges.append("%s (%.1fs)" % [String(eid).to_upper().replace("_", " "), rem])
+	if float(_player.get("input_multiplier")) < 0.0 and not ("HANGED MAN" in " ".join(badges)):
+		badges.append("INVERTED CONTROLS")
+	if float(_player.get("vision_modifier")) < 0.9 and not ("DARK MOON" in " ".join(badges)):
+		badges.append("BLINDED")
+	_active_effects_label.text = " | ".join(badges)
+	_active_effects_label.visible = not badges.is_empty()
 
 func _try_bind_local_player() -> void:
 	if is_instance_valid(_player):
@@ -82,7 +115,7 @@ func refresh_slots() -> void:
 		if i < _player.tarot_cards.size():
 			card = _player.tarot_cards[i]
 
-		var button_hint: String = "[LB]" if i == 0 else "[RB]"
+		var button_hint: String = "[1 / LB]" if i == 0 else "[2 / RB]"
 		if card == null:
 			_slot_art[i].texture = null
 			slot_labels[i].text = button_hint

@@ -151,53 +151,52 @@ func _setup_animation_player() -> void:
 	print("PlayerAnimationController: AnimationPlayer ready, root_node = ", animation_player.root_node)
 
 
+static var _raw_anim_cache: Dictionary = {}
+var _last_synced_anim: String = ""
+
 func _load_all_animations() -> void:
 	for anim_name in ANIM_SCENES:
 		_load_animation(anim_name, ANIM_SCENES[anim_name])
 
 
 func _load_animation(anim_name: String, scene_path: String) -> void:
-	var scene = load(scene_path)
-	if scene == null:
-		push_warning("Failed to load animation scene: %s" % scene_path)
-		return
-
-	var source_root = scene.instantiate()
-	var source_player = _find_animation_player(source_root)
-	if source_player == null:
-		push_warning("No AnimationPlayer in: %s" % scene_path)
-		source_root.queue_free()
-		return
-
-	var source_lib = source_player.get_animation_library(DEFAULT_LIBRARY_KEY)
-	var source_anim: Animation = null
-	var anim_names = []
-
-	# Try AnimationLibrary first
-	if source_lib != null:
-		anim_names = source_lib.get_animation_list()
-		if anim_names.size() > 0:
-			source_anim = source_lib.get_animation(anim_names[0])
-
-	# Fallback: try AnimationPlayer's own methods
+	var source_anim: Animation = _raw_anim_cache.get(scene_path, null)
 	if source_anim == null:
-		anim_names = source_player.get_animation_list()
-		if anim_names.size() > 0:
-			source_anim = source_player.get_animation(anim_names[0])
+		var scene = load(scene_path)
+		if scene == null:
+			push_warning("Failed to load animation scene: %s" % scene_path)
+			return
 
-	if source_anim == null:
-		push_warning("No animations found in: %s" % scene_path)
+		var source_root = scene.instantiate()
+		var source_player = _find_animation_player(source_root)
+		if source_player == null:
+			push_warning("No AnimationPlayer in: %s" % scene_path)
+			source_root.queue_free()
+			return
+
+		var source_lib = source_player.get_animation_library(DEFAULT_LIBRARY_KEY)
+		var anim_names = []
+
+		# Try AnimationLibrary first
+		if source_lib != null:
+			anim_names = source_lib.get_animation_list()
+			if anim_names.size() > 0:
+				source_anim = source_lib.get_animation(anim_names[0])
+
+		# Fallback: try AnimationPlayer's own methods
+		if source_anim == null:
+			anim_names = source_player.get_animation_list()
+			if anim_names.size() > 0:
+				source_anim = source_player.get_animation(anim_names[0])
+
+		if source_anim == null or source_anim.get_track_count() == 0:
+			push_warning("No valid animations found in: %s" % scene_path)
+			source_root.queue_free()
+			return
+
+		source_anim = source_anim.duplicate(true) as Animation
+		_raw_anim_cache[scene_path] = source_anim
 		source_root.queue_free()
-		return
-
-	if source_anim.get_track_count() == 0:
-		push_warning("Animation has 0 tracks in: %s" % scene_path)
-		source_root.queue_free()
-		return
-
-	# Debug: print first track path for verification
-	var test_path = String(source_anim.track_get_path(0))
-	print("PlayerAnimationController: '%s' track: %s -> remapped: %s (lib=%s)" % [anim_name, test_path, _remap_track_path(test_path), source_lib != null])
 
 	var remapped_anim = _remap_animation(source_anim)
 	# These movement clips need to repeat while their state remains active.
@@ -206,12 +205,9 @@ func _load_animation(anim_name: String, scene_path: String) -> void:
 	if anim_name in ["idle", "walk", "walk_back", "strafe_left", "strafe_right", "run", "crouch_walk", "injured_walk", "injured_walk_back"]:
 		remapped_anim.loop_mode = Animation.LOOP_LINEAR
 	var err = anim_library.add_animation(anim_name, remapped_anim)
-	if err == OK:
-		print("PlayerAnimationController: Added '%s' (%d tracks)" % [anim_name, remapped_anim.get_track_count()])
-	else:
+	if err != OK:
 		push_warning("Failed to add animation '%s': %s" % [anim_name, err])
-
-	source_root.queue_free()
+	_last_synced_anim = ""
 
 
 func _remap_animation(source_anim: Animation) -> Animation:
@@ -279,46 +275,51 @@ func _find_skeleton(node: Node) -> Skeleton3D:
 @rpc("any_peer", "call_local", "reliable")
 func _play_animation(name: String) -> void:
 	if animation_player == null:
-		push_warning("No animation_player")
 		return
 	if anim_library == null or not anim_library.has_animation(name):
-		push_warning("Animation not found: %s. Available: %s" % [name, anim_library.get_animation_list() if anim_library != null else "no library"])
 		return
-	if animation_player.current_animation != name:
+	if animation_player.current_animation != name or not animation_player.is_playing():
 		animation_player.play(name)
-		print("PlayerAnimationController: After play - is_playing=", animation_player.is_playing(), " current=", animation_player.current_animation)
-		# Debug: check if AnimationPlayer can find the animation
-		print("PlayerAnimationController: player has animation=", animation_player.get_animation_list(), " lib_anims=", anim_library.get_animation_list())
 
 
 ## Public playback API for local or remote state drivers. This controller does
 ## not read input or network state; callers select a clip by its key in ANIM_SCENES.
-@rpc("any_peer", "call_local", "reliable")
 func play_state(animation_state: StringName) -> void:
-	_play_animation.rpc(String(animation_state))
+	var target := String(animation_state)
+	if target.is_empty():
+		return
+	# Deduplicate: avoid flooding the network with reliable RPCs every physics frame
+	# when the player is already playing the requested animation.
+	if target == _last_synced_anim and animation_player != null and animation_player.current_animation == target and animation_player.is_playing():
+		return
+	_last_synced_anim = target
+	if multiplayer != null and multiplayer.has_multiplayer_peer():
+		_play_animation.rpc(target)
+	else:
+		_play_animation(target)
 
 
 func play_locomotion(animation_name: StringName) -> void:
-	play_state.rpc(animation_name)
+	play_state(animation_name)
 
 
 func play_walk() -> void:
-	play_state.rpc(&"walk")
+	play_state(&"walk")
 
 func play_walk_back() -> void:
-	play_state.rpc(&"walk_back")
+	play_state(&"walk_back")
 
 func play_crouch_walk() -> void:
-	play_state.rpc(&"crouch_walk")
+	play_state(&"crouch_walk")
 
 func play_sprint() -> void:
-	play_state.rpc(&"run")
+	play_state(&"run")
 
 func play_idle() -> void:
-	play_state.rpc(&"idle")
+	play_state(&"idle")
 
 func play_jump(jump_animation: StringName = &"jump_in_place") -> void:
-	play_state.rpc(jump_animation)
+	play_state(jump_animation)
 
 func play_fall() -> void:
 	# No fall clip is present yet; keep a valid looping pose while airborne.
