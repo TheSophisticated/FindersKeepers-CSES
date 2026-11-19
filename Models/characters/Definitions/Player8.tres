@@ -1,12 +1,11 @@
-[gd_resource type="Resource" script_class="CharacterDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="CharacterDefinition" format=3 uid="uid://crdgbkoaej0h5"]
 
-[ext_resource type="Script" path="res://Models/characters/CharacterDefinition.gd" id="1_definition"]
-[ext_resource type="PackedScene" path="res://Models/characters/Player8/Remy.fbx" id="2_model"]
+[ext_resource type="Script" uid="uid://di18xr8rbpibh" path="res://Models/characters/CharacterDefinition.gd" id="1_definition"]
+[ext_resource type="PackedScene" uid="uid://bf17yngmaxews" path="res://Models/characters/Player8/Remy.fbx" id="2_model"]
 
 [resource]
 script = ExtResource("1_definition")
 character_id = &"player_8"
-display_name = "Owen"
+display_name = "Samyak"
 model_scene = ExtResource("2_model")
-vertical_offset = -1.1
 model_scale = Vector3(0.5, 0.5, 0.5)

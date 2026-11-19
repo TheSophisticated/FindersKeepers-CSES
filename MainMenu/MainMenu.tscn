@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://biec8m2uv843c" path="res://Textures/texture_03.png" id="3_3p42x"]
 [ext_resource type="Script" uid="uid://yxesc61whepc" path="res://MainMenu/Scripts/MainMenu.gd" id="4_lbqne"]
 [ext_resource type="Shader" uid="uid://j4jans2k8tmo" path="res://Materials/glass.gdshader" id="5_430ii"]
+[ext_resource type="PackedScene" path="res://MainMenu/MapMenuBackground.tscn" id="6_mapbg"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_otibh"]
 
@@ -76,6 +77,8 @@ shader_parameter/noise_strength = 0.008
 shader_parameter/noise_scale = 500.0
 
 [node name="MainMenu" type="Node3D" unique_id=100439646]
+
+[node name="MapMenuBackground" parent="." instance=ExtResource("6_mapbg")]
 
 [node name="WorldObjects" type="Node" parent="." unique_id=1327173978]
 

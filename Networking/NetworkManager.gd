@@ -19,6 +19,8 @@ var discovery_timer : Timer
 var discovery_listen_timer : Timer
  
 const LOBBY_SCENE = "res://MainMenu/Lobby.tscn"
+## Keep the full map scene and its resources resident from application startup.
+const GAME_MODE_SCENE: PackedScene = preload("res://Maps/GameMode.tscn")
 var match_started := false  # Set once the host leaves the lobby and starts the match
 var loaded_peers := {}  # Server only: client peer IDs whose GameMode scene has finished loading
 var player_character_selections: Dictionary = {}
@@ -138,7 +140,7 @@ func show_connection_error():
 func load_game_world():
 	# Only change scene if not already in game
 	if get_tree().current_scene.name != "GameMode":
-		get_tree().change_scene_to_file("res://Maps/GameMode.tscn")
+		get_tree().change_scene_to_packed(GAME_MODE_SCENE)
  
 # Load the pre-match lobby where players gather before the host starts
 func load_lobby():

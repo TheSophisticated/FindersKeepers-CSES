@@ -41,3 +41,8 @@ mesh = SubResource("TextMesh_v1n8c")
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="TarotPickup" unique_id=91704673]
 root_path = NodePath("../..")
 replication_config = SubResource("SceneReplicationConfig_0j048")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=515430272]
+light_color = Color(0.904608, 0.7988094, 1.540184e-06, 1)
+light_energy = 5.636
+omni_range = 0.977

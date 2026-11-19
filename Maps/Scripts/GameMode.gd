@@ -4,6 +4,7 @@ extends Node3D
 @onready var world: Node = $SubViewportContainer/SubViewport/WorldObjects
 @onready var spawn_points: Node = $SubViewportContainer/SubViewport/SpawnPoints
 @onready var tod: TimeOfDay = $SubViewportContainer/SubViewport/Sky3D/TimeOfDay
+@onready var player_spawner: MultiplayerSpawner = $MultiplayerSpawner
 
 var nextSpawnIdx : int = 0;
 
@@ -25,6 +26,8 @@ func get_game_time() -> String:
 
 # Called when the node is ready
 func _ready():
+	player_spawner.spawn_function = _create_player_from_spawn_data
+
 	# If running standalone (e.g. F6) without an active peer, initialize local server peer
 	if multiplayer != null and not multiplayer.has_multiplayer_peer():
 		var peer = ENetMultiplayerPeer.new()
@@ -126,30 +129,32 @@ func spawn_player(peer_id: int):
 	if GameManager:
 		GameManager.register_player(peer_id, "Player_" + str(peer_id))
 
-	var player_scene = load("res://Player/_Player.tscn")
-	var player = player_scene.instantiate()
-	player.name = "Player_" + str(peer_id)
-	player.character_id = NetworkManager.get_character_id_for_peer(peer_id)
-
 	var spawnPos : Vector3= get_next_spawn_position(nextSpawnIdx)
-	player.position = spawnPos
-	world.add_child(player, true)
+	var character_id: StringName = NetworkManager.get_character_id_for_peer(peer_id)
+	var player := player_spawner.spawn({
+		"peer_id": peer_id,
+		"character_id": character_id,
+		"position": spawnPos
+	})
+	if player == null:
+		push_error("GameMode: failed to spawn player %d" % peer_id)
 
-	if peer_id != multiplayer.get_unique_id():
-		_place_player.rpc_id(peer_id, spawnPos)
 
-@rpc("authority", "reliable")
-func _place_player(pos : Vector3):
-	var node_name := "Player_" + str(multiplayer.get_unique_id())
-	var tries := 0
-	while not world.has_node(node_name) and tries < 300:
-		await get_tree().process_frame
-		tries += 1
-
-	var p = world.get_node_or_null(node_name)
-	if p:
-		p.global_position = pos
-		p.velocity = Vector3.ZERO
+func _create_player_from_spawn_data(data: Variant) -> Node:
+	if not data is Dictionary:
+		push_error("GameMode: invalid player spawn data")
+		return null
+	var player_scene := load("res://Player/_Player.tscn") as PackedScene
+	if player_scene == null:
+		push_error("GameMode: failed to load player scene")
+		return null
+	var player := player_scene.instantiate()
+	var peer_id := int(data.get("peer_id", 1))
+	player.name = "Player_" + str(peer_id)
+	player.set_multiplayer_authority(peer_id)
+	player.character_id = StringName(data.get("character_id", &"player_1"))
+	player.position = data.get("position", Vector3.ZERO)
+	return player
 
 func get_next_spawn_position(idx : int):
 	if spawn_points:

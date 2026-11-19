@@ -1,12 +1,10 @@
-[gd_resource type="Resource" script_class="CharacterDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="CharacterDefinition" format=3 uid="uid://bq6c8oy6vdb8n"]
 
-[ext_resource type="Script" path="res://Models/characters/CharacterDefinition.gd" id="1_definition"]
-[ext_resource type="PackedScene" path="res://Models/characters/Player1/Ch21_nonPBR.fbx" id="2_model"]
+[ext_resource type="Script" uid="uid://di18xr8rbpibh" path="res://Models/characters/CharacterDefinition.gd" id="1_definition"]
+[ext_resource type="PackedScene" uid="uid://bifqtm8fcs52f" path="res://Models/characters/Player1/Ch21_nonPBR.fbx" id="2_model"]
 
 [resource]
 script = ExtResource("1_definition")
 character_id = &"player_1"
-display_name = "Maya"
+display_name = "Kamran"
 model_scene = ExtResource("2_model")
-vertical_offset = -1.1
-model_scale = Vector3(1.0, 1.0, 1.0)

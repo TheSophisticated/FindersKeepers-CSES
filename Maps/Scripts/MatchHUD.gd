@@ -3,28 +3,28 @@
 # announcements, the Blood Shrine voting modal, and the Game Over victory screen.
 class_name MatchHUD
 extends Control
-
+ 
 @onready var timer_label: Label = $TopBar/TimerLabel
 @onready var score_label: Label = $TopBar/ScoreLabel
 @onready var banner_label: Label = $BannerContainer/BannerLabel
 @onready var banner_timer: Timer = $BannerContainer/BannerTimer
-
+ 
 # Blood Shrine UI elements
 @onready var shrine_modal: Panel = $BloodShrineModal
 @onready var shrine_accept_btn: Button = $BloodShrineModal/VBoxContainer/ButtonHBox/AcceptBtn
 @onready var shrine_decline_btn: Button = $BloodShrineModal/VBoxContainer/ButtonHBox/DeclineBtn
 @onready var shrine_status_label: Label = $BloodShrineModal/VBoxContainer/StatusLabel
-
+ 
 # Game Over UI elements
 @onready var game_over_panel: Panel = $GameOverPanel
 @onready var winner_label: Label = $GameOverPanel/VBoxContainer/WinnerLabel
 @onready var menu_btn: Button = $GameOverPanel/VBoxContainer/MenuBtn
-
-
+ 
+ 
 @onready var player_legend_rows: VBoxContainer = $PlayerLegend/LegendVBox/LegendRows
-
-var local_deposits: int = 0
-
+ 
+var local_parts_lost: int = 0
+ 
 func _ready() -> void:
 	# Hide overlays initially
 	if shrine_modal:
@@ -33,7 +33,7 @@ func _ready() -> void:
 		game_over_panel.visible = false
 	if banner_label:
 		banner_label.visible = false
-
+ 
 	# Connect buttons
 	if shrine_accept_btn and not shrine_accept_btn.pressed.is_connected(_on_shrine_accept):
 		shrine_accept_btn.pressed.connect(_on_shrine_accept)
@@ -49,9 +49,9 @@ func _ready() -> void:
 		shrine_accept_btn.focus_neighbor_left = shrine_decline_btn.get_path()
 		shrine_decline_btn.focus_neighbor_left = shrine_accept_btn.get_path()
 		shrine_decline_btn.focus_neighbor_right = shrine_accept_btn.get_path()
-
+ 
 	_setup_focus_styling()
-
+ 
 func _setup_focus_styling() -> void:
 	var focus_box := StyleBoxFlat.new()
 	focus_box.draw_center = false
@@ -66,7 +66,7 @@ func _setup_focus_styling() -> void:
 	focus_box.corner_radius_bottom_left = 4
 	for btn in find_children("*", "Button", true, false):
 		btn.add_theme_stylebox_override("focus", focus_box)
-
+ 
 	# Connect to GameManager signals
 	if GameManager:
 		GameManager.match_timer_updated.connect(_on_match_timer_updated)
@@ -84,7 +84,7 @@ func _setup_focus_styling() -> void:
 			_update_player_legend()
 	
 	_update_score_display()
-
+ 
 func _on_match_timer_updated(time_remaining: float) -> void:
 	if not timer_label:
 		return
@@ -98,14 +98,10 @@ func _on_match_timer_updated(time_remaining: float) -> void:
 		timer_label.add_theme_color_override("font_color", Color(1.0, 0.25, 0.25))
 	else:
 		timer_label.add_theme_color_override("font_color", Color.WHITE)
-
+ 
 func _on_part_deposited(depositor_id: int, victim_id: int, part_type: int) -> void:
-	var my_id: int = multiplayer.get_unique_id()
-	if depositor_id == my_id or (my_id <= 1 and depositor_id <= 1):
-		if GameManager and GameManager.players.has(depositor_id):
-			local_deposits = GameManager.players[depositor_id]["parts_deposited"]
-		else:
-			local_deposits += 1
+	# The counter tracks how many of the local player's own parts were sacrificed.
+	if victim_id == multiplayer.get_unique_id():
 		_update_score_display()
 	
 	var part_names: Array[String] = ["Head", "Hands", "Torso", "Legs"]
@@ -113,19 +109,25 @@ func _on_part_deposited(depositor_id: int, victim_id: int, part_type: int) -> vo
 	var dep_name: String = GameManager.get_player_color(depositor_id) if (GameManager and GameManager.players.has(depositor_id)) else ("Player " + str(depositor_id))
 	
 	_show_banner("%s sacrificed a %s!" % [dep_name, p_name])
-
+ 
 func _update_score_display() -> void:
 	var my_id: int = multiplayer.get_unique_id()
 	if GameManager and GameManager.players.has(my_id):
-		local_deposits = GameManager.players[my_id]["parts_deposited"]
-	elif GameManager and GameManager.players.has(1):
-		local_deposits = GameManager.players[1]["parts_deposited"]
+		local_parts_lost = GameManager.players[my_id]["parts_lost"].size()
 	if score_label:
-		score_label.text = "Sacrifices: %d" % local_deposits
-
+		score_label.text = "Your Parts Sacrificed: %d/4" % local_parts_lost
+ 
 func _on_player_eliminated(peer_id: int, player_name: String) -> void:
-	_show_banner("ELIMINATED: %s was completely sacrificed!" % player_name, Color(1.0, 0.3, 0.3))
-
+	_show_banner("ELIMINATED: %s was completely sacrificed!" % _display_name(peer_id, player_name), Color(1.0, 0.3, 0.3))
+ 
+# Roster names are "Player_<peer_id>"; show the player number ("Player 2") instead.
+func _display_name(peer_id: int, fallback: String) -> String:
+	if GameManager:
+		var number: int = GameManager.get_player_display_number(peer_id)
+		if number != -1:
+			return "Player %d" % number
+	return fallback
+ 
 func _show_banner(text: String, color: Color = Color.WHITE) -> void:
 	if banner_label:
 		banner_label.text = text
@@ -133,11 +135,11 @@ func _show_banner(text: String, color: Color = Color.WHITE) -> void:
 		banner_label.visible = true
 		if banner_timer:
 			banner_timer.start(3.5)
-
+ 
 func _on_banner_timeout() -> void:
 	if banner_label:
 		banner_label.visible = false
-
+ 
 # ===== BLOOD SHRINE EVENT =====
 func _on_shrine_prompt_started() -> void:
 	if shrine_modal:
@@ -148,7 +150,7 @@ func _on_shrine_prompt_started() -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	if shrine_accept_btn:
 		shrine_accept_btn.grab_focus()
-
+ 
 func _on_shrine_accept() -> void:
 	if shrine_accept_btn:
 		shrine_accept_btn.disabled = true
@@ -156,7 +158,7 @@ func _on_shrine_accept() -> void:
 		shrine_decline_btn.disabled = true
 	shrine_status_label.text = "Accepted! Waiting for other players..."
 	GameManager.submit_shrine_vote.rpc(true)
-
+ 
 func _on_shrine_decline() -> void:
 	if shrine_accept_btn:
 		shrine_accept_btn.disabled = true
@@ -164,7 +166,7 @@ func _on_shrine_decline() -> void:
 		shrine_decline_btn.disabled = true
 	shrine_status_label.text = "Declined! Waiting for other players..."
 	GameManager.submit_shrine_vote.rpc(false)
-
+ 
 func _on_shrine_resolved(accepted: bool) -> void:
 	if shrine_modal:
 		shrine_modal.visible = false
@@ -173,7 +175,7 @@ func _on_shrine_resolved(accepted: bool) -> void:
 		_show_banner("The Blood Deal was accepted! -20s from match clock.", Color(0.9, 0.2, 0.2))
 	else:
 		_show_banner("The Blood Deal was rejected by the players.", Color(0.7, 0.7, 0.7))
-
+ 
 # ===== GAME OVER =====
 func _on_game_over(winner_id: int, winner_name: String) -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -187,47 +189,48 @@ func _on_game_over(winner_id: int, winner_name: String) -> void:
 				if is_local_winner:
 					winner_label.text = "VICTORY!\nYou survived and sacrificed the most parts!"
 				else:
-					winner_label.text = "GAME OVER\nWinner: %s" % winner_name
+					winner_label.text = "GAME OVER\nWinner: %s" % _display_name(winner_id, winner_name)
 	if menu_btn:
 		menu_btn.grab_focus()
-
+ 
 func _on_menu_pressed() -> void:
 	print("Menu Button Pressed After Game End!")
 	NetworkManager.leave_session()
-
-
+ 
+ 
 func _update_player_legend() -> void:
 	if player_legend_rows == null or GameManager == null:
 		return
-
+ 
 	for child in player_legend_rows.get_children():
 		child.queue_free()
-
+ 
 	var player_ids: Array = GameManager.players.keys()
 	player_ids.sort()
-
+ 
 	var local_id: int = multiplayer.get_unique_id()
-
+ 
 	for peer_id in player_ids:
 		var player_data: Dictionary = GameManager.players[peer_id]
 		var display_number: int = GameManager.get_player_display_number(peer_id)
 		var color_index: int = int(player_data["color"])
 		var player_color: Color = GameManager.PLAYER_COLOR_VALUES[color_index]
-
+ 
 		var row := HBoxContainer.new()
 		var color_swatch := ColorRect.new()
 		color_swatch.color = player_color
 		color_swatch.custom_minimum_size = Vector2(14, 14)
 		row.add_child(color_swatch)
-
+ 
 		var label := Label.new()
 		label.text = "Player %d" % display_number
 		if peer_id == local_id:
 			label.text += " (YOU)"
 		row.add_child(label)
-
+ 
 		player_legend_rows.add_child(row)
-
+ 
 func _on_match_state_changed(new_state: GameManager.MatchState) -> void:
 	if new_state == GameManager.MatchState.IN_PROGRESS:
 		_update_player_legend()
+ 

@@ -51,8 +51,8 @@ fov = 89.1
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.4656279, -0.061312616)
 visible = false
 light_energy = 20.0
-spot_range = 50.0
-spot_angle = 75.89
+spot_range = 2086.737
+spot_angle = 28.79
 
 [node name="Timer" type="Timer" parent="Camera3D/Flashlight" unique_id=57878081]
 wait_time = 4096.0

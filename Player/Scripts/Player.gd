@@ -8,8 +8,9 @@ extends CharacterBody3D
 @export var walk_speed := 10.0          # Normal movement speed
 @export var sprint_speed := 15.0        # Sprinting speed
 @export var jump_velocity := 15.0      # Jump force
-@export var ground_acceleration := 15.0 # Acceleration on ground
-@export var ground_deceleration := 20.0 # Deceleration on ground
+@export var ground_acceleration := 22.0 # Acceleration on ground
+@export var ground_deceleration := 30.0 # Deceleration on ground
+@export var ground_turn_acceleration := 40.0 # Used when steering against current velocity, so direction changes don't slide
 @export var air_control := 0.3         # Air movement control factor
 @export var sprint_grace_time := 0.25  # Sprint still counts this long after release (A -> B thumb travel)
 @export var slide_boost: float = 1.0   # Slide speed boost multiplier (boosted by Torso part)
@@ -38,7 +39,7 @@ const ROTATION_LERP_FACTOR = 0.5      # Rotation interpolation factor
 
 # ===== NODE REFERENCES =====
 @onready var camera := $Camera3D # Player camera
-var pitch = 0.0 
+var pitch = 0.0
 @onready var head_position := $Camera3D/HeadPosition  # Hold point for picked-up objects
 @onready var sync := $MultiplayerSynchronizer # Network sync component
 @onready var effect_controller: TarotEffectController = $TarotEffectController #Effect controller component
@@ -57,7 +58,7 @@ var wish_dir := Vector3.ZERO          # Desired movement direction
 var current_speed := 0.0              # Current movement speed
 var was_on_floor := true              # Previous frame ground state
 var speed_modifier: float = 1.0 # Used while using demon speed
-var input_multiplier: float  = 1.0 # Used for inverting the controls while using hanged man 
+var input_multiplier: float  = 1.0 # Used for inverting the controls while using hanged man
 var knockback_velocity: Vector3 = Vector3.ZERO
 var knockback_time_remaining: float = 0.0
 var sprint_grace_timer := 0.0          # Time left in which a released sprint still counts
@@ -95,7 +96,7 @@ var player_id: int = -1
 		character_id = value
 		if is_node_ready() and animation_controller != null:
 			animation_controller.set_character_by_id(value)
- 
+
 # ===== LOOK-AT DETECTION =====
 var look_at_ray: RayCast3D            # Raycast for detecting objects in front of player
 var pickup_assist_cast: ShapeCast3D   # Wider sweep so near misses still pick up
@@ -120,7 +121,7 @@ func flicker_lights(delta) -> void:
 		return
 	_t = randf_range(0.03, 0.12) if hotel.is_light_on() else randf_range(0.05, 0.4)
 	hotel.set_light(not hotel.is_light_on())
-	
+
 
 func _process(delta):
 	# Update controller camera look (local player only)
@@ -200,8 +201,8 @@ func _enter_tree():
 		if sync:
 			sync.set_multiplayer_authority(peer_id)
 			sync.replication_interval = 1.0 / network_update_rate
-			
-	
+
+
 
 func _ready():
 	add_to_group("player")
@@ -212,7 +213,7 @@ func _ready():
 	# Setup for local player
 	if is_multiplayer_authority():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
-		if camera: 
+		if camera:
 			camera.far = normal_render_distance
 			camera.current = true
 		if interact_prompt:
@@ -231,7 +232,6 @@ func _ready():
 		var starting_card: TarotCard = load("res://Tarot/Cards/Definitions/DemonSpeed.tres")
 		if starting_card != null:
 			add_tarot_card(starting_card)
-	
 	# Set up look-at raycast as child of camera
 	look_at_ray = RayCast3D.new()
 	look_at_ray.name = "LookAtDetector"
@@ -257,7 +257,7 @@ func _ready():
 	pickup_assist_cast.add_exception(self)
 	if camera:
 		camera.add_child(pickup_assist_cast)
-		
+
 	GameManager.player_eliminated.connect(_on_player_eliminated)
 
 	# Initialize animations
@@ -269,14 +269,14 @@ func _ready():
 func _input(event):
 	if not input_enabled or not is_multiplayer_authority():
 		return
-	
+
 	# Mouse look
 	if event is InputEventMouseMotion:
 		rotate_y(-event.relative.x * mouse_sensitivity)
 		if camera:
 			pitch = clamp(pitch - event.relative.y * mouse_sensitivity, deg_to_rad(-89), deg_to_rad(89))
 			camera.rotation.x = pitch
-	
+
 	# Jump input buffering
 	if event.is_action_pressed("jump"):
 		jump_buffer_timer = 0.15
@@ -328,20 +328,19 @@ func trigger_tarot_slot(slot_index: int) -> void:
 		show_tarot_notification("Tarot Slot %d is empty" % (slot_index + 1))
 		return
 	use_tarot_card.rpc(slot_index)
-				
 # ===== Flashlight =====
 @rpc("authority", "reliable", "call_local")
 func set_flashlight(on : bool):
 	print("Flashlight was Turned ", on)
 	flashlight.visible = on
-	
+
 
 # ===== TAROT INVENTORY =====
 signal tarot_card_added(card: TarotCard, slot: int)  # Emitted when a card fills a slot
 signal tarot_card_removed(slot: int)
 
 var tarot_cards: Array[TarotCard] = []  # Fixed-size slots, empty slots hold null
-	
+
 # Stores a card in the first empty slot. Returns true if it fit.
 
 @rpc("any_peer", "call_local", "reliable")
@@ -385,25 +384,25 @@ func use_tarot_card(slot_index: int)->void:
 	if slot_index < 0 or slot_index >= tarot_cards.size():
 		push_warning("Invalid Tarot Card slot: "+str(slot_index))
 		return
-	
+
 	var card: TarotCard = tarot_cards[slot_index]
-	
+
 	if card == null:
 		push_warning("Tarot slot is empty: "+str(slot_index))
 		return
-	
+
 	if card.effect == null:
 		push_warning("Tarot card has no effect: "+card.card_name)
 		return
-	
+
 	print("Using Tarot card ",card.card_name)
-	
+
 	var applied: bool = effect_controller.apply_effect(card.effect)
-	
+
 	if not applied:
 		print("Could not apply Tarot Card: ",card.card_name)
 		return
-	
+
 	tarot_cards[slot_index] = null
 	tarot_card_removed.emit(slot_index)
 	print("removed tarot cards : ",card.card_name," | Inventory: ",tarot_cards.size(),"/",tarot_capacity)
@@ -514,14 +513,14 @@ func _get_push_target() -> CharacterBody3D:
 
 func apply_speed_modifier(multiplier: float)->void:
 	speed_modifier *= multiplier
-	
+
 	print("Speed modifier applied: ",multiplier," | current modifier  : ",speed_modifier)
 
 func remove_speed_modifier(multiplier: float)->void:
 	if multiplier == 0.0:
 		return
 	speed_modifier /= multiplier
-	
+
 	print("speed modifier removed : ",multiplier , " | current modifier : ",speed_modifier)
 
 
@@ -532,7 +531,7 @@ func apply_vision_modifier(multiplier: float)->void:
 
 func remove_vision_modifier(multiplier: float)->void:
 	if multiplier == 0.0:
-		return 
+		return
 	vision_modifier /= multiplier
 	print("vison modifier removed : ",multiplier, " | current modifier ",vision_modifier)
 	if is_equal_approx(vision_modifier,1.0):
@@ -542,7 +541,7 @@ func remove_vision_modifier(multiplier: float)->void:
 func apply_render_distance_modifier(multiplier: float)->void:
 	render_distance_modifier *= multiplier
 	camera.far = normal_render_distance*render_distance_modifier
-	
+
 	print("Render distance modifier applied : ",multiplier," | Far : ",camera.far)
 
 func remove_render_distance_modifier(multiplier: float)->void:
@@ -550,7 +549,7 @@ func remove_render_distance_modifier(multiplier: float)->void:
 		return
 	render_distance_modifier /= multiplier
 	camera.far = normal_render_distance
-	
+
 	print("render distance modifer removed : ",multiplier," | Far : ",camera.far)
 
 func apply_input_modifier(multiplier:float)->void:
@@ -656,7 +655,7 @@ func request_pick_up(target: NodePath) -> void:
 func pick_up_object(targetPath: NodePath) -> void:
 	if multiplayer.get_remote_sender_id() != 1 && multiplayer.get_remote_sender_id() != 0:
 		return
-	
+
 	var target = get_node_or_null(targetPath)
 	if target == null:
 		print("NULL Target")
@@ -690,7 +689,7 @@ func pick_up_body_part(partPath : NodePath) -> void:
 	if part == null:
 		print("Part is NULL! FAILED")
 		return
-		
+
 	if part.owner_id == player_id:
 		print("You cant pick up your own parts!")
 		return
@@ -714,7 +713,7 @@ func pick_up_body_part(partPath : NodePath) -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func deposit_body_part() -> void:
-	
+
 	if held_body_part == null:
 		print("[Player] deposit_body_part aborted: held_body_part is null")
 		return
@@ -746,7 +745,7 @@ func _physics_process(delta):
 	if not input_enabled:
 		velocity = Vector3.ZERO
 		return
-		
+
 	if is_multiplayer_authority():
 		# Local player movement
 		process_local_movement(delta)
@@ -765,19 +764,17 @@ func process_local_movement(delta):
 	raw_input_dir = Input.get_vector("move_left", "move_right", "move_forward", "move_back")*input_multiplier
 	is_moving = raw_input_dir.length() > 0.1
 	wish_dir = (transform.basis * Vector3(raw_input_dir.x, 0, raw_input_dir.y)).normalized()
-	
+
 	# Handle jumping
 	handle_jump_mechanics(delta)
-	
 	# Handle tarot inputs polled every tick
 	handle_tarot_inputs()
 
 	# Update movement state
 	update_movement_state(delta)
-	
 	# Calculate movement
 	handle_movement(delta)
-	
+
 	# Apply gravity
 	apply_gravity(delta)
 
@@ -800,7 +797,7 @@ func handle_jump_mechanics(delta):
 		sprint_grace_timer = sprint_grace_time
 	else:
 		sprint_grace_timer = max(sprint_grace_timer - delta, 0)
-	
+
 	# Coyote time - allows jumping shortly after leaving ground
 	if is_on_floor():
 		coyote_timer = 0.1
@@ -810,9 +807,9 @@ func handle_jump_mechanics(delta):
 			air_speed = 0.0
 	else:
 		coyote_timer = max(coyote_timer - delta, 0)
-	
+
 	was_on_floor = is_on_floor()
-	
+
 	# Perform jump if conditions met
 	if jump_buffer_timer > 0 and can_jump and (is_on_floor() or coyote_timer > 0):
 		perform_jump()
@@ -910,19 +907,23 @@ func handle_movement(delta):
 		# Ground movement
 		var current_vel = Vector2(velocity.x, velocity.z)
 		var target_vel = Vector2(wish_dir.x, wish_dir.z) * current_speed
-		
+
 		if wish_dir.length() > 0:
-			current_vel = current_vel.move_toward(target_vel, ground_acceleration * delta)
+			# Snap harder when the new direction points away from where we're sliding
+			var accel := ground_acceleration
+			if current_vel.dot(target_vel) < 0.0:
+				accel = ground_turn_acceleration
+			current_vel = current_vel.move_toward(target_vel, accel * delta)
 		else:
 			current_vel = current_vel.move_toward(Vector2.ZERO, ground_deceleration * delta)
-		
+
 		velocity.x = current_vel.x
 		velocity.z = current_vel.y
 	else:
 		# Air movement
 		var current_vel = Vector2(velocity.x, velocity.z)
 		var target_vel = Vector2(wish_dir.x, wish_dir.z) * max(current_speed, air_speed)
-		
+
 		if wish_dir.length() > 0:
 			current_vel = current_vel.move_toward(target_vel, ground_acceleration * air_control * delta)
 			velocity.x = current_vel.x
@@ -945,28 +946,28 @@ func apply_gravity(delta):
 # ===== CAMERA EFFECTS =====
 func update_camera_effects(delta):
 	if not camera: return
-	
+
 	# Camera tilt when strafing
 	var target_tilt = 0.0
 	if is_moving and is_on_floor():
 		target_tilt = -raw_input_dir.x * camera_tilt_amount
-	
+
 	camera_tilt = lerp(camera_tilt, target_tilt, delta * sway_smoothness)
 	camera.rotation.z = deg_to_rad(camera_tilt)
-	
+
 	# FOV changes when sprinting
 	var target_fov := fov_normal
 	if current_state == MovementState.SPRINTING and raw_input_dir.y < 0:
 		target_fov = fov_sprint
-	
+
 	target_fov *= vision_modifier
-	
+
 	camera.fov = lerp(camera.fov,target_fov,delta*5.0)
 
 # ===== NETWORK UPDATES =====
 func send_network_update():
 	# Send position/rotation update to other players
-	rpc("_receive_network_update", 
+	rpc("_receive_network_update",
 		global_position,
 		velocity,
 		rotation,
@@ -975,39 +976,39 @@ func send_network_update():
 @rpc("unreliable_ordered", "any_peer", "call_remote", 1)
 func _receive_network_update(pos: Vector3, vel: Vector3, rot: Vector3, timestamp: float):
 	if is_multiplayer_authority(): return
-	
+
 	# Store update for interpolation
 	network_position_buffer.append(pos)
 	network_rotation_buffer.append(rot)
 	network_timestamp_buffer.append(timestamp)
-	
+
 	# Maintain buffer size
 	if network_position_buffer.size() > 5:
 		network_position_buffer.pop_front()
 		network_rotation_buffer.pop_front()
 		network_timestamp_buffer.pop_front()
-	
+
 	last_network_update_time = Time.get_ticks_msec() / 1000.0
 
 # ===== REMOTE PLAYER INTERPOLATION =====
 func process_remote_movement(delta):
-	if network_position_buffer.size() < 2: 
+	if network_position_buffer.size() < 2:
 		return
-	
+
 	var current_time = Time.get_ticks_msec() / 1000.0
 	var render_time = current_time - interpolation_time
-	
+
 	# Find closest states for interpolation
 	var prev_index = -1
 	var next_index = -1
-	
+
 	for i in range(network_timestamp_buffer.size()):
 		if network_timestamp_buffer[i] <= render_time:
 			prev_index = i
 		else:
 			next_index = i
 			break
-	
+
 	if next_index == -1:
 		if network_timestamp_buffer.size() < 2: return
 		prev_index = network_timestamp_buffer.size() - 2
@@ -1015,14 +1016,14 @@ func process_remote_movement(delta):
 	elif prev_index == -1:
 		prev_index = 0
 		next_index = 1
-	
+
 	# Calculate interpolation factor
 	var prev_time = network_timestamp_buffer[prev_index]
 	var next_time = network_timestamp_buffer[next_index]
 	var time_diff = next_time - prev_time
-	
+
 	var t = 1.0  if time_diff < 0.001 else clamp((render_time - prev_time) / (next_time - prev_time), 0.0, 1.0)
-	
+
 	# Interpolate position and rotation
 	var target_pos = network_position_buffer[prev_index].lerp(
 		network_position_buffer[next_index], t)
@@ -1031,7 +1032,7 @@ func process_remote_movement(delta):
 
 	if not target_pos.is_finite() or not target_rot.is_finite():
 		return
-	
+
 	# Apply with smoothing
 	global_position = global_position.lerp(target_pos, POSITION_LERP_FACTOR)
 	rotation = rotation.lerp(target_rot, ROTATION_LERP_FACTOR)
@@ -1080,7 +1081,7 @@ func set_input_enabled(enabled: bool):
 	input_enabled = enabled
 	if is_multiplayer_authority():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED if enabled else Input.MOUSE_MODE_VISIBLE)
-		
+
 
 # Hanlde Player Elimination
 func _on_player_eliminated(peer_id : int, name : String) -> void:
@@ -1090,4 +1091,3 @@ func _on_player_eliminated(peer_id : int, name : String) -> void:
 	collision_layer = 0
 	collision_mask = 0
 	hide()
-	

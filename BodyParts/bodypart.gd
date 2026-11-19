@@ -260,7 +260,11 @@ func set_owner_label_visible(show_label: bool) -> void:
 	if show_label:
 		var part_names := ["Head", "Hands", "Torso", "Legs"]
 		var part_name: String = part_names[part_type]
-		owner_label.text = "Player %d's %s" % [owner_id, part_name]
+		# owner_id is the owner's network peer ID; show their player number instead.
+		var player_number: int = GameManager.get_player_display_number(owner_id) if GameManager else -1
+		if player_number == -1:
+			player_number = owner_id
+		owner_label.text = "Player %d's %s" % [player_number, part_name]
 
 	owner_label.visible = show_label
 
