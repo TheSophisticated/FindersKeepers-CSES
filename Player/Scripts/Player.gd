@@ -12,6 +12,7 @@ extends CharacterBody3D
 @export var ground_deceleration := 20.0 # Deceleration on ground
 @export var air_control := 0.3         # Air movement control factor
 @export var sprint_grace_time := 0.25  # Sprint still counts this long after release (A -> B thumb travel)
+@export var slide_boost: float = 1.0   # Slide speed boost multiplier (boosted by Torso part)
 @export var character_turn_speed := 12.0 # How quickly the visible character faces movement
 @export var character_facing_yaw: float = PI # Replicated visual facing, relative to the player root
 
@@ -61,6 +62,8 @@ var knockback_velocity: Vector3 = Vector3.ZERO
 var knockback_time_remaining: float = 0.0
 var sprint_grace_timer := 0.0          # Time left in which a released sprint still counts
 var air_speed := 0.0                   # Horizontal speed carried from takeoff
+var is_sliding: bool = false           # Whether player is currently sliding
+var slide_timer: float = 0.0           # Slide duration timer
 
 # ===== JUMP VARIABLES =====
 var jump_buffer_timer := 0.0          # Jump input buffer timer
@@ -224,6 +227,10 @@ func _ready():
 		camera.current = false
 	current_speed = walk_speed
 	tarot_cards.resize(tarot_capacity)
+	if is_multiplayer_authority():
+		var starting_card: TarotCard = load("res://Tarot/Cards/Definitions/DemonSpeed.tres")
+		if starting_card != null:
+			add_tarot_card(starting_card)
 	
 	# Set up look-at raycast as child of camera
 	look_at_ray = RayCast3D.new()
@@ -305,12 +312,22 @@ func _input(event):
 
 	# Tarot slots
 	if event.is_action_pressed("tarot_slot_1"):
-		use_tarot_card.rpc(0)
+		trigger_tarot_slot(0)
 	elif event.is_action_pressed("tarot_slot_2"):
-		use_tarot_card.rpc(1)
+		trigger_tarot_slot(1)
 		
 	if event.is_action_pressed("flashlight"):
 		set_flashlight.rpc(not flashlight.visible)
+
+func trigger_tarot_slot(slot_index: int) -> void:
+	if not input_enabled or not is_multiplayer_authority():
+		return
+	if slot_index < 0 or slot_index >= tarot_cards.size():
+		return
+	if tarot_cards[slot_index] == null:
+		show_tarot_notification("Tarot Slot %d is empty" % (slot_index + 1))
+		return
+	use_tarot_card.rpc(slot_index)
 				
 # ===== Flashlight =====
 @rpc("authority", "reliable", "call_local")
@@ -752,14 +769,25 @@ func process_local_movement(delta):
 	# Handle jumping
 	handle_jump_mechanics(delta)
 	
+	# Handle tarot inputs polled every tick
+	handle_tarot_inputs()
+
 	# Update movement state
-	update_movement_state()
+	update_movement_state(delta)
 	
 	# Calculate movement
 	handle_movement(delta)
 	
 	# Apply gravity
 	apply_gravity(delta)
+
+func handle_tarot_inputs() -> void:
+	if not is_multiplayer_authority() or not input_enabled:
+		return
+	if Input.is_action_just_pressed("tarot_slot_1"):
+		trigger_tarot_slot(0)
+	elif Input.is_action_just_pressed("tarot_slot_2"):
+		trigger_tarot_slot(1)
 
 # ===== JUMP MECHANICS =====
 func handle_jump_mechanics(delta):
@@ -801,15 +829,42 @@ func perform_jump():
 	jump_count += 1
 
 # ===== MOVEMENT STATES =====
-func update_movement_state():
+func update_movement_state(delta: float = 0.0):
 	if is_on_floor():
-		if (Input.is_action_pressed("sprint") or sprint_grace_timer > 0) and is_moving and raw_input_dir.y < 0:
-			current_state = MovementState.SPRINTING
-			current_speed = sprint_speed*speed_modifier
+		var wants_sprint: bool = (Input.is_action_pressed("sprint") or sprint_grace_timer > 0) and is_moving and raw_input_dir.y < 0
+		var wants_crouch: bool = Input.is_action_pressed("crouch")
+
+		if wants_crouch:
+			# If sprinting forward and pressing crouch -> SLIDE!
+			if wants_sprint or is_sliding:
+				if not is_sliding:
+					is_sliding = true
+					slide_timer = 0.65
+				slide_timer = max(slide_timer - delta, 0.0)
+				if slide_timer > 0.0:
+					current_state = MovementState.SPRINTING
+					var boost_factor = 1.35 * slide_boost * (0.6 + 0.4 * (slide_timer / 0.65))
+					current_speed = sprint_speed * speed_modifier * boost_factor
+				else:
+					is_sliding = false
+					current_state = MovementState.WALKING
+					current_speed = walk_speed * 0.6 * speed_modifier
+			else:
+				is_sliding = false
+				slide_timer = 0.0
+				current_state = MovementState.WALKING
+				current_speed = walk_speed * 0.6 * speed_modifier
 		else:
-			current_state = MovementState.WALKING
-			current_speed = walk_speed*speed_modifier
+			is_sliding = false
+			slide_timer = 0.0
+			if wants_sprint:
+				current_state = MovementState.SPRINTING
+				current_speed = sprint_speed * speed_modifier
+			else:
+				current_state = MovementState.WALKING
+				current_speed = walk_speed * speed_modifier
 	else:
+		is_sliding = false
 		current_state = MovementState.AIRBORNE
 
 	_play_movement_animation()
@@ -832,7 +887,10 @@ func _play_movement_animation() -> void:
 			else:
 				locomotion_animation = &"walk"
 		MovementState.SPRINTING:
-			locomotion_animation = &"run"
+			if is_sliding or Input.is_action_pressed("crouch"):
+				locomotion_animation = &"crouch_walk"
+			else:
+				locomotion_animation = &"run"
 		MovementState.AIRBORNE:
 			if velocity.y > 0:
 				animation_controller.play_jump(jump_animation_name)
