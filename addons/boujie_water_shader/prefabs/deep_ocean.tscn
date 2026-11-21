@@ -14,48 +14,50 @@
 
 [sub_resource type="Resource" id="Resource_h6ky8"]
 script = ExtResource("8_uytuc")
-steepness = 10.0
-amplitude = 2.0
+steepness = 0.28
+amplitude = 0.35
 direction_degrees = 315.0
-frequency = 0.02
+frequency = 0.035
+speed = 0.9
 
 [sub_resource type="Resource" id="Resource_gq4b8"]
 script = ExtResource("8_uytuc")
-steepness = 0.05
-amplitude = 0.004
+steepness = 0.08
+amplitude = 0.12
 direction_degrees = 70.702
-frequency = 2.0
+frequency = 0.18
+speed = 1.2
 
 [sub_resource type="Resource" id="Resource_ewn38"]
 script = ExtResource("8_uytuc")
-steepness = 2.0
-amplitude = 1.5
+steepness = 0.35
+amplitude = 0.45
 direction_degrees = 15.0
-frequency = 0.02
+frequency = 0.025
 phase_degrees = -40.0
 
 [sub_resource type="Resource" id="Resource_v8fws"]
 script = ExtResource("8_uytuc")
-steepness = 0.45
-amplitude = 0.7
+steepness = 0.25
+amplitude = 0.35
 direction_degrees = 281.195
 frequency = 0.03
-speed = 3.0
+speed = 1.6
 
 [sub_resource type="Resource" id="Resource_pwrcy"]
 script = ExtResource("8_uytuc")
-steepness = 1.3
-amplitude = 2.0
+steepness = 0.3
+amplitude = 0.4
 direction_degrees = 88.25
-frequency = 0.001
-speed = 0.05
+frequency = 0.008
+speed = 0.25
 
 [sub_resource type="Resource" id="Resource_ei3rv"]
 script = ExtResource("8_uytuc")
-steepness = 1.5
+steepness = 0.25
 direction_degrees = 151.5
-frequency = 0.004
-speed = 0.05
+frequency = 0.01
+speed = 0.25
 
 [node name="DeepOcean" type="Node3D" unique_id=1322041387]
 script = ExtResource("1_ffcdn")

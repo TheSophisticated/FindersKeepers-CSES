@@ -16,9 +16,84 @@ var settings := {
 	"ssr_enabled": false
 }
 
+const BODY_FONT_PATH := "res://Assets/Fonts/HorrorBodySerif.ttf"
+const TITLE_FONT_PATH := "res://Assets/Fonts/HorrorDisplayTitle.ttf"
+const ACCENT_FONT_PATH := "res://Assets/Fonts/HorrorAccent.ttf"
+
+var body_font: Font = null
+var title_font: Font = null
+var accent_font: Font = null
+
 func _ready():
+	_init_custom_fonts()
 	# Apply settings on startup
 	load_settings()
+
+func _load_font_safe(res_path: String) -> Font:
+	var ff := FontFile.new()
+	var global_path := ProjectSettings.globalize_path(res_path)
+	if FileAccess.file_exists(global_path) and ff.load_dynamic_font(global_path) == OK:
+		return ff
+	if FileAccess.file_exists(res_path) and ff.load_dynamic_font(res_path) == OK:
+		return ff
+	if ResourceLoader.exists(res_path):
+		var loaded = load(res_path)
+		if loaded is Font:
+			return loaded
+	return null
+
+func _init_custom_fonts() -> void:
+	body_font = _load_font_safe(BODY_FONT_PATH)
+	title_font = _load_font_safe(TITLE_FONT_PATH)
+	accent_font = _load_font_safe(ACCENT_FONT_PATH)
+
+	if body_font != null:
+		var proj_theme := ThemeDB.get_project_theme()
+		if proj_theme != null:
+			proj_theme.default_font = body_font
+		var def_theme := ThemeDB.get_default_theme()
+		if def_theme != null:
+			def_theme.default_font = body_font
+
+	if get_tree():
+		if not get_tree().node_added.is_connected(_on_tree_node_added):
+			get_tree().node_added.connect(_on_tree_node_added)
+		if get_tree().root:
+			_apply_fonts_recursive(get_tree().root)
+
+func _on_tree_node_added(node: Node) -> void:
+	_apply_font_to_single_node(node)
+
+func _apply_fonts_recursive(node: Node) -> void:
+	_apply_font_to_single_node(node)
+	for child in node.get_children():
+		_apply_fonts_recursive(child)
+
+func _apply_font_to_single_node(node: Node) -> void:
+	if body_font == null:
+		return
+	if node is Control:
+		var ctrl := node as Control
+		var n_name := String(ctrl.name)
+		var is_title := n_name in [
+			"Title", "TitleLabel", "HeaderLabel", "TimerLabel", "BannerLabel",
+			"WinnerLabel", "NameLabel", "MessageLabel", "CharacterName",
+			"AudioSectionHeader", "GraphicsSectionHeader"
+		]
+		var target_font: Font = title_font if (is_title and title_font != null) else body_font
+		if ctrl is Label or ctrl is Button or ctrl is LineEdit or ctrl is RichTextLabel:
+			ctrl.add_theme_font_override("font", target_font)
+		if ctrl is RichTextLabel:
+			ctrl.add_theme_font_override("normal_font", body_font)
+			if title_font != null:
+				ctrl.add_theme_font_override("bold_font", title_font)
+		if ctrl is Label:
+			ctrl.add_theme_color_override("font_shadow_color", Color(0.03, 0.01, 0.02, 0.9))
+			ctrl.add_theme_constant_override("shadow_offset_x", 1)
+			ctrl.add_theme_constant_override("shadow_offset_y", 2)
+	elif node is Label3D:
+		var lbl3d := node as Label3D
+		lbl3d.font = title_font if title_font != null else body_font
 
 func save_settings():
 	var file = FileAccess.open("user://settings.dat", FileAccess.WRITE)

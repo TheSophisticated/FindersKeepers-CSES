@@ -4,8 +4,8 @@
 
 [resource]
 script = ExtResource("1_h1pxf")
-steepness = 2.0
-amplitude = 1.0
+steepness = 0.22
+amplitude = 0.25
 direction_degrees = 150.0
 frequency = 0.06
-speed = 1.6
+speed = 1.3
