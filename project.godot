@@ -41,6 +41,10 @@ movie_writer/fps=90
 
 enabled=PackedStringArray("res://addons/sky_3d/plugin.cfg", "res://addons/terrain_3d/plugin.cfg")
 
+[gui]
+
+theme/custom_font="res://Assets/Fonts/HorrorBodySerif.ttf"
+
 [input]
 
 ui_accept={

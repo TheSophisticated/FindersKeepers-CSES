@@ -36,6 +36,9 @@ extends CharacterBody3D
 const GRAVITY_FORCE = 35.0            # Gravity strength
 const POSITION_LERP_FACTOR = 0.3      # Position interpolation factor
 const ROTATION_LERP_FACTOR = 0.5      # Rotation interpolation factor
+const OCEAN_SURFACE_Y := 5.0          # World Y of the BoujieOcean plane
+const WATER_FEET_OFFSET := 2.1        # Distance from Player origin to bottom of feet
+const WATER_FLOAT_CENTER_Y := 4.85    # Buoyancy equilibrium Y so camera stays above water surface
 
 # ===== NODE REFERENCES =====
 @onready var camera := $Camera3D # Player camera
@@ -951,27 +954,38 @@ func _play_movement_animation() -> void:
 		animation_controller.play_state(locomotion_animation)
 
 # ===== MOVEMENT CALCULATION =====
+func _get_water_submerge_depth() -> float:
+	return maxf(0.0, (OCEAN_SURFACE_Y + 0.15) - (global_position.y - WATER_FEET_OFFSET))
+
 func handle_movement(delta):
-	if is_on_floor():
-		# Ground movement
+	var water_depth := _get_water_submerge_depth()
+	var is_in_deep_water := global_position.y < (WATER_FLOAT_CENTER_Y + 0.35)
+	var water_speed_scale := clampf(1.0 - (water_depth / 2.6) * 0.45, 0.55, 1.0)
+	var effective_speed := current_speed * water_speed_scale
+
+	if is_on_floor() or is_in_deep_water:
+		# Ground or wading/treading water movement
 		var current_vel = Vector2(velocity.x, velocity.z)
-		var target_vel = Vector2(wish_dir.x, wish_dir.z) * current_speed
+		var target_vel = Vector2(wish_dir.x, wish_dir.z) * effective_speed
 
 		if wish_dir.length() > 0:
 			# Snap harder when the new direction points away from where we're sliding
 			var accel := ground_acceleration
 			if current_vel.dot(target_vel) < 0.0:
 				accel = ground_turn_acceleration
+			if water_depth > 0.2:
+				accel *= 0.75
 			current_vel = current_vel.move_toward(target_vel, accel * delta)
 		else:
-			current_vel = current_vel.move_toward(Vector2.ZERO, ground_deceleration * delta)
+			var decel := ground_deceleration * (0.8 if water_depth > 0.2 else 1.0)
+			current_vel = current_vel.move_toward(Vector2.ZERO, decel * delta)
 
 		velocity.x = current_vel.x
 		velocity.z = current_vel.y
 	else:
 		# Air movement
 		var current_vel = Vector2(velocity.x, velocity.z)
-		var target_vel = Vector2(wish_dir.x, wish_dir.z) * max(current_speed, air_speed)
+		var target_vel = Vector2(wish_dir.x, wish_dir.z) * max(effective_speed, air_speed * water_speed_scale)
 
 		if wish_dir.length() > 0:
 			current_vel = current_vel.move_toward(target_vel, ground_acceleration * air_control * delta)
@@ -989,8 +1003,21 @@ func handle_movement(delta):
 		knockback_velocity = Vector3.ZERO
 
 func apply_gravity(delta):
+	var water_depth := _get_water_submerge_depth()
+	# Deep water buoyancy: float at chest/shoulder height so camera never clips underwater
+	if global_position.y < WATER_FLOAT_CENTER_Y + 0.15:
+		var bob_offset := sin(Time.get_ticks_msec() * 0.0028) * 0.07
+		var target_y := WATER_FLOAT_CENTER_Y + bob_offset
+		var depth_err := target_y - global_position.y
+		var target_vy := clampf(depth_err * 6.5, -3.5, 5.5)
+		if Input.is_action_pressed("jump") and global_position.y <= WATER_FLOAT_CENTER_Y + 0.2:
+			target_vy = maxf(target_vy, 4.8)
+		velocity.y = lerpf(velocity.y, target_vy, clampf(delta * 8.0, 0.0, 1.0))
+		return
+
 	if not is_on_floor():
-		velocity.y -= GRAVITY_FORCE * delta
+		var grav_scale := 0.55 if water_depth > 0.5 else 1.0
+		velocity.y -= GRAVITY_FORCE * grav_scale * delta
 
 # ===== CAMERA EFFECTS =====
 func update_camera_effects(delta):

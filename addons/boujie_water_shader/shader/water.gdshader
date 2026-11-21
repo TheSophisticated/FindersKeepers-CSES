@@ -154,8 +154,9 @@ float snell(float amount, vec3 normal, vec3 view)
  * Direction, Frequency, Speed: self explanatory
  */
 vec3 P_DEG(float x, float z, float t, float Steepness, float Amplitude, float DirectionDegrees, float Frequency, float Speed, float PhaseDegrees) {
-	float strength  = 1.4;
-	vec2 Direction = normalize(strength* normalize(vec2( x, z))+ normalize(vec2( sin(DirectionDegrees * TAU / 360.0), cos(DirectionDegrees * TAU / 360.0 ))));
+	vec2 base_dir = vec2(sin(DirectionDegrees * TAU / 360.0), cos(DirectionDegrees * TAU / 360.0));
+	vec2 radial_dir = length(vec2(x, z)) > 0.001 ? normalize(vec2(x, z)) : base_dir;
+	vec2 Direction = normalize(mix(base_dir, radial_dir, 0.35));
 	float p = PhaseDegrees * TAU / 360.0;
 	vec3 result;
 	result.x = ((Steepness * Amplitude) * Direction.x * cos(TAU * dot(Frequency * Direction, vec2(x, z)) + (Speed * (t+p))));
@@ -166,7 +167,9 @@ vec3 P_DEG(float x, float z, float t, float Steepness, float Amplitude, float Di
 }
 
 vec3 N_DEG(float x, float z, float t, float Steepness, float Amplitude, float DirectionDegrees, float Frequency, float Speed, float PhaseDegrees) {
-	vec2 Direction = vec2( sin(DirectionDegrees * TAU / 360.0), cos(DirectionDegrees * TAU / 360.0 ));
+	vec2 base_dir = vec2(sin(DirectionDegrees * TAU / 360.0), cos(DirectionDegrees * TAU / 360.0));
+	vec2 radial_dir = length(vec2(x, z)) > 0.001 ? normalize(vec2(x, z)) : base_dir;
+	vec2 Direction = normalize(mix(base_dir, radial_dir, 0.35));
 	float p = PhaseDegrees * TAU / 360.0;
 	vec3 result;
 	result.x = (-1.0) * (Direction.x * Frequency * Amplitude * (cos((Frequency * TAU * dot(Direction, vec2(x, z))) + Speed * (t+p))));
@@ -360,7 +363,6 @@ void fragment() {
 	float shore_fade_alpha = 1.0;
 #ifdef DISTANCE_FADE
 	ALPHA *= smoothstep(distance_fade_max, distance_fade_min, distance_from_camera);
-	ALPHA *= smoothstep(near_fade_min, near_fade_max, distance_from_camera);
 #endif
 #ifdef FOAM_FADE
 	foam_fade_alpha = smoothstep(foam_fade_max, foam_fade_min, distance_from_camera);
