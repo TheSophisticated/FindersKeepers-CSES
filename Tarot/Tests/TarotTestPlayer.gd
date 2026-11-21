@@ -63,6 +63,13 @@ func _input(event: InputEvent) -> void:
 	if not input_enabled:
 		return
 
+	if event.is_action_pressed("tarot_slot_1"):
+		use_tarot_card(0)
+	elif event.is_action_pressed("tarot_slot_2"):
+		use_tarot_card(1)
+	elif event.is_action_pressed("interact"):
+		collect_test_pickup("../TarotPickup")
+
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_ESCAPE:

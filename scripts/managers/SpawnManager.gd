@@ -50,11 +50,15 @@ func spawn_objects(peer_id: int = -1) -> void:
 	clear_objects()
 
 	if object_spawner_type == spawnerType.BodyPartSpawner:
+		if spawn_points.is_empty():
+			return
+		var shuffled_points: Array[Marker3D] = spawn_points.duplicate()
+		shuffled_points.shuffle()
 		var n := 0
 		for pid in GameManager.players.keys():
 			for t in 4:
 				_spawn_object(
-					spawn_points[n % spawn_points.size()],
+					shuffled_points[n % shuffled_points.size()],
 					pid,
 					t
 				)

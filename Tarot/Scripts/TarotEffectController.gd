@@ -22,6 +22,9 @@ func _get_targets(effect: TarotEffect)->Array[Node]:
 			for player in get_tree().get_nodes_in_group("player"):
 				if player != target:
 					targets.append(player)
+			# Fallback for solo testing / practice when no opponents exist in the match
+			if targets.is_empty() and is_instance_valid(target):
+				targets.append(target)
 		TarotEffect.TargetMode.SINGLE_PLAYER:
 			push_warning("NOT IMPLEMENTED YET")
 

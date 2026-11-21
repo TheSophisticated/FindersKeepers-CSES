@@ -27,6 +27,8 @@ func get_game_time() -> String:
 # Called when the node is ready
 func _ready():
 	player_spawner.spawn_function = _create_player_from_spawn_data
+	if Settings and Settings.has_method("apply_graphics_settings"):
+		Settings.apply_graphics_settings()
 
 	# If running standalone (e.g. F6) without an active peer, initialize local server peer
 	if multiplayer != null and not multiplayer.has_multiplayer_peer():
@@ -161,12 +163,17 @@ func get_next_spawn_position(idx : int):
 		var points = spawn_points.get_children()
 		if points.size() > 0:
 			nextSpawnIdx += 1
-			return points[idx].global_position
+			return points[posmod(idx, points.size())].global_position
 	return Vector3(0, 10, 0)
 
 func remove_player(peer_id: int):
 	var player = world.get_node_or_null("Player_" + str(peer_id))
 	if player:
+		# Safely drop any carried body part or object before freeing the player node
+		if player.get("held_body_part") != null and player.has_method("drop_body_part"):
+			player.drop_body_part()
+		if player.get("held_object") != null and player.has_method("drop_object"):
+			player.drop_object()
 		player.queue_free()
 	print("Removed player: ", peer_id)
 

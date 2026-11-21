@@ -4,6 +4,9 @@
 # Extends Control node for UI elements
 extends Control
 
+var _direct_ip_input: LineEdit = null
+var _status_label: Label = null
+
 
 func _hide_old_3d_menu() -> void:
 	# The map viewport now provides the full menu backdrop. Hide the old 3D set
@@ -13,9 +16,12 @@ func _hide_old_3d_menu() -> void:
 		for child in old_world.get_children():
 			if child is Node3D:
 				child.visible = false
+			if child is Camera3D:
+				child.current = false
 
 # Called when the node enters the scene tree
 func _ready():
+	add_to_group("ui")
 	_hide_old_3d_menu()
 
 	# Load saved settings
@@ -24,6 +30,9 @@ func _ready():
 	# Set initial visibility of panels
 	$MenuPanel.show()
 	$SettingsMenu.hide()
+	
+	_setup_direct_ip_and_status_ui()
+	_setup_extended_settings_ui()
 	
 	# Connect main menu buttons with safety checks to prevent duplicate connections
 	if not $MenuPanel/VBoxContainer/Host.pressed.is_connected(_on_host_pressed):
@@ -159,6 +168,133 @@ func _setup_focus_styling() -> void:
 	for btn in find_children("*", "Button", true, false):
 		btn.add_theme_stylebox_override("focus", focus_box)
 
+func _setup_direct_ip_and_status_ui() -> void:
+	var vbox := get_node_or_null("MenuPanel/VBoxContainer")
+	if vbox == null:
+		return
+	var panel := get_node_or_null("MenuPanel") as Panel
+	if panel:
+		panel.offset_top = -182.0
+		vbox.offset_bottom = 175.0
+
+	if vbox.get_node_or_null("DirectIPInput") == null:
+		_direct_ip_input = LineEdit.new()
+		_direct_ip_input.name = "DirectIPInput"
+		_direct_ip_input.placeholder_text = "Direct IP (empty = LAN)"
+		_direct_ip_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_direct_ip_input.add_theme_font_size_override("font_size", 9)
+		_direct_ip_input.text_submitted.connect(func(_t): _on_join_pressed())
+		vbox.add_child(_direct_ip_input)
+		vbox.move_child(_direct_ip_input, 0)
+
+	if get_node_or_null("NetworkStatusLabel") == null:
+		_status_label = Label.new()
+		_status_label.name = "NetworkStatusLabel"
+		_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_status_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+		_status_label.offset_left = -320.0
+		_status_label.offset_right = 320.0
+		_status_label.offset_top = -310.0
+		_status_label.offset_bottom = -280.0
+		_status_label.add_theme_font_size_override("font_size", 16)
+		_status_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+		_status_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+		_status_label.add_theme_constant_override("shadow_offset_x", 1)
+		_status_label.add_theme_constant_override("shadow_offset_y", 2)
+		add_child(_status_label)
+
+
+func _setup_extended_settings_ui() -> void:
+	var settings_panel := get_node_or_null("SettingsMenu") as Panel
+	var vbox := get_node_or_null("SettingsMenu/VBoxContainer") as VBoxContainer
+	if settings_panel == null or vbox == null:
+		return
+	if vbox.get_node_or_null("AudioSectionHeader") != null:
+		return
+
+	# Expand panel vertically to comfortably house audio and graphics options
+	settings_panel.offset_top = -82.0
+	settings_panel.offset_bottom = 82.0
+	vbox.offset_top = -140.0
+	vbox.offset_bottom = 220.0
+
+	var back_btn := vbox.get_node_or_null("SettingMenuBack")
+
+	# --- Audio Section ---
+	var audio_hdr := Label.new()
+	audio_hdr.name = "AudioSectionHeader"
+	audio_hdr.text = "Audio Settings"
+	audio_hdr.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	vbox.add_child(audio_hdr)
+
+	_add_volume_slider(vbox, "MasterVolumeRow", "Master Volume", "master_volume", 1.0)
+	_add_volume_slider(vbox, "SFXVolumeRow", "SFX Volume", "sfx_volume", 1.0)
+	_add_volume_slider(vbox, "AmbienceVolumeRow", "Ambience Volume", "ambience_volume", 1.0)
+
+	# --- Graphics Section ---
+	var gfx_hdr := Label.new()
+	gfx_hdr.name = "GraphicsSectionHeader"
+	gfx_hdr.text = "Graphics & Performance"
+	gfx_hdr.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	vbox.add_child(gfx_hdr)
+
+	var shadow_row := HBoxContainer.new()
+	shadow_row.name = "ShadowQualityRow"
+	var shadow_lbl := Label.new()
+	shadow_lbl.text = "Shadows: "
+	shadow_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var shadow_opt := OptionButton.new()
+	shadow_opt.name = "ShadowQualityOption"
+	shadow_opt.add_item("Hard (Fastest)", 0)
+	shadow_opt.add_item("Soft Low (Balanced)", 2)
+	shadow_opt.add_item("Soft Medium", 3)
+	shadow_opt.add_item("Soft High", 4)
+	var saved_sq := int(Settings.settings.get("shadow_quality", 2))
+	for i in range(shadow_opt.item_count):
+		if shadow_opt.get_item_id(i) == saved_sq:
+			shadow_opt.selected = i
+			break
+	shadow_opt.item_selected.connect(func(idx: int):
+		Settings.set_setting("shadow_quality", shadow_opt.get_item_id(idx))
+	)
+	shadow_row.add_child(shadow_lbl)
+	shadow_row.add_child(shadow_opt)
+	vbox.add_child(shadow_row)
+
+	var sdfgi_chk := CheckBox.new()
+	sdfgi_chk.name = "SDFGICheckBox"
+	sdfgi_chk.text = "Global Illumination (SDFGI - Heavy)"
+	sdfgi_chk.button_pressed = bool(Settings.settings.get("sdfgi_enabled", false))
+	sdfgi_chk.toggled.connect(func(on: bool):
+		Settings.set_setting("sdfgi_enabled", on)
+	)
+	vbox.add_child(sdfgi_chk)
+
+	if back_btn:
+		vbox.move_child(back_btn, vbox.get_child_count() - 1)
+
+
+func _add_volume_slider(parent_vbox: VBoxContainer, node_name: String, label_text: String, setting_key: String, default_val: float) -> void:
+	var row := HBoxContainer.new()
+	row.name = node_name
+	var lbl := Label.new()
+	lbl.text = label_text
+	lbl.custom_minimum_size = Vector2(140, 0)
+	var slider := HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 1.0
+	slider.step = 0.05
+	slider.value = float(Settings.settings.get(setting_key, default_val))
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.custom_minimum_size = Vector2(180, 18)
+	slider.value_changed.connect(func(val: float):
+		Settings.set_setting(setting_key, val)
+	)
+	row.add_child(lbl)
+	row.add_child(slider)
+	parent_vbox.add_child(row)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel") and $SettingsMenu.visible:
 		_on_setting_menu_back_pressed()
@@ -166,6 +302,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # Called when Host button is pressed
 func _on_host_pressed():
+	if _status_label:
+		_status_label.text = "Starting Host Server..."
+		_status_label.add_theme_color_override("font_color", Color(0.7, 1.0, 0.7))
 	$MenuPanel/VBoxContainer/Host.disabled = true  # Disable button while attempting
 	if NetworkManager.host_game() == false:  # Wait for host attempt
 		$MenuPanel/VBoxContainer/Host.disabled = false  # Re-enable if failed
@@ -173,8 +312,19 @@ func _on_host_pressed():
 # Called when Join button is pressed
 func _on_join_pressed():
 	$MenuPanel/VBoxContainer/Join.disabled = true  # Disable button while attempting
-	if !NetworkManager.start_host_search():  # Try to join (default to localhost)
-		$MenuPanel/VBoxContainer/Join.disabled = false  # Re-enable if failed
+	var target_ip := _direct_ip_input.text.strip_edges() if _direct_ip_input != null else ""
+	if not target_ip.is_empty():
+		if _status_label:
+			_status_label.text = "Connecting to %s..." % target_ip
+			_status_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+		if not NetworkManager.join_game(target_ip):
+			$MenuPanel/VBoxContainer/Join.disabled = false
+	else:
+		if _status_label:
+			_status_label.text = "Searching for LAN Host (5s)..."
+			_status_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+		if !NetworkManager.start_host_search():  # Try to join via LAN discovery
+			$MenuPanel/VBoxContainer/Join.disabled = false  # Re-enable if failed
 
 # Called when Settings button is pressed
 func _on_settings_pressed():
@@ -223,5 +373,8 @@ func _on_setting_menu_back_pressed():
 # Displays error messages and re-enables buttons
 func show_error(message: String):
 	print("Error: ", message)
+	if _status_label:
+		_status_label.text = message
+		_status_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.35))
 	$MenuPanel/VBoxContainer/Host.disabled = false
 	$MenuPanel/VBoxContainer/Join.disabled = false

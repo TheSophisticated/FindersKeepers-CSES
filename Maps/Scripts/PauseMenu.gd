@@ -145,6 +145,94 @@ func init_settings_controls():
 				res_option.selected = i
 				break
 
+	_setup_extended_settings_ui()
+
+func _setup_extended_settings_ui() -> void:
+	var settings_panel := get_node_or_null("SettingsMenu") as Panel
+	var vbox := get_node_or_null("SettingsMenu/VBoxContainer") as VBoxContainer
+	if settings_panel == null or vbox == null:
+		return
+	if vbox.get_node_or_null("AudioSectionHeader") != null:
+		return
+
+	settings_panel.offset_top = -82.0
+	settings_panel.offset_bottom = 82.0
+	vbox.offset_top = -140.0
+	vbox.offset_bottom = 220.0
+
+	var back_btn := vbox.get_node_or_null("SettingMenuBack")
+
+	var audio_hdr := Label.new()
+	audio_hdr.name = "AudioSectionHeader"
+	audio_hdr.text = "Audio Settings"
+	audio_hdr.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	vbox.add_child(audio_hdr)
+
+	_add_volume_slider(vbox, "MasterVolumeRow", "Master Volume", "master_volume", 1.0)
+	_add_volume_slider(vbox, "SFXVolumeRow", "SFX Volume", "sfx_volume", 1.0)
+	_add_volume_slider(vbox, "AmbienceVolumeRow", "Ambience Volume", "ambience_volume", 1.0)
+
+	var gfx_hdr := Label.new()
+	gfx_hdr.name = "GraphicsSectionHeader"
+	gfx_hdr.text = "Graphics & Performance"
+	gfx_hdr.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	vbox.add_child(gfx_hdr)
+
+	var shadow_row := HBoxContainer.new()
+	shadow_row.name = "ShadowQualityRow"
+	var shadow_lbl := Label.new()
+	shadow_lbl.text = "Shadows: "
+	shadow_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var shadow_opt := OptionButton.new()
+	shadow_opt.name = "ShadowQualityOption"
+	shadow_opt.add_item("Hard (Fastest)", 0)
+	shadow_opt.add_item("Soft Low (Balanced)", 2)
+	shadow_opt.add_item("Soft Medium", 3)
+	shadow_opt.add_item("Soft High", 4)
+	var saved_sq := int(Settings.settings.get("shadow_quality", 2))
+	for i in range(shadow_opt.item_count):
+		if shadow_opt.get_item_id(i) == saved_sq:
+			shadow_opt.selected = i
+			break
+	shadow_opt.item_selected.connect(func(idx: int):
+		Settings.set_setting("shadow_quality", shadow_opt.get_item_id(idx))
+	)
+	shadow_row.add_child(shadow_lbl)
+	shadow_row.add_child(shadow_opt)
+	vbox.add_child(shadow_row)
+
+	var sdfgi_chk := CheckBox.new()
+	sdfgi_chk.name = "SDFGICheckBox"
+	sdfgi_chk.text = "Global Illumination (SDFGI - Heavy)"
+	sdfgi_chk.button_pressed = bool(Settings.settings.get("sdfgi_enabled", false))
+	sdfgi_chk.toggled.connect(func(on: bool):
+		Settings.set_setting("sdfgi_enabled", on)
+	)
+	vbox.add_child(sdfgi_chk)
+
+	if back_btn:
+		vbox.move_child(back_btn, vbox.get_child_count() - 1)
+
+func _add_volume_slider(parent_vbox: VBoxContainer, node_name: String, label_text: String, setting_key: String, default_val: float) -> void:
+	var row := HBoxContainer.new()
+	row.name = node_name
+	var lbl := Label.new()
+	lbl.text = label_text
+	lbl.custom_minimum_size = Vector2(140, 0)
+	var slider := HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 1.0
+	slider.step = 0.05
+	slider.value = float(Settings.settings.get(setting_key, default_val))
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.custom_minimum_size = Vector2(180, 18)
+	slider.value_changed.connect(func(val: float):
+		Settings.set_setting(setting_key, val)
+	)
+	row.add_child(lbl)
+	row.add_child(slider)
+	parent_vbox.add_child(row)
+
 # Find the local player in the scene
 func find_local_player():
 	# Search all player nodes in the "player" group

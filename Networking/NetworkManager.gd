@@ -19,8 +19,12 @@ var discovery_timer : Timer
 var discovery_listen_timer : Timer
  
 const LOBBY_SCENE = "res://MainMenu/Lobby.tscn"
-## Keep the full map scene and its resources resident from application startup.
-const GAME_MODE_SCENE: PackedScene = preload("res://Maps/GameMode.tscn")
+const GAME_MODE_SCENE_PATH = "res://Maps/GameMode.tscn"
+var _cached_game_mode_scene: PackedScene = null
+var _threaded_load_requested := false
+var _search_ticks := 0
+const MAX_SEARCH_TICKS := 25 # 5 seconds at 0.2s interval
+
 var match_started := false  # Set once the host leaves the lobby and starts the match
 var loaded_peers := {}  # Server only: client peer IDs whose GameMode scene has finished loading
 var player_character_selections: Dictionary = {}
@@ -43,14 +47,35 @@ func _ready():
 	Engine.physics_ticks_per_second = 60
 	Engine.max_physics_steps_per_frame = 10
 	
+	# Start asynchronous background loading of the large GameMode scene
+	# so the MainMenu opens instantly without blocking startup.
+	_request_background_map_load()
+
+func _request_background_map_load() -> void:
+	if not _threaded_load_requested and _cached_game_mode_scene == null:
+		var err := ResourceLoader.load_threaded_request(GAME_MODE_SCENE_PATH)
+		if err == OK:
+			_threaded_load_requested = true
+
+func get_game_mode_scene() -> PackedScene:
+	if _cached_game_mode_scene == null:
+		if _threaded_load_requested:
+			_cached_game_mode_scene = ResourceLoader.load_threaded_get(GAME_MODE_SCENE_PATH) as PackedScene
+		if _cached_game_mode_scene == null:
+			_cached_game_mode_scene = load(GAME_MODE_SCENE_PATH) as PackedScene
+	return _cached_game_mode_scene
+	
 # Broadcast Host Message for Clients to listen
 func _broadcast_host():
 	var message = DISCOVERY_MESSAGE.to_utf8_buffer()
 	discovery_peer.put_packet(message)
-	
-	print("Broadcasting Host")
  
 func start_host_discovery():
+	if discovery_timer:
+		discovery_timer.queue_free()
+		discovery_timer = null
+	discovery_peer.close()
+	discovery_peer = PacketPeerUDP.new()
 	discovery_peer.set_broadcast_enabled(true)
 	discovery_peer.set_dest_address("255.255.255.255", DISCOVERY_PORT)
 	
@@ -63,11 +88,13 @@ func start_host_discovery():
  
 # Host a new game server
 func host_game():
+	_stop_host_search()
+	peer = ENetMultiplayerPeer.new()
 	# Create server with specified port and max players
 	var error = peer.create_server(PORT, MAX_PLAYERS)
 	if error:
 		print("Host error: ", error)
-		show_connection_error()
+		show_connection_error("Could not host on port %d (Error %d)." % [PORT, error])
 		return false
 	
 	# Set as multiplayer peer and load game world
@@ -82,16 +109,25 @@ func host_game():
 	
 	return true
 	
-	
-#Make Client Listen for Host Broadcast
+func _stop_host_search() -> void:
+	if discovery_listen_timer:
+		discovery_listen_timer.stop()
+		discovery_listen_timer.queue_free()
+		discovery_listen_timer = null
+	listener_peer.close()
+
+# Make Client Listen for Host Broadcast
 func start_host_search():
+	_stop_host_search()
+	listener_peer = PacketPeerUDP.new()
 	var error = listener_peer.bind(DISCOVERY_PORT)
 	
 	if error != OK:
-		print("Could not Listen for Hosts: ", error)
-		return
+		print("Could not Listen for Hosts on UDP port (trying localhost fallback): ", error)
+		return join_game("127.0.0.1")
 		
 	print("Listening for Host Broadcast")
+	_search_ticks = 0
 	discovery_listen_timer = Timer.new()
 	discovery_listen_timer.wait_time = 0.2
 	discovery_listen_timer.timeout.connect(_check_for_host)
@@ -102,7 +138,7 @@ func start_host_search():
 	return true
  
 func _check_for_host():
-	print("Listening for LAN Hosts")
+	_search_ticks += 1
 	while listener_peer.get_available_packet_count() > 0:
 		var packet = listener_peer.get_packet()
 		var packet_content = packet.get_string_from_utf8()
@@ -110,37 +146,47 @@ func _check_for_host():
 		
 		if packet_content == DISCOVERY_MESSAGE:
 			print("Found Host at ", sender_ip)
-			listener_peer.close()
-			discovery_listen_timer.stop()
+			_stop_host_search()
 			join_game(sender_ip)
 			return
+	if _search_ticks >= MAX_SEARCH_TICKS:
+		print("LAN broadcast search timed out; attempting localhost fallback...")
+		_stop_host_search()
+		show_connection_error("No LAN host found. Enter a Direct IP or start a Host first.")
  
 # Join an existing game
-func join_game(ip: String = "localhost"):
+func join_game(ip: String = "127.0.0.1", custom_port: int = PORT):
+	_stop_host_search()
+	var clean_ip := ip.strip_edges()
+	if clean_ip.is_empty():
+		clean_ip = "127.0.0.1"
+	peer = ENetMultiplayerPeer.new()
 	# Create client connection to specified IP
-	var error = peer.create_client(ip, PORT)
+	var error = peer.create_client(clean_ip, custom_port)
 	if error:
 		print("Join error: ", error)
-		show_connection_error()
+		show_connection_error("Could not connect to %s:%d" % [clean_ip, custom_port])
 		return false
 		
 	# Set as multiplayer peer
 	multiplayer.multiplayer_peer = peer
 	player_character_selections.clear()
 	GameManager.reset_state()
-	print("Joining game at ", ip)
+	print("Joining game at ", clean_ip, ":", custom_port)
 	return true
  
 # Show connection error through UI
-func show_connection_error():
-	print("Failed to connect to server")
-	get_tree().call_group("ui", "show_error", "Connection failed. Make sure host is running.")
+func show_connection_error(msg: String = "Connection failed. Make sure host is running."):
+	print("Connection Error: ", msg)
+	get_tree().call_group("ui", "show_error", msg)
  
 # Load the game world scene
 func load_game_world():
 	# Only change scene if not already in game
 	if get_tree().current_scene.name != "GameMode":
-		get_tree().change_scene_to_packed(GAME_MODE_SCENE)
+		var packed := get_game_mode_scene()
+		if packed:
+			get_tree().change_scene_to_packed(packed)
  
 # Load the pre-match lobby where players gather before the host starts
 func load_lobby():
@@ -161,6 +207,7 @@ func rpc_start_game():
  
 # Leave the current session (host or client) and return to the main menu
 func leave_session():
+	_stop_host_search()
 	if discovery_timer:
 		discovery_timer.queue_free()
 		discovery_timer = null

@@ -1,40 +1,31 @@
 extends Control
 
-@export_group("Time of Day")
-@export_range(0.0, 23.9998, 0.001) var menu_time: float = 0.83
+## Displays the lightweight main menu backdrop artwork instead of instantiating
+## the full 254 MB GameMode.tscn world in the main menu.
+
+const MENU_BG_TEXTURE_PATH := "res://main-menu1.png"
+
+var _bg_rect: TextureRect = null
+var _pulse_time: float = 0.0
 
 
 func _ready() -> void:
-	var game_mode := NetworkManager.GAME_MODE_SCENE.instantiate()
-	game_mode.name = "FullMapBackground"
-	var sky := game_mode.get_node_or_null("SubViewportContainer/SubViewport/Sky3D")
-	if sky:
-		sky.current_time = menu_time
-		var time_of_day := sky.get_node_or_null("TimeOfDay")
-		if time_of_day:
-			time_of_day.current_time = menu_time
-	# Keep the full map and its camera, while stopping match setup and spawners.
-	game_mode.set_script(null)
-	_disable_gameplay_scripts(game_mode)
-	var canvas_layer := game_mode.get_node_or_null("CanvasLayer")
-	if canvas_layer:
-		canvas_layer.hide()
-	add_child(game_mode)
-	var map_view := game_mode.get_node_or_null("SubViewportContainer")
-	if map_view is Control:
-		map_view.reparent(self)
-		move_child(map_view, 0)
+	_bg_rect = TextureRect.new()
+	_bg_rect.name = "MenuArtworkBackground"
+	_bg_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_bg_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_bg_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if ResourceLoader.exists(MENU_BG_TEXTURE_PATH):
+		_bg_rect.texture = load(MENU_BG_TEXTURE_PATH) as Texture2D
+	add_child(_bg_rect)
 
 
-func _disable_gameplay_scripts(node: Node) -> void:
-	var attached_script := node.get_script() as Script
-	if attached_script and attached_script.resource_path in [
-		"res://scripts/managers/SpawnManager.gd",
-		"res://Maps/Scripts/PauseMenu.gd",
-		"res://Maps/Scripts/TarotInventoryUI.gd",
-		"res://Tarot/Scripts/TarotPickup.gd",
-		"res://BodyParts/SpellCenter.gd",
-	]:
-		node.set_script(null)
-	for child in node.get_children():
-		_disable_gameplay_scripts(child)
+func _process(delta: float) -> void:
+	if _bg_rect == null:
+		return
+	_pulse_time += delta
+	# Subtle atmospheric brightness pulse for horror mood
+	var b := 0.94 + 0.06 * sin(_pulse_time * 0.9)
+	_bg_rect.modulate = Color(b, b * 0.98, b * 0.98, 1.0)
+

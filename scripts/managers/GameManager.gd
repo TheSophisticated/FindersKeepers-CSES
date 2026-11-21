@@ -192,7 +192,7 @@ func start_match() -> void:
 	current_state = MatchState.IN_PROGRESS
 	
 	# Generate only the body parts corresponding to currently connected players
-	#generate_active_body_parts()
+	generate_active_body_parts()
 	
 	set_process(true)
 	
