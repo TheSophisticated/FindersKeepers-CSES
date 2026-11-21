@@ -33,6 +33,7 @@ func _ready():
 	
 	_setup_direct_ip_and_status_ui()
 	_setup_extended_settings_ui()
+	_play_start_menu_blur_transition()
 	
 	# Connect main menu buttons with safety checks to prevent duplicate connections
 	if not $MenuPanel/VBoxContainer/Host.pressed.is_connected(_on_host_pressed):
@@ -152,6 +153,94 @@ func _ready():
 	
 	# Initial gamepad focus on the first button (Join)
 	join_btn.grab_focus()
+
+func _play_start_menu_blur_transition() -> void:
+	const TRANSITION_DURATION := 1.0
+
+	# Play heavy breathing noise accompanying the 1-second wake-up transition
+	if AudioManager and AudioManager.has_method("play_heavy_breathing"):
+		AudioManager.play_heavy_breathing()
+		if AudioManager.get("breathing_player") != null:
+			var bp: AudioStreamPlayer = AudioManager.breathing_player
+			var audio_tween := create_tween()
+			audio_tween.tween_interval(TRANSITION_DURATION * 0.85)
+			audio_tween.tween_property(bp, "volume_db", -32.0, 0.45)
+			audio_tween.tween_callback(func():
+				if is_instance_valid(bp):
+					bp.stop()
+					bp.volume_db = 2.0
+			)
+
+	# Full-screen multi-tap blur + dark eyelid vignette overlay
+	var transition_layer := CanvasLayer.new()
+	transition_layer.name = "StartMenuBlurTransitionLayer"
+	transition_layer.layer = 100
+	add_child(transition_layer)
+
+	var overlay := ColorRect.new()
+	overlay.name = "BlurTransitionRect"
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var blur_shader := Shader.new()
+	blur_shader.code = """
+shader_type canvas_item;
+
+uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear_mipmap;
+uniform float blur_amount : hint_range(0.0, 1.0) = 1.0;
+
+void fragment() {
+	vec2 uv = SCREEN_UV;
+	vec2 px = SCREEN_PIXEL_SIZE * (blur_amount * 14.0);
+	float mip = blur_amount * 4.2;
+
+	// 9-tap Gaussian-weighted multi-ring screen blur
+	vec3 col = textureLod(screen_texture, uv, mip).rgb * 0.28;
+	col += textureLod(screen_texture, uv + vec2(px.x, 0.0), mip).rgb * 0.12;
+	col += textureLod(screen_texture, uv - vec2(px.x, 0.0), mip).rgb * 0.12;
+	col += textureLod(screen_texture, uv + vec2(0.0, px.y), mip).rgb * 0.12;
+	col += textureLod(screen_texture, uv - vec2(0.0, px.y), mip).rgb * 0.12;
+	col += textureLod(screen_texture, uv + px * 0.75, mip).rgb * 0.06;
+	col += textureLod(screen_texture, uv - px * 0.75, mip).rgb * 0.06;
+	col += textureLod(screen_texture, uv + vec2(px.x, -px.y) * 0.75, mip).rgb * 0.06;
+	col += textureLod(screen_texture, uv + vec2(-px.x, px.y) * 0.75, mip).rgb * 0.06;
+
+	// Subtle dark wake-up vignette that clears as blur fades
+	vec2 centered = uv - vec2(0.5);
+	float vignette = clamp(dot(centered, centered) * 2.2 * blur_amount, 0.0, 0.92);
+	float blackout = pow(blur_amount, 1.8) * 0.65;
+	col *= (1.0 - max(vignette, blackout));
+
+	COLOR = vec4(col, blur_amount);
+}
+"""
+	var mat := ShaderMaterial.new()
+	mat.shader = blur_shader
+	mat.set_shader_parameter("blur_amount", 1.0)
+	overlay.material = mat
+	transition_layer.add_child(overlay)
+
+	if has_node("MenuPanel"):
+		$MenuPanel.modulate.a = 0.0
+
+	var tween := create_tween().set_parallel(true)
+	tween.tween_method(
+		func(val: float):
+			if is_instance_valid(mat):
+				mat.set_shader_parameter("blur_amount", val),
+		1.0,
+		0.0,
+		TRANSITION_DURATION
+	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+	if has_node("MenuPanel"):
+		tween.tween_property($MenuPanel, "modulate:a", 1.0, TRANSITION_DURATION)\
+			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+	tween.chain().tween_callback(func():
+		if is_instance_valid(transition_layer):
+			transition_layer.queue_free()
+	)
 
 func _setup_focus_styling() -> void:
 	var focus_box := StyleBoxFlat.new()
