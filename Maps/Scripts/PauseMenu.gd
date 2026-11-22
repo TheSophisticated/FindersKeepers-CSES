@@ -127,15 +127,15 @@ func init_settings_controls():
 	if has_node("SettingsMenu/VBoxContainer/ResOptionButton"):
 		var res_option = $SettingsMenu/VBoxContainer/ResOptionButton
 		res_option.clear()
-		# Add the screen's native resolution first so any display can render 1:1
+		# Add the screen's native resolution first, then deduplicated common presets
 		var screen_res := DisplayServer.screen_get_size()
 		var screen_res_str := str(screen_res.x) + "x" + str(screen_res.y)
-		res_option.add_item(screen_res_str)
-		# Add common resolution options
-		res_option.add_item("1152x648")
-		res_option.add_item("1280x720")
-		res_option.add_item("1366x768")
-		res_option.add_item("1920x1080")
+		var res_choices: Array[String] = [screen_res_str]
+		for preset in ["1152x648", "1280x720", "1366x768", "1920x1080"]:
+			if not (preset in res_choices):
+				res_choices.append(preset)
+		for choice in res_choices:
+			res_option.add_item(choice)
 		
 		# Set current resolution from settings
 		var current_res = Settings.settings.get("resolution", Vector2i(1280, 960))

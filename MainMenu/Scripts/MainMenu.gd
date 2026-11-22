@@ -87,16 +87,16 @@ func _ready():
 		if not res_option.item_selected.is_connected(_on_resolution_selected):
 			res_option.item_selected.connect(_on_resolution_selected)
 		
-		# Populate resolution dropdown with common options
+		# Populate resolution dropdown with native + common options (deduplicated)
 		res_option.clear()
-		# Add the screen's native resolution first so any display can render 1:1
 		var screen_res := DisplayServer.screen_get_size()
 		var screen_res_str := str(screen_res.x) + "x" + str(screen_res.y)
-		res_option.add_item(screen_res_str)
-		res_option.add_item("1152x648")
-		res_option.add_item("1280x720")
-		res_option.add_item("1366x768")
-		res_option.add_item("1920x1080")
+		var res_choices: Array[String] = [screen_res_str]
+		for preset in ["1152x648", "1280x720", "1366x768", "1920x1080"]:
+			if not (preset in res_choices):
+				res_choices.append(preset)
+		for choice in res_choices:
+			res_option.add_item(choice)
 		
 		# Set current resolution from settings
 		var current_res = Settings.settings.get("resolution", Vector2i(1280, 960))
