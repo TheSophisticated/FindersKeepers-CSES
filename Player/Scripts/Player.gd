@@ -89,6 +89,8 @@ var _peak_fall_speed := 0.0           # Peak downward speed tracked while airbor
 var _landing_dip := 0.0               # Tactile downward camera offset on touchdown
 var _camera_shake_trauma := 0.0       # Decaying trauma [0..1] for knockback camera shake
 var _carry_sway_time := 0.0           # Phase timer for carried body-part sway
+var _base_flashlight_rot := Vector3.ZERO # Cached base rotation of player flashlight
+var _flashlight_sway := Vector2.ZERO  # Handheld rotational lag offset (yaw, pitch)
 var raw_input_dir := Vector2.ZERO     # Raw input direction
 var vision_modifier: float  = 1.0
 var render_distance_modifier: float = 1.0
@@ -227,6 +229,8 @@ func process_controller_look(delta: float) -> void:
 		if camera:
 			pitch = clamp(pitch - look_dir.y * controller_sensitivity * delta, deg_to_rad(-89), deg_to_rad(89))
 			camera.rotation.x = pitch
+		_flashlight_sway.x = clampf(_flashlight_sway.x + look_dir.x * controller_sensitivity * delta * 0.45, -0.075, 0.075)
+		_flashlight_sway.y = clampf(_flashlight_sway.y + look_dir.y * controller_sensitivity * delta * 0.45, -0.075, 0.075)
 
 func _enter_tree():
 	# Set multiplayer authority based on name
@@ -253,6 +257,8 @@ func _ready():
 			_base_camera_pos = camera.position
 			camera.far = normal_render_distance
 			camera.current = true
+		if flashlight:
+			_base_flashlight_rot = flashlight.rotation
 		if interact_prompt:
 			interact_prompt.text = "[E] / [X] — Interact"
 			_setup_reticle()
@@ -334,6 +340,8 @@ func _input(event):
 		if camera:
 			pitch = clamp(pitch - event.relative.y * mouse_sensitivity, deg_to_rad(-89), deg_to_rad(89))
 			camera.rotation.x = pitch
+		_flashlight_sway.x = clampf(_flashlight_sway.x + event.relative.x * mouse_sensitivity * 0.45, -0.075, 0.075)
+		_flashlight_sway.y = clampf(_flashlight_sway.y + event.relative.y * mouse_sensitivity * 0.45, -0.075, 0.075)
 
 	# Jump input buffering
 	if event.is_action_pressed("jump"):
@@ -1123,6 +1131,11 @@ func update_camera_effects(delta):
 		var sway_y := (0.045 if moving_on_ground else 0.015) * sin(_carry_sway_time)
 		var target_hold_pos := HELD_PART_BASE_POS + Vector3(sway_x, sway_y, 0.0)
 		held_body_part.position = held_body_part.position.lerp(target_hold_pos, clampf(delta * 10.0, 0.0, 1.0))
+
+	# Handheld rotational lag sway on player flashlight
+	if flashlight:
+		_flashlight_sway = _flashlight_sway.lerp(Vector2.ZERO, clampf(delta * 9.0, 0.0, 1.0))
+		flashlight.rotation = _base_flashlight_rot + Vector3(_flashlight_sway.y, _flashlight_sway.x, 0.0)
 
 # ===== NETWORK UPDATES =====
 func send_network_update():
