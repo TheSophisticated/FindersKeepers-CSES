@@ -124,35 +124,39 @@ func _ready():
 	quit_btn.focus_neighbor_top = settings_btn.get_path()
 	quit_btn.focus_neighbor_bottom = join_btn.get_path()
 
-	# Setup focus neighbors in SettingsMenu
+	# Setup focus neighbors in SettingsMenu (includes extended audio & graphics controls)
 	if has_node("SettingsMenu/VBoxContainer"):
-		var res_option = $SettingsMenu/VBoxContainer/ResOptionButton
-		var fs_check = $SettingsMenu/VBoxContainer/FullScreenCheckButton
-		var vsync_check = $SettingsMenu/VBoxContainer/VsyncCheckBox
-		var mouse_slider = $SettingsMenu/VBoxContainer/MouseSensitivity/Text/Sensitivity
-		var ctrl_slider = $SettingsMenu/VBoxContainer/ControllerSensitivity/Text/Sensitivity
-		var settings_back_btn = $SettingsMenu/VBoxContainer/SettingMenuBack
-
-		res_option.focus_neighbor_top = settings_back_btn.get_path()
-		res_option.focus_neighbor_bottom = fs_check.get_path()
-		fs_check.focus_neighbor_top = res_option.get_path()
-		fs_check.focus_neighbor_bottom = vsync_check.get_path()
-		vsync_check.focus_neighbor_top = fs_check.get_path()
-		vsync_check.focus_neighbor_bottom = mouse_slider.get_path()
-		mouse_slider.focus_neighbor_top = vsync_check.get_path()
-		mouse_slider.focus_neighbor_bottom = ctrl_slider.get_path()
-		ctrl_slider.focus_neighbor_top = mouse_slider.get_path()
-		ctrl_slider.focus_neighbor_bottom = settings_back_btn.get_path()
-		settings_back_btn.focus_neighbor_top = ctrl_slider.get_path()
-		settings_back_btn.focus_neighbor_bottom = res_option.get_path()
-
-		mouse_slider.focus_entered.connect(func(): mouse_slider.get_parent().modulate = Color(1.0, 0.84, 0.0))
-		mouse_slider.focus_exited.connect(func(): mouse_slider.get_parent().modulate = Color.WHITE)
-		ctrl_slider.focus_entered.connect(func(): ctrl_slider.get_parent().modulate = Color(1.0, 0.84, 0.0))
-		ctrl_slider.focus_exited.connect(func(): ctrl_slider.get_parent().modulate = Color.WHITE)
+		_wire_settings_focus_chain($SettingsMenu/VBoxContainer)
 	
 	# Initial gamepad focus on the first button (Join)
 	join_btn.grab_focus()
+
+func _collect_focusable_controls(node: Node, out: Array[Control]) -> void:
+	for child in node.get_children():
+		if child is BaseButton or child is Slider:
+			var ctrl := child as Control
+			if ctrl.visible and ctrl.focus_mode != Control.FOCUS_NONE:
+				out.append(ctrl)
+		else:
+			_collect_focusable_controls(child, out)
+
+func _wire_settings_focus_chain(vbox: VBoxContainer) -> void:
+	var controls: Array[Control] = []
+	_collect_focusable_controls(vbox, controls)
+	var count := controls.size()
+	if count == 0:
+		return
+	for i in range(count):
+		var curr := controls[i]
+		var prev := controls[posmod(i - 1, count)]
+		var next := controls[posmod(i + 1, count)]
+		curr.focus_neighbor_top = prev.get_path()
+		curr.focus_neighbor_bottom = next.get_path()
+		if curr is Slider:
+			var parent_ctrl := curr.get_parent() as Control
+			if parent_ctrl != null:
+				curr.focus_entered.connect(func(): parent_ctrl.modulate = Color(1.0, 0.84, 0.0))
+				curr.focus_exited.connect(func(): parent_ctrl.modulate = Color.WHITE)
 
 func _play_start_menu_blur_transition() -> void:
 	const TRANSITION_DURATION := 1.0
