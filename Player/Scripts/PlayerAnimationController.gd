@@ -51,11 +51,12 @@ func load_character_model(player_node: Node3D, definition: CharacterDefinition) 
 	if character_node != null:
 		character_node.queue_free()
 
-	if definition == null or definition.model_scene == null:
+	var packed_model := definition.get_model_scene() if definition != null else null
+	if packed_model == null:
 		push_error("Character definition does not have a model scene")
 		return false
 
-	character_node = definition.model_scene.instantiate()
+	character_node = packed_model.instantiate()
 	character_node.name = "CharacterModel"
 	character_node.position.y += definition.vertical_offset
 	character_node.scale = definition.model_scale

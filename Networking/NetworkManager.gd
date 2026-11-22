@@ -46,10 +46,7 @@ func _ready():
 	# Set physics interpolation for smoother movement
 	Engine.physics_ticks_per_second = 60
 	Engine.max_physics_steps_per_frame = 10
-	
-	# Start asynchronous background loading of the large GameMode scene
-	# so the MainMenu opens instantly without blocking startup.
-	_request_background_map_load()
+	# Map background preload is deferred until entering Lobby so startup to MainMenu stays instant.
 
 func _request_background_map_load() -> void:
 	if not _threaded_load_requested and _cached_game_mode_scene == null:
@@ -190,6 +187,7 @@ func load_game_world():
  
 # Load the pre-match lobby where players gather before the host starts
 func load_lobby():
+	_request_background_map_load()
 	get_tree().change_scene_to_file(LOBBY_SCENE)
  
 # Called by the host from the lobby: moves every connected peer into the match

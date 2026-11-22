@@ -1,10 +1,9 @@
 [gd_resource type="Resource" script_class="CharacterDefinition" format=3 uid="uid://svj88neb73a"]
 
 [ext_resource type="Script" uid="uid://di18xr8rbpibh" path="res://Models/characters/CharacterDefinition.gd" id="1_definition"]
-[ext_resource type="PackedScene" uid="uid://clmbn8d3ffoxp" path="res://Models/characters/Player2/Ch02_nonPBR.fbx" id="2_model"]
 
 [resource]
 script = ExtResource("1_definition")
 character_id = &"player_2"
 display_name = "Tanmay"
-model_scene = ExtResource("2_model")
+model_scene_path = "res://Models/characters/Player2/Ch02_nonPBR.fbx"
