@@ -25,6 +25,10 @@ extends Control
  
 var local_parts_lost: int = 0
 var _banner_tween: Tween = null
+var _panic_vignette: ColorRect = null
+var _panic_vignette_mat: ShaderMaterial = null
+var _panic_phase: float = 0.0
+var _last_time_remaining: float = 300.0
  
 func _ready() -> void:
 	# Hide overlays initially
@@ -51,7 +55,58 @@ func _ready() -> void:
 		shrine_decline_btn.focus_neighbor_left = shrine_accept_btn.get_path()
 		shrine_decline_btn.focus_neighbor_right = shrine_accept_btn.get_path()
  
+	_setup_panic_vignette()
 	_setup_focus_styling()
+
+func _setup_panic_vignette() -> void:
+	_panic_vignette = ColorRect.new()
+	_panic_vignette.name = "PanicVignette"
+	_panic_vignette.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_panic_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panic_vignette.visible = false
+
+	var vignette_shader := Shader.new()
+	vignette_shader.code = """
+shader_type canvas_item;
+uniform float intensity : hint_range(0.0, 1.0) = 0.0;
+
+void fragment() {
+	vec2 centered = UV - vec2(0.5);
+	float dist = length(centered) * 1.45;
+	float edge = smoothstep(0.42, 1.02, dist);
+	COLOR = vec4(0.65, 0.04, 0.06, edge * intensity);
+}
+"""
+	_panic_vignette_mat = ShaderMaterial.new()
+	_panic_vignette_mat.shader = vignette_shader
+	_panic_vignette_mat.set_shader_parameter("intensity", 0.0)
+	_panic_vignette.material = _panic_vignette_mat
+	add_child(_panic_vignette)
+	move_child(_panic_vignette, 0)
+
+func _process(delta: float) -> void:
+	var is_game_over := GameManager != null and GameManager.current_state == GameManager.MatchState.GAME_OVER
+	var in_panic := not is_game_over and _last_time_remaining <= 60.0 and _last_time_remaining > 0.0
+	if in_panic:
+		var factor := clampf((60.0 - _last_time_remaining) / 60.0, 0.0, 1.0)
+		var pulse_speed := lerpf(2.6, 6.0, factor)
+		_panic_phase += delta * pulse_speed
+		var pulse := 0.5 + 0.5 * sin(_panic_phase)
+		if _panic_vignette and _panic_vignette_mat:
+			_panic_vignette.visible = true
+			var intensity := lerpf(0.14, 0.52, factor) * (0.65 + 0.35 * pulse)
+			_panic_vignette_mat.set_shader_parameter("intensity", intensity)
+		if timer_label and _last_time_remaining <= 15.0:
+			timer_label.pivot_offset = timer_label.size * 0.5
+			var s := 1.0 + 0.08 * pulse
+			timer_label.scale = Vector2(s, s)
+		elif timer_label:
+			timer_label.scale = Vector2.ONE
+	else:
+		if _panic_vignette:
+			_panic_vignette.visible = false
+		if timer_label and timer_label.scale != Vector2.ONE:
+			timer_label.scale = Vector2.ONE
  
 func _setup_focus_styling() -> void:
 	var focus_box := StyleBoxFlat.new()
@@ -87,6 +142,7 @@ func _setup_focus_styling() -> void:
 	_update_score_display()
  
 func _on_match_timer_updated(time_remaining: float) -> void:
+	_last_time_remaining = maxf(0.0, time_remaining)
 	if not timer_label:
 		return
 	var total_seconds: int = int(max(0.0, time_remaining))
