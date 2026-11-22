@@ -11,6 +11,7 @@ extends Control
 # State variables
 var is_paused := false         # Current pause state
 var local_player: Node = null  # Reference to local player
+var _controls_card: PanelContainer = null # Quick-reference controls overlay
 
 # Called when node enters scene tree
 func _ready():
@@ -64,8 +65,73 @@ func _ready():
 	if has_node("SettingsMenu/VBoxContainer"):
 		_wire_settings_focus_chain($SettingsMenu/VBoxContainer)
 	
+	# Setup compact controls reference card
+	_setup_controls_card()
+
 	# Setup high-visibility focus indicator for gamepad
 	_setup_focus_styling()
+
+func _setup_controls_card() -> void:
+	if _controls_card != null:
+		return
+	_controls_card = PanelContainer.new()
+	_controls_card.name = "ControlsReferenceCard"
+	_controls_card.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
+	_controls_card.offset_left = 28.0
+	_controls_card.offset_top = -150.0
+	_controls_card.offset_right = 310.0
+	_controls_card.offset_bottom = 150.0
+	_controls_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var card_style := StyleBoxFlat.new()
+	card_style.bg_color = Color(0.07, 0.04, 0.06, 0.86)
+	card_style.set_border_width_all(2)
+	card_style.border_color = Color(0.55, 0.22, 0.24, 0.85)
+	card_style.set_corner_radius_all(6)
+	card_style.set_content_margin_all(12)
+	_controls_card.add_theme_stylebox_override("panel", card_style)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 4)
+
+	var title := Label.new()
+	title.name = "HeaderLabel"
+	title.text = "CONTROLS"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(1.0, 0.84, 0.35))
+	vbox.add_child(title)
+
+	var bindings := [
+		["WASD / L-Stick", "Move"],
+		["Shift / RT", "Sprint"],
+		["C / Ctrl (Sprint)", "Slide"],
+		["Space / A", "Jump"],
+		["E / X", "Pick Up / Drop"],
+		["Q / B", "Shove Player"],
+		["1 / 2 (LB / RB)", "Use Tarot Card"],
+		["F / Y", "Toggle Torch"],
+		["Esc / P / Start", "Pause"]
+	]
+	for pair in bindings:
+		var row := HBoxContainer.new()
+		var key_lbl := Label.new()
+		key_lbl.text = pair[0]
+		key_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		key_lbl.add_theme_font_size_override("font_size", 13)
+		key_lbl.add_theme_color_override("font_color", Color(0.95, 0.88, 0.72))
+		var act_lbl := Label.new()
+		act_lbl.text = pair[1]
+		act_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		act_lbl.add_theme_font_size_override("font_size", 13)
+		act_lbl.add_theme_color_override("font_color", Color(0.78, 0.78, 0.82))
+		row.add_child(key_lbl)
+		row.add_child(act_lbl)
+		vbox.add_child(row)
+
+	_controls_card.add_child(vbox)
+	_controls_card.visible = false
+	add_child(_controls_card)
 
 func _collect_focusable_controls(node: Node, out: Array[Control]) -> void:
 	for child in node.get_children():
@@ -325,6 +391,8 @@ func toggle_pause_menu():
 		# Show pause menu
 		main_menu.visible = true
 		settings_menu.visible = false
+		if _controls_card:
+			_controls_card.visible = true
 		
 		# Focus continue button for gamepad navigation
 		if has_node("PauseContainer/Continue"):
@@ -339,6 +407,8 @@ func toggle_pause_menu():
 		
 		# Hide settings menu if open
 		settings_menu.visible = false
+		if _controls_card:
+			_controls_card.visible = false
 		
 		# Hide mouse cursor (capture for FPS controls)
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
@@ -353,6 +423,8 @@ func _on_settings_pressed():
 	print("Settings pressed")
 	main_menu.visible = false
 	settings_menu.visible = true  # Show settings submenu
+	if _controls_card:
+		_controls_card.visible = false
 	if has_node("SettingsMenu/VBoxContainer/SettingMenuBack"):
 		$SettingsMenu/VBoxContainer/SettingMenuBack.grab_focus()
 
@@ -421,5 +493,7 @@ func _on_setting_menu_back_pressed():
 	print("Settings back pressed")
 	settings_menu.visible = false
 	main_menu.visible = true  # Return to main pause menu
+	if _controls_card:
+		_controls_card.visible = true
 	if has_node("PauseContainer/Settings"):
 		$PauseContainer/Settings.grab_focus()
