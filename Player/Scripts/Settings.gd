@@ -13,7 +13,8 @@ var settings := {
 	"shadow_quality": 2,
 	"sdfgi_enabled": false,
 	"ssao_enabled": true,
-	"ssr_enabled": false
+	"ssr_enabled": false,
+	"last_direct_ip": ""
 }
 
 const BODY_FONT_PATH := "res://Assets/Fonts/HorrorBodySerif.ttf"

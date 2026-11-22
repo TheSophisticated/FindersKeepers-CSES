@@ -276,6 +276,7 @@ func _setup_direct_ip_and_status_ui() -> void:
 		_direct_ip_input = LineEdit.new()
 		_direct_ip_input.name = "DirectIPInput"
 		_direct_ip_input.placeholder_text = "Direct IP (empty = LAN)"
+		_direct_ip_input.text = str(Settings.settings.get("last_direct_ip", ""))
 		_direct_ip_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_direct_ip_input.add_theme_font_size_override("font_size", 9)
 		_direct_ip_input.text_submitted.connect(func(_t): _on_join_pressed())
@@ -448,6 +449,7 @@ func _on_join_pressed():
 	$MenuPanel/VBoxContainer/Join.disabled = true  # Disable button while attempting
 	var target_ip := _direct_ip_input.text.strip_edges() if _direct_ip_input != null else ""
 	if not target_ip.is_empty():
+		Settings.set_setting("last_direct_ip", target_ip)
 		if _status_label:
 			_status_label.text = "Connecting to %s..." % target_ip
 			_status_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
