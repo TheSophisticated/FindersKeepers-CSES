@@ -80,6 +80,9 @@ var jump_animation_name: StringName = &"jump_in_place"
 
 # ===== CAMERA EFFECTS =====
 var camera_tilt := 0.0                # Current camera tilt amount
+var _base_camera_pos := Vector3.ZERO  # Cached standing camera local position
+var _bob_phase := 0.0                 # Headbob sine phase
+var _bob_offset := Vector2.ZERO       # Current smoothed headbob offset (x, y)
 var raw_input_dir := Vector2.ZERO     # Raw input direction
 var vision_modifier: float  = 1.0
 var render_distance_modifier: float = 1.0
@@ -241,6 +244,7 @@ func _ready():
 	if is_multiplayer_authority():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		if camera:
+			_base_camera_pos = camera.position
 			camera.far = normal_render_distance
 			camera.current = true
 		if interact_prompt:
@@ -1057,6 +1061,26 @@ func update_camera_effects(delta):
 	target_fov *= vision_modifier
 
 	camera.fov = lerp(camera.fov,target_fov,delta*5.0)
+
+	# Speed-scaled sinusoidal headbob while moving on ground
+	var horiz_speed := Vector2(velocity.x, velocity.z).length()
+	if is_on_floor() and horiz_speed > 0.5 and not is_sliding:
+		var bob_freq := clampf(horiz_speed * 0.85, 4.5, 13.5)
+		_bob_phase += delta * bob_freq
+		var bob_amp := 0.045
+		if current_state == MovementState.SPRINTING:
+			bob_amp = 0.075
+		elif Input.is_action_pressed("crouch"):
+			bob_amp = 0.025
+		var target_bob := Vector2(
+			cos(_bob_phase * 0.5) * bob_amp * 0.55,
+			sin(_bob_phase) * bob_amp
+		)
+		_bob_offset = _bob_offset.lerp(target_bob, clampf(delta * 10.0, 0.0, 1.0))
+	else:
+		_bob_offset = _bob_offset.lerp(Vector2.ZERO, clampf(delta * 8.0, 0.0, 1.0))
+
+	camera.position = _base_camera_pos + Vector3(_bob_offset.x, _bob_offset.y, 0.0)
 
 # ===== NETWORK UPDATES =====
 func send_network_update():
