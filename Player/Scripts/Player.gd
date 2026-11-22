@@ -41,6 +41,7 @@ const ROTATION_LERP_FACTOR = 0.5      # Rotation interpolation factor
 const OCEAN_SURFACE_Y := 5.0          # World Y of the BoujieOcean plane
 const WATER_FEET_OFFSET := 2.1        # Distance from Player origin to bottom of feet
 const WATER_FLOAT_CENTER_Y := 4.85    # Buoyancy equilibrium Y so camera stays above water surface
+const HELD_PART_BASE_POS := Vector3(0.0, 0.0, -2.0) # Base hold offset in front of camera
 
 # ===== NODE REFERENCES =====
 @onready var camera := $Camera3D # Player camera
@@ -80,6 +81,16 @@ var jump_animation_name: StringName = &"jump_in_place"
 
 # ===== CAMERA EFFECTS =====
 var camera_tilt := 0.0                # Current camera tilt amount
+var _base_camera_pos := Vector3.ZERO  # Cached standing camera local position
+var _bob_phase := 0.0                 # Headbob sine phase
+var _bob_offset := Vector2.ZERO       # Current smoothed headbob offset (x, y)
+var _crouch_cam_offset := 0.0         # Vertical eye-height offset during crouch/slide
+var _peak_fall_speed := 0.0           # Peak downward speed tracked while airborne
+var _landing_dip := 0.0               # Tactile downward camera offset on touchdown
+var _camera_shake_trauma := 0.0       # Decaying trauma [0..1] for knockback camera shake
+var _carry_sway_time := 0.0           # Phase timer for carried body-part sway
+var _base_flashlight_rot := Vector3.ZERO # Cached base rotation of player flashlight
+var _flashlight_sway := Vector2.ZERO  # Handheld rotational lag offset (yaw, pitch)
 var raw_input_dir := Vector2.ZERO     # Raw input direction
 var vision_modifier: float  = 1.0
 var render_distance_modifier: float = 1.0
@@ -218,6 +229,8 @@ func process_controller_look(delta: float) -> void:
 		if camera:
 			pitch = clamp(pitch - look_dir.y * controller_sensitivity * delta, deg_to_rad(-89), deg_to_rad(89))
 			camera.rotation.x = pitch
+		_flashlight_sway.x = clampf(_flashlight_sway.x + look_dir.x * controller_sensitivity * delta * 0.45, -0.075, 0.075)
+		_flashlight_sway.y = clampf(_flashlight_sway.y + look_dir.y * controller_sensitivity * delta * 0.45, -0.075, 0.075)
 
 func _enter_tree():
 	# Set multiplayer authority based on name
@@ -241,8 +254,11 @@ func _ready():
 	if is_multiplayer_authority():
 		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 		if camera:
+			_base_camera_pos = camera.position
 			camera.far = normal_render_distance
 			camera.current = true
+		if flashlight:
+			_base_flashlight_rot = flashlight.rotation
 		if interact_prompt:
 			interact_prompt.text = "[E] / [X] — Interact"
 			_setup_reticle()
@@ -324,6 +340,8 @@ func _input(event):
 		if camera:
 			pitch = clamp(pitch - event.relative.y * mouse_sensitivity, deg_to_rad(-89), deg_to_rad(89))
 			camera.rotation.x = pitch
+		_flashlight_sway.x = clampf(_flashlight_sway.x + event.relative.x * mouse_sensitivity * 0.45, -0.075, 0.075)
+		_flashlight_sway.y = clampf(_flashlight_sway.y + event.relative.y * mouse_sensitivity * 0.45, -0.075, 0.075)
 
 	# Jump input buffering
 	if event.is_action_pressed("jump"):
@@ -486,6 +504,7 @@ func _apply_tower_knockback_local(
 
 	knockback_velocity = direction.normalized() * strength
 	knockback_time_remaining = duration
+	_camera_shake_trauma = clampf(_camera_shake_trauma + 0.65, 0.0, 1.0)
 
 	if held_body_part != null:
 		drop_body_part.rpc()
@@ -778,7 +797,7 @@ func pick_up_body_part(partPath : NodePath) -> void:
 	held_body_part = part
 	part.set_carried(true)
 	part.reparent(head_position, true)
-	part.position = Vector3(0, 0, -2)
+	part.position = HELD_PART_BASE_POS
 	part.part_collected.connect(_on_part_collected)
 	print("[Player] SUCCESS: Carrying body part: ", part.name)
 
@@ -875,8 +894,13 @@ func handle_jump_mechanics(delta):
 			can_jump = true
 			jump_count = 0
 			air_speed = 0.0
+			if _peak_fall_speed > 5.0:
+				_landing_dip = -clampf(_peak_fall_speed * 0.014, 0.06, 0.28)
+			_peak_fall_speed = 0.0
 	else:
 		coyote_timer = max(coyote_timer - delta, 0)
+		if velocity.y < 0.0:
+			_peak_fall_speed = maxf(_peak_fall_speed, -velocity.y)
 
 	was_on_floor = is_on_floor()
 
@@ -1041,13 +1065,23 @@ func apply_gravity(delta):
 func update_camera_effects(delta):
 	if not camera: return
 
-	# Camera tilt when strafing
+	# Camera tilt when strafing or sliding
 	var target_tilt = 0.0
-	if is_moving and is_on_floor():
+	if is_sliding:
+		target_tilt = -raw_input_dir.x * camera_tilt_amount + (3.5 if raw_input_dir.x >= 0.0 else -3.5)
+	elif is_moving and is_on_floor():
 		target_tilt = -raw_input_dir.x * camera_tilt_amount
 
 	camera_tilt = lerp(camera_tilt, target_tilt, delta * sway_smoothness)
-	camera.rotation.z = deg_to_rad(camera_tilt)
+	var shake_roll := 0.0
+	var shake_pitch := 0.0
+	if _camera_shake_trauma > 0.001:
+		_camera_shake_trauma = maxf(_camera_shake_trauma - delta * 1.9, 0.0)
+		var shake := _camera_shake_trauma * _camera_shake_trauma
+		shake_roll = deg_to_rad(randf_range(-4.5, 4.5) * shake)
+		shake_pitch = deg_to_rad(randf_range(-3.0, 3.0) * shake)
+	camera.rotation.x = clampf(pitch + shake_pitch, deg_to_rad(-89), deg_to_rad(89))
+	camera.rotation.z = deg_to_rad(camera_tilt) + shake_roll
 
 	# FOV changes when sprinting
 	var target_fov := fov_normal
@@ -1057,6 +1091,51 @@ func update_camera_effects(delta):
 	target_fov *= vision_modifier
 
 	camera.fov = lerp(camera.fov,target_fov,delta*5.0)
+
+	# Speed-scaled sinusoidal headbob while moving on ground
+	var horiz_speed := Vector2(velocity.x, velocity.z).length()
+	if is_on_floor() and horiz_speed > 0.5 and not is_sliding:
+		var bob_freq := clampf(horiz_speed * 0.85, 4.5, 13.5)
+		_bob_phase += delta * bob_freq
+		var bob_amp := 0.045
+		if current_state == MovementState.SPRINTING:
+			bob_amp = 0.075
+		elif Input.is_action_pressed("crouch"):
+			bob_amp = 0.025
+		var target_bob := Vector2(
+			cos(_bob_phase * 0.5) * bob_amp * 0.55,
+			sin(_bob_phase) * bob_amp
+		)
+		_bob_offset = _bob_offset.lerp(target_bob, clampf(delta * 10.0, 0.0, 1.0))
+	else:
+		_bob_offset = _bob_offset.lerp(Vector2.ZERO, clampf(delta * 8.0, 0.0, 1.0))
+
+	# Smooth eye-height drop during crouch and slide
+	var target_crouch_offset := 0.0
+	if is_sliding:
+		target_crouch_offset = -0.65
+	elif is_on_floor() and Input.is_action_pressed("crouch"):
+		target_crouch_offset = -0.45
+	_crouch_cam_offset = lerpf(_crouch_cam_offset, target_crouch_offset, clampf(delta * 12.0, 0.0, 1.0))
+
+	# Smoothly recover landing dip back to standing eye height
+	_landing_dip = lerpf(_landing_dip, 0.0, clampf(delta * 11.0, 0.0, 1.0))
+
+	camera.position = _base_camera_pos + Vector3(_bob_offset.x, _bob_offset.y + _crouch_cam_offset + _landing_dip, 0.0)
+
+	# Subtle walk and breathing sway on carried body part
+	if is_instance_valid(held_body_part) and held_body_part.get_parent() == head_position:
+		var moving_on_ground := is_on_floor() and horiz_speed > 0.5
+		_carry_sway_time += delta * (clampf(horiz_speed * 0.75, 4.5, 11.0) if moving_on_ground else 1.8)
+		var sway_x := (0.06 if moving_on_ground else 0.012) * cos(_carry_sway_time * 0.5)
+		var sway_y := (0.045 if moving_on_ground else 0.015) * sin(_carry_sway_time)
+		var target_hold_pos := HELD_PART_BASE_POS + Vector3(sway_x, sway_y, 0.0)
+		held_body_part.position = held_body_part.position.lerp(target_hold_pos, clampf(delta * 10.0, 0.0, 1.0))
+
+	# Handheld rotational lag sway on player flashlight
+	if flashlight:
+		_flashlight_sway = _flashlight_sway.lerp(Vector2.ZERO, clampf(delta * 9.0, 0.0, 1.0))
+		flashlight.rotation = _base_flashlight_rot + Vector3(_flashlight_sway.y, _flashlight_sway.x, 0.0)
 
 # ===== NETWORK UPDATES =====
 func send_network_update():
