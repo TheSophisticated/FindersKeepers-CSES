@@ -83,6 +83,7 @@ var camera_tilt := 0.0                # Current camera tilt amount
 var _base_camera_pos := Vector3.ZERO  # Cached standing camera local position
 var _bob_phase := 0.0                 # Headbob sine phase
 var _bob_offset := Vector2.ZERO       # Current smoothed headbob offset (x, y)
+var _crouch_cam_offset := 0.0         # Vertical eye-height offset during crouch/slide
 var raw_input_dir := Vector2.ZERO     # Raw input direction
 var vision_modifier: float  = 1.0
 var render_distance_modifier: float = 1.0
@@ -1045,9 +1046,11 @@ func apply_gravity(delta):
 func update_camera_effects(delta):
 	if not camera: return
 
-	# Camera tilt when strafing
+	# Camera tilt when strafing or sliding
 	var target_tilt = 0.0
-	if is_moving and is_on_floor():
+	if is_sliding:
+		target_tilt = -raw_input_dir.x * camera_tilt_amount + (3.5 if raw_input_dir.x >= 0.0 else -3.5)
+	elif is_moving and is_on_floor():
 		target_tilt = -raw_input_dir.x * camera_tilt_amount
 
 	camera_tilt = lerp(camera_tilt, target_tilt, delta * sway_smoothness)
@@ -1080,7 +1083,15 @@ func update_camera_effects(delta):
 	else:
 		_bob_offset = _bob_offset.lerp(Vector2.ZERO, clampf(delta * 8.0, 0.0, 1.0))
 
-	camera.position = _base_camera_pos + Vector3(_bob_offset.x, _bob_offset.y, 0.0)
+	# Smooth eye-height drop during crouch and slide
+	var target_crouch_offset := 0.0
+	if is_sliding:
+		target_crouch_offset = -0.65
+	elif is_on_floor() and Input.is_action_pressed("crouch"):
+		target_crouch_offset = -0.45
+	_crouch_cam_offset = lerpf(_crouch_cam_offset, target_crouch_offset, clampf(delta * 12.0, 0.0, 1.0))
+
+	camera.position = _base_camera_pos + Vector3(_bob_offset.x, _bob_offset.y + _crouch_cam_offset, 0.0)
 
 # ===== NETWORK UPDATES =====
 func send_network_update():
