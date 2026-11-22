@@ -30,6 +30,8 @@ var _panic_vignette_mat: ShaderMaterial = null
 var _panic_phase: float = 0.0
 var _last_time_remaining: float = 300.0
 var _spectator_banner: PanelContainer = null
+var _debug_overlay_label: Label = null
+var _debug_refresh_accum: float = 0.0
  
 func _ready() -> void:
 	# Hide overlays initially
@@ -58,7 +60,47 @@ func _ready() -> void:
  
 	_setup_panic_vignette()
 	_setup_spectator_banner()
+	_setup_debug_overlay()
 	_setup_focus_styling()
+
+func _setup_debug_overlay() -> void:
+	_debug_overlay_label = Label.new()
+	_debug_overlay_label.name = "DebugPerfOverlay"
+	_debug_overlay_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_debug_overlay_label.offset_left = -220.0
+	_debug_overlay_label.offset_right = -20.0
+	_debug_overlay_label.offset_top = 62.0
+	_debug_overlay_label.offset_bottom = 86.0
+	_debug_overlay_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_debug_overlay_label.add_theme_font_size_override("font_size", 13)
+	_debug_overlay_label.add_theme_color_override("font_color", Color(0.75, 1.0, 0.78, 0.9))
+	_debug_overlay_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_debug_overlay_label.visible = false
+	add_child(_debug_overlay_label)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F3:
+		if _debug_overlay_label != null:
+			_debug_overlay_label.visible = not _debug_overlay_label.visible
+			if _debug_overlay_label.visible:
+				_update_debug_overlay()
+			get_viewport().set_input_as_handled()
+
+func _update_debug_overlay() -> void:
+	if _debug_overlay_label == null:
+		return
+	var fps := Engine.get_frames_per_second()
+	var ping_text := "OFFLINE"
+	if multiplayer != null and multiplayer.has_multiplayer_peer():
+		if multiplayer.is_server():
+			ping_text = "HOST"
+		elif multiplayer.multiplayer_peer is ENetMultiplayerPeer:
+			var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
+			var server_peer := enet.get_peer(1)
+			if server_peer != null:
+				var rtt := int(server_peer.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
+				ping_text = "%dms" % rtt
+	_debug_overlay_label.text = "FPS: %d  |  Ping: %s" % [fps, ping_text]
 
 func _setup_spectator_banner() -> void:
 	_spectator_banner = PanelContainer.new()
@@ -116,6 +158,12 @@ void fragment() {
 	move_child(_panic_vignette, 0)
 
 func _process(delta: float) -> void:
+	if _debug_overlay_label != null and _debug_overlay_label.visible:
+		_debug_refresh_accum += delta
+		if _debug_refresh_accum >= 0.5:
+			_debug_refresh_accum = 0.0
+			_update_debug_overlay()
+
 	var is_game_over := GameManager != null and GameManager.current_state == GameManager.MatchState.GAME_OVER
 	var in_panic := not is_game_over and _last_time_remaining <= 60.0 and _last_time_remaining > 0.0
 	if in_panic:
