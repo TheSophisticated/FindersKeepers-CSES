@@ -11,6 +11,7 @@ Assets/graveyard/** -filter -diff -merge
 Assets/forestnotused/** -filter -diff -merge
 Maps/forest.tscn filter=lfs diff=lfs merge=lfs -text
 Maps/GameMode.tscn filter=lfs diff=lfs merge=lfs -text
+Maps/GameMode.scn filter=lfs diff=lfs merge=lfs -text
 c1de72ef1b59fc417447dd8342ab06cb3a99da80 filter=lfs diff=lfs merge=lfs -text
 Assets/graveyard/38689b21fa70449fa725d53fda4550e0.glb filter=lfs diff=lfs merge=lfs -text
 Assets/candle/ filter=lfs diff=lfs merge=lfs -text
