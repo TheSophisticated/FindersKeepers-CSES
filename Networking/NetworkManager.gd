@@ -19,9 +19,11 @@ var discovery_timer : Timer
 var discovery_listen_timer : Timer
  
 const LOBBY_SCENE = "res://MainMenu/Lobby.tscn"
-const GAME_MODE_SCENE_PATH = "res://Maps/GameMode.tscn"
+const GAME_MODE_SCENE_PATH = "res://Maps/GameMode.scn"
+const GAME_MODE_FALLBACK_PATH = "res://Maps/GameMode.tscn"
 var _cached_game_mode_scene: PackedScene = null
 var _threaded_load_requested := false
+var _active_game_mode_path: String = ""
 var _search_ticks := 0
 const MAX_SEARCH_TICKS := 25 # 5 seconds at 0.2s interval
 
@@ -46,23 +48,27 @@ func _ready():
 	# Set physics interpolation for smoother movement
 	Engine.physics_ticks_per_second = 60
 	Engine.max_physics_steps_per_frame = 10
-	
-	# Start asynchronous background loading of the large GameMode scene
-	# so the MainMenu opens instantly without blocking startup.
-	_request_background_map_load()
+	# Map background preload is deferred until entering Lobby so startup to MainMenu stays instant.
+
+func _resolve_game_mode_path() -> String:
+	if ResourceLoader.exists(GAME_MODE_SCENE_PATH):
+		return GAME_MODE_SCENE_PATH
+	return GAME_MODE_FALLBACK_PATH
 
 func _request_background_map_load() -> void:
 	if not _threaded_load_requested and _cached_game_mode_scene == null:
-		var err := ResourceLoader.load_threaded_request(GAME_MODE_SCENE_PATH)
+		_active_game_mode_path = _resolve_game_mode_path()
+		var err := ResourceLoader.load_threaded_request(_active_game_mode_path)
 		if err == OK:
 			_threaded_load_requested = true
 
 func get_game_mode_scene() -> PackedScene:
 	if _cached_game_mode_scene == null:
+		var target_path := _active_game_mode_path if not _active_game_mode_path.is_empty() else _resolve_game_mode_path()
 		if _threaded_load_requested:
-			_cached_game_mode_scene = ResourceLoader.load_threaded_get(GAME_MODE_SCENE_PATH) as PackedScene
+			_cached_game_mode_scene = ResourceLoader.load_threaded_get(target_path) as PackedScene
 		if _cached_game_mode_scene == null:
-			_cached_game_mode_scene = load(GAME_MODE_SCENE_PATH) as PackedScene
+			_cached_game_mode_scene = load(target_path) as PackedScene
 	return _cached_game_mode_scene
 	
 # Broadcast Host Message for Clients to listen
@@ -190,6 +196,7 @@ func load_game_world():
  
 # Load the pre-match lobby where players gather before the host starts
 func load_lobby():
+	_request_background_map_load()
 	get_tree().change_scene_to_file(LOBBY_SCENE)
  
 # Called by the host from the lobby: moves every connected peer into the match

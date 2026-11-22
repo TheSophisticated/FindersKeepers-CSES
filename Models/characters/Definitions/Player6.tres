@@ -1,10 +1,9 @@
 [gd_resource type="Resource" script_class="CharacterDefinition" format=3 uid="uid://brhc0v2xaumv1"]
 
 [ext_resource type="Script" uid="uid://di18xr8rbpibh" path="res://Models/characters/CharacterDefinition.gd" id="1_definition"]
-[ext_resource type="PackedScene" uid="uid://3c38ywqm17i7" path="res://Models/characters/Player6/Ch22_nonPBR.fbx" id="2_model"]
 
 [resource]
 script = ExtResource("1_definition")
 character_id = &"player_6"
 display_name = "Donyak Bhatia"
-model_scene = ExtResource("2_model")
+model_scene_path = "res://Models/characters/Player6/Ch22_nonPBR.fbx"

@@ -38,6 +38,7 @@ var is_heartbeat_active: bool = false
 # Window focus mute state (keeps multi-instance local playtesting clean)
 var _muted_by_focus_loss: bool = false
 var _was_master_muted_before_blur: bool = false
+var _gameplay_sounds_loaded: bool = false
 
 func _load_sound(path: String) -> AudioStream:
 	if ResourceLoader.exists(path):
@@ -71,22 +72,27 @@ func _init() -> void:
 	breathing_timer.autostart = true
 	breathing_timer.timeout.connect(_on_breathing_timer_timeout)
 
-	# Load sounds
+	# Load only menu-essential audio at startup; defer gameplay SFX until match start
 	SND_AMBIENCE = _load_sound("res://Audio/Ambience/horror_ambience.wav")
+	SND_BREATHING = _find_breathing_clip()
+
+	if SND_AMBIENCE:
+		ambience_player.stream = SND_AMBIENCE
+	if SND_BREATHING:
+		breathing_player.stream = SND_BREATHING
+
+func _ensure_gameplay_sounds_loaded() -> void:
+	if _gameplay_sounds_loaded:
+		return
+	_gameplay_sounds_loaded = true
 	SND_HEARTBEAT = _load_sound("res://Audio/Ambience/heartbeat.wav")
 	SND_RITUAL_DEPOSIT = _load_sound("res://Audio/SFX/Ritual/ritual_deposit.wav")
 	SND_PLAYER_ELIMINATED = _load_sound("res://Audio/SFX/Ritual/player_eliminated.wav")
 	SND_BLOOD_SHRINE = _load_sound("res://Audio/SFX/Ritual/blood_shrine.wav")
 	SND_TAROT_ACTIVATE = _load_sound("res://Audio/SFX/Ritual/tarot_activate.wav")
-	SND_BREATHING = _find_breathing_clip()
 	SND_CHURCH_BELL = _load_sound("res://Audio/SFX/Church/church_bell_creepy.mp3")
-
-	if SND_AMBIENCE:
-		ambience_player.stream = SND_AMBIENCE
-	if SND_HEARTBEAT:
+	if SND_HEARTBEAT and heartbeat_player:
 		heartbeat_player.stream = SND_HEARTBEAT
-	if SND_BREATHING:
-		breathing_player.stream = SND_BREATHING
 
 func _enter_tree() -> void:
 	_setup_audio_buses()
@@ -187,13 +193,13 @@ func _on_breathing_timer_timeout() -> void:
 	play_heavy_breathing()
 
 func play_heavy_breathing() -> void:
-	# Check if the user placed or replaced their own breathing clip
-	var clip := _find_breathing_clip()
-	if clip == null:
+	if SND_BREATHING == null:
+		SND_BREATHING = _find_breathing_clip()
+	if SND_BREATHING == null:
 		return
 
 	if breathing_player and is_inside_tree():
-		breathing_player.stream = clip
+		breathing_player.stream = SND_BREATHING
 		breathing_player.volume_db = randf_range(1.0, 3.0)
 		breathing_player.pitch_scale = randf_range(0.96, 1.04)
 		breathing_player.play()
@@ -220,6 +226,7 @@ func _find_breathing_clip() -> AudioStream:
 	return null
 
 func play_church_bell() -> void:
+	_ensure_gameplay_sounds_loaded()
 	if SND_CHURCH_BELL and global_sfx_player and is_inside_tree():
 		global_sfx_player.stream = SND_CHURCH_BELL
 		global_sfx_player.volume_db = -2.0
@@ -274,6 +281,7 @@ func _on_match_state_changed(new_state) -> void:
 	var gm = get_node_or_null("/root/GameManager")
 	if gm and "MatchState" in gm:
 		if new_state == gm.MatchState.IN_PROGRESS:
+			_ensure_gameplay_sounds_loaded()
 			target_ambience_volume = -3.0
 			if not is_ambience_playing:
 				start_ambience()
@@ -291,6 +299,7 @@ func _on_match_timer_updated(time_remaining: float) -> void:
 		return
 
 	if time_remaining <= 60.0 and time_remaining > 0.0:
+		_ensure_gameplay_sounds_loaded()
 		if not is_heartbeat_active:
 			is_heartbeat_active = true
 			if SND_HEARTBEAT and is_inside_tree() and not heartbeat_player.playing:
@@ -312,19 +321,23 @@ func _on_match_timer_updated(time_remaining: float) -> void:
 			heartbeat_player.stop()
 
 func _on_part_deposited(_depositor_id: int, _victim_id: int, _part_type: int) -> void:
+	_ensure_gameplay_sounds_loaded()
 	# Play ominous ritual deposit stinger
 	play_sfx(SND_RITUAL_DEPOSIT, 4.0, randf_range(0.97, 1.03))
 
 func _on_player_eliminated(_peer_id: int, _player_name: String) -> void:
+	_ensure_gameplay_sounds_loaded()
 	# Play horrifying death knell & distant screech
 	play_sfx(SND_PLAYER_ELIMINATED, 5.0, randf_range(0.96, 1.02))
 
 func _on_blood_shrine_prompt() -> void:
+	_ensure_gameplay_sounds_loaded()
 	# Demonic pact stinger
 	play_sfx(SND_BLOOD_SHRINE, 4.0, 1.0)
 
 func _on_blood_shrine_resolved(accepted: bool) -> void:
 	if accepted:
+		_ensure_gameplay_sounds_loaded()
 		play_sfx(SND_TAROT_ACTIVATE, 3.5, 0.92)
 
 # ===== PUBLIC PLAY HELPER METHODS =====

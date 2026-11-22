@@ -230,7 +230,7 @@ vec3 calc_atmospheric_scatter(float sr, float sm, vec2 mu, vec3 mult) {
 
 // Clouds
 //------------------------------------------------------------------------------
-const int CUMULUS_STEP = 10;
+const int CUMULUS_STEP = 4;
 
 float sample_cirrus_noise(vec2 coords) {
 	float a = textureLod(cirrus_texture, coords.xy * cirrus_uv + cirrus_position1, 0.0).r;
@@ -252,13 +252,11 @@ float sample_cumulus_noise(vec3 p) {
 
 float calc_cumulus_fbm(vec3 p, float l) {
 	float ret;
-	ret = 0.51749673 * sample_cumulus_noise(p);
+	ret = 0.552 * sample_cumulus_noise(p);
 	p *= l;
-	ret += 0.25584929 * sample_cumulus_noise(p);
+	ret += 0.286 * sample_cumulus_noise(p);
 	p *= l;
-	ret += 0.12527603 * sample_cumulus_noise(p);
-	p *= l;
-	ret += 0.06255931 * sample_cumulus_noise(p);
+	ret += 0.162 * sample_cumulus_noise(p);
 	return ret;
 }
 
@@ -299,7 +297,7 @@ vec4 render_cumulus_clouds(vec3 ro, vec3 rd, float am, vec3 sun_pos, vec3 moon_p
 	// n and tt doesnt need to be initialized since it would be set by ray_sphere_intersect
 	vec3 n; float tt;
 	if (ray_sphere_intersect(500., ro, rd, tt, n)) {
-		float march_step = float(CUMULUS_STEP) * cumulus_thickness;
+		float march_step = (100.0 / float(CUMULUS_STEP)) * cumulus_thickness;
 		vec3 dir_step = rd / rd.y * march_step;
 		vec3 pos = n * cumulus_size;
 
@@ -311,7 +309,7 @@ vec4 render_cumulus_clouds(vec3 ro, vec3 rd, float am, vec3 sun_pos, vec3 moon_p
 		t.rgb += (mph.rgb * cumulus_mie_intensity);
 
 		for(int i = 0; i < CUMULUS_STEP; i++) {
-			float h = float(i) * 0.1; // / float(kCLOUDS_STEP);
+			float h = float(i) / float(CUMULUS_STEP);
 			float density = calc_cumulus_density(pos, wind, h);
 			float sh = clamp_to_unit(exp(-cumulus_absorption * density * march_step));
 			t *= sh;

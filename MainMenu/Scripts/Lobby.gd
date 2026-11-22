@@ -233,13 +233,14 @@ func _update_character_preview(definition: CharacterDefinition) -> void:
 		_preview_pivot.queue_free()
 		_preview_pivot = null
 		_preview_model = null
-	if definition.model_scene == null:
+	var packed_model := definition.get_model_scene()
+	if packed_model == null:
 		return
 	_preview_pivot = Node3D.new()
 	_preview_pivot.name = "CharacterPreviewPivot"
 	_preview_pivot.position = Vector3(0.0, 1.0, 0.0)
 	preview_stage.add_child(_preview_pivot)
-	_preview_model = definition.model_scene.instantiate() as Node3D
+	_preview_model = packed_model.instantiate() as Node3D
 	if _preview_model == null:
 		push_warning("Character preview could not instance '%s'" % definition.display_name)
 		return

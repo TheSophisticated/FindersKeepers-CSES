@@ -8,25 +8,10 @@ var _direct_ip_input: LineEdit = null
 var _status_label: Label = null
 
 
-func _hide_old_3d_menu() -> void:
-	# The map viewport now provides the full menu backdrop. Hide the old 3D set
-	# so its camera and props cannot show through around the new background.
-	var old_world := get_parent().get_node_or_null("WorldObjects")
-	if old_world:
-		for child in old_world.get_children():
-			if child is Node3D:
-				child.visible = false
-			if child is Camera3D:
-				child.current = false
-
 # Called when the node enters the scene tree
 func _ready():
 	add_to_group("ui")
-	_hide_old_3d_menu()
 
-	# Load saved settings
-	Settings.load_settings()
-	
 	# Set initial visibility of panels
 	$MenuPanel.show()
 	$SettingsMenu.hide()

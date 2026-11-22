@@ -51,11 +51,12 @@ func load_character_model(player_node: Node3D, definition: CharacterDefinition) 
 	if character_node != null:
 		character_node.queue_free()
 
-	if definition == null or definition.model_scene == null:
+	var packed_model := definition.get_model_scene() if definition != null else null
+	if packed_model == null:
 		push_error("Character definition does not have a model scene")
 		return false
 
-	character_node = definition.model_scene.instantiate()
+	character_node = packed_model.instantiate()
 	character_node.name = "CharacterModel"
 	character_node.position.y += definition.vertical_offset
 	character_node.scale = definition.model_scale
@@ -128,35 +129,49 @@ func _setup_animation_player() -> void:
 	else:
 		character_node.add_child(animation_player)
 
-	# Create AnimationLibrary and add as default
-	anim_library = AnimationLibrary.new()
-	var lib_err = animation_player.add_animation_library(DEFAULT_LIBRARY_KEY, anim_library)
-	if lib_err != OK:
-		push_error("Failed to add AnimationLibrary: %s" % lib_err)
-
 	# Set root_node to skeleton so bone tracks resolve
 	# AnimationMixer paths are relative to the AnimationPlayer itself. It is
 	# a sibling of the Skeleton3D, so this path must include the parent hop.
 	var root_path = animation_player.get_path_to(skeleton)
-	print("PlayerAnimationController: root_path before set = ", root_path, " parent=", animation_player.get_parent())
 	_set_root_node(root_path)
 
 	# Ensure AnimationPlayer processes during physics frames
 	if animation_player.has_method("set_playback_process_mode"):
 		animation_player.call("set_playback_process_mode", 0)
-		print("PlayerAnimationController: playback_process_mode set to PHYSICS")
 	elif animation_player.has_method("set_process_callback"):
 		animation_player.call("set_process_callback", 0)
-		print("PlayerAnimationController: process_callback set to PHYSICS")
-	print("PlayerAnimationController: AnimationPlayer ready, root_node = ", animation_player.root_node)
 
 
 static var _raw_anim_cache: Dictionary = {}
+static var _remapped_lib_cache: Dictionary = {}
 var _last_synced_anim: String = ""
 
+func _get_library_cache_key() -> StringName:
+	if current_character != null and current_character.character_id != &"" and current_character.character_id != &"custom":
+		return current_character.character_id
+	return &""
+
 func _load_all_animations() -> void:
+	var cache_key := _get_library_cache_key()
+	if cache_key != &"" and _remapped_lib_cache.has(cache_key):
+		anim_library = _remapped_lib_cache[cache_key]
+		if animation_player != null:
+			var cached_err := animation_player.add_animation_library(DEFAULT_LIBRARY_KEY, anim_library)
+			if cached_err != OK:
+				push_error("Failed to attach cached AnimationLibrary: %s" % cached_err)
+		_last_synced_anim = ""
+		return
+
+	anim_library = AnimationLibrary.new()
 	for anim_name in ANIM_SCENES:
 		_load_animation(anim_name, ANIM_SCENES[anim_name])
+	if cache_key != &"":
+		_remapped_lib_cache[cache_key] = anim_library
+	if animation_player != null:
+		var lib_err := animation_player.add_animation_library(DEFAULT_LIBRARY_KEY, anim_library)
+		if lib_err != OK:
+			push_error("Failed to add AnimationLibrary: %s" % lib_err)
+	_last_synced_anim = ""
 
 
 func _load_animation(anim_name: String, scene_path: String) -> void:

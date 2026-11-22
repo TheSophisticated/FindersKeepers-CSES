@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tools/optimize_gamemode_scene.gd" id="1_opt"]
+
+[node name="OptimizeGameModeRunner" type="Node"]
+script = ExtResource("1_opt")

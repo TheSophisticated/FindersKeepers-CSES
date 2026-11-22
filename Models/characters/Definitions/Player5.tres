@@ -1,10 +1,9 @@
 [gd_resource type="Resource" script_class="CharacterDefinition" format=3 uid="uid://nbjbgjwr4t85"]
 
 [ext_resource type="Script" uid="uid://di18xr8rbpibh" path="res://Models/characters/CharacterDefinition.gd" id="1_definition"]
-[ext_resource type="PackedScene" uid="uid://cq3ox0jv6pkl5" path="res://Models/characters/Player5/Ch33_nonPBR.fbx" id="2_model"]
 
 [resource]
 script = ExtResource("1_definition")
 character_id = &"player_5"
 display_name = "Ram"
-model_scene = ExtResource("2_model")
+model_scene_path = "res://Models/characters/Player5/Ch33_nonPBR.fbx"

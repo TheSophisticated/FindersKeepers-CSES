@@ -62,9 +62,10 @@ speed = 0.25
 [node name="DeepOcean" type="Node3D" unique_id=1322041387]
 script = ExtResource("1_ffcdn")
 material = ExtResource("2_mvet8")
-levels_of_detail = 5
+levels_of_detail = 3
+outermost_resolution = 6
 unit_size = 2.0
-far_edge = 5000
+far_edge = 1800
 
 [node name="CameraFollower3D" type="Node3D" parent="." unique_id=149572426]
 script = ExtResource("3_u4edm")
@@ -79,9 +80,9 @@ update_on_ready = true
 update_when_camera_far_changes = true
 ocean_path = NodePath("..")
 camera_follower_path = NodePath("../CameraFollower3D")
-distance_fade_far = 5000
+distance_fade_far = 1800
 distance_fade_softness = 0.323
-wave_fade_far = 2000
+wave_fade_far = 1200
 wave_fade_softness = 0.641
 height_waves = Array[ExtResource("8_uytuc")]([SubResource("Resource_h6ky8"), SubResource("Resource_gq4b8"), ExtResource("9_bqe5t"), ExtResource("10_3dku7")])
 foam_waves = Array[ExtResource("8_uytuc")]([SubResource("Resource_ewn38"), SubResource("Resource_v8fws"), SubResource("Resource_pwrcy"), SubResource("Resource_ei3rv"), ExtResource("11_32a1e"), ExtResource("12_fndme")])
