@@ -125,22 +125,12 @@ var held_object: Node3D = null        # Currently held interactable object
 var held_body_part: BodyPart = null   # Body part being carried, deposited at the spell center
 var hovered_body_part: BodyPart = null # Body part which is being hovered
 var _reticle_dot: ColorRect = null    # Central retro crosshair dot
-var _t := 0.0
 
 func show_tarot_notification(message: String) -> void:
 	print("Notification requested: ", message)
 	if not is_multiplayer_authority():
 		return
 	tarot_notification.show_notification(message)
-
-func flicker_lights(delta) -> void:
-	# Calls hotel.set_light() on a stuttery pattern.
-	var hotel := get_node("/root/GameMode/SubViewportContainer/SubViewport/WorldObjects/hotel_map")
-	_t -= delta
-	if _t > 0.0:
-		return
-	_t = randf_range(0.03, 0.12) if hotel.is_light_on() else randf_range(0.05, 0.4)
-	hotel.set_light(not hotel.is_light_on())
 
 
 func _process(delta):

@@ -101,12 +101,12 @@ func _card_material(texture: Texture2D, fallback: Color) -> Material:
 @rpc("any_peer", "call_local", "reliable")
 func collect(playerPath : NodePath)->bool:
 	var player = get_node_or_null(playerPath)
-	if card==null:
-		push_warning("TarotPicckup : No Tarot Card assigned")
+	if card == null:
+		push_warning("TarotPickup: No Tarot Card assigned")
 		return false
 	
 	if player == null:
-		push_warning("TarotPickup : recieved a null player")
+		push_warning("TarotPickup: received a null player")
 		return false
 	
 	if not player.has_method("add_tarot_card"):

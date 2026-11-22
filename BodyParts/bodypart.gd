@@ -137,9 +137,6 @@ func _load_part_visual() -> void:
 
 	# Configure the collision shape.
 	var collision := get_node_or_null("CollisionShape3D") as CollisionShape3D
-	print("BodyPart position: ", global_position)
-	print("Collider position: ", collision.global_position)
-	print("Collider radius: ", collision.shape.radius)
 
 	if collision != null:
 		if collision.shape is SphereShape3D:
