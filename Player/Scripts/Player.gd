@@ -187,9 +187,14 @@ func _process(delta):
 			elif current_hovered_part != null:
 				var part_names := ["Head", "Hands", "Torso", "Legs"]
 				var p_idx := clampi(int(current_hovered_part.part_type), 0, 3)
-				interact_prompt.text = "[E] / [X] — Collect %s" % part_names[p_idx]
-				interact_prompt.visible = true
-				is_hovering_actionable = true
+				if current_hovered_part.owner_id == player_id:
+					interact_prompt.text = "Your Own %s — Defend It!" % part_names[p_idx]
+					interact_prompt.visible = true
+					is_hovering_actionable = false
+				else:
+					interact_prompt.text = "[E] / [X] — Steal %s" % _format_body_part_label(current_hovered_part)
+					interact_prompt.visible = true
+					is_hovering_actionable = true
 			elif tarot_target != null and tarot_target.card != null:
 				interact_prompt.text = "[E] / [X] — Take %s" % tarot_target.card.card_name
 				interact_prompt.visible = true
@@ -201,7 +206,7 @@ func _process(delta):
 	else:
 		if interact_prompt:
 			if held_body_part != null:
-				interact_prompt.text = "Carrying Body Part — Deliver to Church Altar | [E] Drop"
+				interact_prompt.text = "Carrying %s — Deliver to Church Altar | [E] Drop" % _format_body_part_label(held_body_part)
 				interact_prompt.visible = true
 			else:
 				interact_prompt.visible = false
@@ -776,6 +781,14 @@ func drop_object() -> void:
 # Carries a body part to the spell center. No buffs, progress or removal
 # happen here; that all waits for deposit_body_part().
 
+func _format_body_part_label(part: BodyPart) -> String:
+	var part_names := ["Head", "Hands", "Torso", "Legs"]
+	var p_idx := clampi(int(part.part_type), 0, 3)
+	var owner_name := GameManager.get_player_display_name(part.owner_id) if GameManager else "Player %d" % part.owner_id
+	if owner_name == "Unknown":
+		owner_name = "Player %d" % part.owner_id
+	return "%s's %s" % [owner_name, part_names[p_idx]]
+
 @rpc("any_peer", "call_local", "reliable")
 func pick_up_body_part(partPath : NodePath) -> void:
 	var part := get_node_or_null(partPath)
@@ -785,6 +798,7 @@ func pick_up_body_part(partPath : NodePath) -> void:
 
 	if part.owner_id == player_id:
 		print("You cant pick up your own parts!")
+		show_tarot_notification("You can't pick up your own body part!")
 		return
 
 	if held_body_part != null or held_object != null:
