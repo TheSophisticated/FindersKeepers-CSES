@@ -88,15 +88,17 @@ It reads each source FBX, matches Mixamo bone namespaces against defined vertex 
 
 ### Keyboard & Mouse
 - **WASD**: Movement
-- **Mouse**: Look
+- **Mouse**: Look (also click-drag in Lobby to spin 3D character preview)
 - **Shift**: Sprint
 - **C / Ctrl (while sprinting)**: Slide
 - **Space**: Jump
-- **E**: Interact / Pick up body part / Pick up tarot card
-- **Q**: Shove / Push player
-- **1 / 2**: Use Tarot Card in Slot 1 / Slot 2
+- **E**: Interact / Pick up or drop body part / Pick up tarot card
+- **Q**: Shove / Push player (1.5s cooldown)
+- **1 / 2 (3 / 4 with Torso buff)**: Use Tarot Card in Slot 1–4
 - **F**: Toggle flashlight
-- **Esc**: Pause / Settings
+- **F3**: Toggle FPS & ENet ping overlay
+- **Esc / P**: Pause / Settings & Controls card
+- **A / D or Q / E (in Lobby)**: Cycle character selection
 
 ### Controller (Gamepad)
 - **Left Stick**: Movement
@@ -104,10 +106,10 @@ It reads each source FBX, matches Mixamo bone namespaces against defined vertex 
 - **Left Stick Click / Bumper**: Sprint
 - **Right Trigger / B Button (while sprinting)**: Slide
 - **A Button**: Jump
-- **X Button**: Interact / Pick up
+- **X Button**: Interact / Pick up or drop
 - **B Button**: Shove / Push
-- **D-Pad Left / Right**: Use Tarot Slot 1 / Slot 2
-- **D-Pad Up**: Toggle flashlight
+- **LB / RB or D-Pad Left / Right**: Use Tarot Slot 1 / Slot 2
+- **Y Button**: Toggle flashlight
 - **Start**: Pause
 
 ---
@@ -116,21 +118,23 @@ It reads each source FBX, matches Mixamo bone namespaces against defined vertex 
 
 ```
 FindersKeepers-CSES/
-├── Audio/                  # Positional audio, footstep controller, ambient loops
-├── BodyParts/              # Collectible RigidBody3D parts & SpellCenter altar logic
+├── Audio/                  # AudioManager (lazy SFX, focus-mute), PlayerAudioController, ambient loops
+├── BodyParts/              # Collectible RigidBody3D parts, passive buff subclasses & SpellCenter altar
 │   ├── bodypart.gd         # Base class for collectible physics limbs
 │   └── SpellCenter.tscn    # Altar area with sacrifice triggers
-├── MainMenu/               # Lobby UI, host/join menus, character selection
-├── Maps/                   # Game scenes, Terrain3D assets, forest layouts
-│   ├── Scripts/            # MatchHUD, CompassUI, RenderScaler, collision bakers
-│   └── GameMode.tscn       # Main map scene
-├── Models/                 # Character FBXs, split limb GLBs, materials
-├── Networking/             # NetworkManager (ENet peer management & UDP LAN discovery)
-├── Player/                 # First-person player controller and animation states
-│   └── Scripts/Player.gd   # Movement, slide math, tarot trigger inputs
-├── scripts/managers/       # GameManager (match state machine, timer, win checks)
-├── Tarot/                  # Tarot card definitions (.tres) and effect scripts
-└── tools/                  # Headless Blender scripts for automated FBX bisecting
+├── MainMenu/               # 2D horror Main Menu, Lobby UI (LAN IP copy, 3D preview), character picker
+├── Maps/                   # Game scenes, Terrain3D assets, forest layouts, extracted compressed textures
+│   ├── extracted_textures/ # Compressed PNGs extracted from GameMode.tscn for binary scene loading
+│   ├── Scripts/            # MatchHUD, CompassUI, PauseMenu, TarotInventoryUI, RenderScaler, bakers
+│   ├── GameMode.scn        # Optimized binary match scene (loaded at runtime via Git LFS)
+│   └── GameMode.tscn       # Source text map scene backup
+├── Models/                 # Character FBXs, lazy CharacterCatalog definitions, split limb GLBs
+├── Networking/             # NetworkManager (ENet peer management, UDP LAN discovery, Direct IP)
+├── Player/                 # First-person player controller, Settings autoload, cached Mixamo animations
+│   └── Scripts/Player.gd   # Movement, camera juice, buoyancy, shove cooldown, tarot trigger inputs
+├── scripts/managers/       # GameManager (match state machine, 5-min timer, tie-breaking, Blood Shrine)
+├── Tarot/                  # Tarot card definitions (.tres), effect scripts, fade-animated tooltips/toasts
+└── tools/                  # Headless Blender limb slicer & Godot binary scene optimizer
 ```
 
 ---
@@ -138,8 +142,8 @@ FindersKeepers-CSES/
 ## Running the Project
 
 ### Requirements
-- **Godot 4.3+ (Forward+ renderer)**
-- **Git LFS** (needed to pull the 3D meshes and terrain textures)
+- **Godot 4.7+ (Forward+ renderer)**
+- **Git LFS** (needed to pull the binary `GameMode.scn`, 3D meshes, and terrain textures)
 
 ### Setup
 ```bash
@@ -152,9 +156,9 @@ Open Godot, import `project.godot`, and let the assets import on first launch.
 
 ### Testing Multiplayer on a Single Machine
 1. In the Godot editor, go to **Debug > Run Multiple Instances** and select **2** or **4** instances.
-2. Press **F5** to run.
-3. On instance 1, click **Host**.
-4. On instance 2+, the host will appear in the lobby list via UDP discovery. Click **Join**.
+2. Press **F5** to run (unfocused instances automatically mute audio so ambience loops don't stack).
+3. On instance 1, click **Host** (you can also copy your LAN IP directly from the Lobby for Direct IP joins).
+4. On instance 2+, click **Join** to auto-discover over LAN (or paste a Direct IP).
 5. Select characters and hit **Start Game**.
 
 ---
