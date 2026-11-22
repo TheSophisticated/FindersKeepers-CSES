@@ -29,6 +29,7 @@ var _panic_vignette: ColorRect = null
 var _panic_vignette_mat: ShaderMaterial = null
 var _panic_phase: float = 0.0
 var _last_time_remaining: float = 300.0
+var _spectator_banner: PanelContainer = null
  
 func _ready() -> void:
 	# Hide overlays initially
@@ -56,7 +57,37 @@ func _ready() -> void:
 		shrine_decline_btn.focus_neighbor_right = shrine_accept_btn.get_path()
  
 	_setup_panic_vignette()
+	_setup_spectator_banner()
 	_setup_focus_styling()
+
+func _setup_spectator_banner() -> void:
+	_spectator_banner = PanelContainer.new()
+	_spectator_banner.name = "SpectatorBanner"
+	_spectator_banner.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_spectator_banner.offset_left = -290.0
+	_spectator_banner.offset_right = 290.0
+	_spectator_banner.offset_top = -125.0
+	_spectator_banner.offset_bottom = -78.0
+	_spectator_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_spectator_banner.visible = false
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.14, 0.03, 0.04, 0.88)
+	style.set_border_width_all(2)
+	style.border_color = Color(0.85, 0.2, 0.2, 0.9)
+	style.set_corner_radius_all(6)
+	style.set_content_margin_all(8)
+	_spectator_banner.add_theme_stylebox_override("panel", style)
+
+	var lbl := Label.new()
+	lbl.name = "SpectatorLabel"
+	lbl.text = "YOU WERE SACRIFICED — WATCHING REMAINING SURVIVORS"
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 15)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.4, 0.35))
+	_spectator_banner.add_child(lbl)
+	add_child(_spectator_banner)
 
 func _setup_panic_vignette() -> void:
 	_panic_vignette = ColorRect.new()
@@ -180,6 +211,8 @@ func _on_player_eliminated(peer_id: int, player_name: String) -> void:
 	_update_score_display()
 	_update_player_legend()
 	_show_banner("ELIMINATED: %s was completely sacrificed!" % _display_name(peer_id, player_name), Color(1.0, 0.3, 0.3))
+	if peer_id == multiplayer.get_unique_id() and _spectator_banner != null:
+		_spectator_banner.visible = true
  
 # Roster names are "Player_<peer_id>"; show the player number ("Player 2") instead.
 func _display_name(peer_id: int, fallback: String) -> String:
@@ -278,6 +311,8 @@ func _on_shrine_resolved(accepted: bool) -> void:
  
 # ===== GAME OVER =====
 func _on_game_over(winner_id: int, winner_name: String) -> void:
+	if _spectator_banner != null:
+		_spectator_banner.visible = false
 	var local_player := _get_local_player()
 	if local_player and local_player.has_method("set_input_enabled"):
 		local_player.set_input_enabled(false)

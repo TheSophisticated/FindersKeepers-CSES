@@ -1301,6 +1301,8 @@ func _on_player_eliminated(peer_id : int, name : String) -> void:
 	if peer_id != player_id:
 		return
 	set_input_enabled(false)
+	if has_node("InteractPrompt"):
+		$InteractPrompt.visible = false
 	collision_layer = 0
 	collision_mask = 0
 	hide()
