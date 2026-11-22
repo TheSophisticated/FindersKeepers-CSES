@@ -8,12 +8,16 @@ class_name CompassUI
 
 const FADE_FULL_DISTANCE: float = 25.0
 const FADE_ZERO_DISTANCE: float = 10.0
+const ALTAR_FADE_FULL_DISTANCE: float = 10.0
+const ALTAR_FADE_ZERO_DISTANCE: float = 3.5
 
 @onready var distance_label: Label = $DistanceLabel
 
 var world_objects: Node = null
+var spell_center: Node3D = null
 var local_player_id: int = -1
 var target_part: Node = null
+var _targeting_altar: bool = false
 var _last_angle: float = 0.0
 var _current_angle: float = 0.0
 var _angle_epsilon: float = 0.01  # ~0.5 degrees
@@ -48,14 +52,29 @@ func _process(delta: float) -> void:
 		visible = false
 		return
 
-	# Find nearest valid body part
-	target_part = _find_nearest_valid_body_part(local_player)
+	# While carrying a body part, guide the player back to the Church Altar (SpellCenter)
+	var held_part = local_player.get("held_body_part")
+	if held_part != null and is_instance_valid(held_part):
+		_targeting_altar = true
+		target_part = _get_spell_center()
+	else:
+		_targeting_altar = false
+		target_part = _find_nearest_valid_body_part(local_player)
 
 	if target_part:
 		_update_compass(local_player, target_part)
 		visible = true
 	else:
 		visible = false
+
+func _get_spell_center() -> Node3D:
+	if is_instance_valid(spell_center):
+		return spell_center
+	if world_objects:
+		spell_center = world_objects.get_node_or_null("SpellCenter") as Node3D
+	if spell_center == null and get_tree() and get_tree().root:
+		spell_center = get_tree().root.find_child("SpellCenter", true, false) as Node3D
+	return spell_center
 
 func _get_local_player() -> Node:
 	# Find the player node that has multiplayer authority (our local player)
@@ -133,15 +152,17 @@ func _update_compass(player: Node, target: Node) -> void:
 		_current_angle = angle_diff
 		queue_redraw()
 
-	# Update fade based on distance to target
+	# Update fade based on distance to target (keep Altar visible closer)
 	var distance = player.global_position.distance_to(target.global_position)
+	var fade_full := ALTAR_FADE_FULL_DISTANCE if _targeting_altar else FADE_FULL_DISTANCE
+	var fade_zero := ALTAR_FADE_ZERO_DISTANCE if _targeting_altar else FADE_ZERO_DISTANCE
 	var alpha: float = 0.0
-	if distance >= FADE_FULL_DISTANCE:
+	if distance >= fade_full:
 		alpha = 1.0
-	elif distance <= FADE_ZERO_DISTANCE:
+	elif distance <= fade_zero:
 		alpha = 0.0
 	else:
-		alpha = (distance - FADE_ZERO_DISTANCE) / (FADE_FULL_DISTANCE - FADE_ZERO_DISTANCE)
+		alpha = (distance - fade_zero) / (fade_full - fade_zero)
 	modulate.a = alpha
 
 # Draw a simple arrow triangle programmatically
