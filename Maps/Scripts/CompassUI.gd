@@ -21,7 +21,8 @@ var _targeting_altar: bool = false
 var _arrow_color: Color = Color(1.0, 1.0, 1.0, 0.9)
 var _last_angle: float = 0.0
 var _current_angle: float = 0.0
-var _angle_epsilon: float = 0.01  # ~0.5 degrees
+var _has_angle: bool = false
+var _angle_epsilon: float = 0.005  # ~0.3 degrees
 
 func _ready() -> void:
 	# Find WorldObjects node (same path as GameMode uses)
@@ -72,9 +73,10 @@ func _process(delta: float) -> void:
 		if not next_color.is_equal_approx(_arrow_color):
 			_arrow_color = next_color
 			queue_redraw()
-		_update_compass(local_player, target_part)
+		_update_compass(local_player, target_part, delta)
 		visible = true
 	else:
+		_has_angle = false
 		visible = false
 
 func _get_spell_center() -> Node3D:
@@ -124,7 +126,7 @@ func _find_nearest_valid_body_part(player: Node) -> Node:
 
 	return nearest
 
-func _update_compass(player: Node, target: Node) -> void:
+func _update_compass(player: Node, target: Node, delta: float) -> void:
 	var camera = player.camera
 	if not camera:
 		return
@@ -156,10 +158,16 @@ func _update_compass(player: Node, target: Node) -> void:
 	# Normalize to [-PI, PI]
 	angle_diff = fmod(angle_diff + PI, 2 * PI) - PI
 
-	# Only queue redraw if angle changed significantly
-	if abs(angle_diff - _last_angle) > _angle_epsilon:
-		_last_angle = angle_diff
+	# Smoothly interpolate needle angle; snap on first frame after becoming visible
+	if not _has_angle:
 		_current_angle = angle_diff
+		_has_angle = true
+	else:
+		_current_angle = lerp_angle(_current_angle, angle_diff, clampf(delta * 12.0, 0.0, 1.0))
+
+	# Only queue redraw if drawn angle changed significantly
+	if abs(angle_difference(_current_angle, _last_angle)) > _angle_epsilon:
+		_last_angle = _current_angle
 		queue_redraw()
 
 	# Update fade based on distance to target (keep Altar visible closer)
