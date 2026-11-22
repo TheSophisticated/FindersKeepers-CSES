@@ -8,8 +8,11 @@ signal collected(pickup : TarotPickup)
 const CARD_SIZE := Vector2(0.62, 0.92)
 const CARD_FACE_SHADER: Shader = preload("res://Tarot/Scripts/TarotCardFace.gdshader")
 var _terrain: Terrain3D
+var _frame_material: StandardMaterial3D = null
+var _glow_phase: float = 0.0
 
 func _ready() -> void:
+	_glow_phase = randf() * TAU
 	_build_card_visual()
 	var physics_body := get_parent() as RigidBody3D
 	if physics_body != null:
@@ -56,6 +59,10 @@ func _build_card_visual() -> void:
 	frame_material.albedo_color = Color("21151e")
 	frame_material.metallic = 0.35
 	frame_material.roughness = 0.42
+	frame_material.emission_enabled = true
+	frame_material.emission = Color("8c4fd9")
+	frame_material.emission_energy_multiplier = 0.45
+	_frame_material = frame_material
 	frame.material_override = frame_material
 	add_child(frame)
 
@@ -118,4 +125,6 @@ func collect(playerPath : NodePath)->bool:
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	pass
+	if _frame_material != null:
+		_glow_phase += delta * 2.2
+		_frame_material.emission_energy_multiplier = 0.32 + 0.38 * (0.5 + 0.5 * sin(_glow_phase))
