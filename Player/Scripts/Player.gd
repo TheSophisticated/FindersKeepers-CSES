@@ -41,6 +41,7 @@ const ROTATION_LERP_FACTOR = 0.5      # Rotation interpolation factor
 const OCEAN_SURFACE_Y := 5.0          # World Y of the BoujieOcean plane
 const WATER_FEET_OFFSET := 2.1        # Distance from Player origin to bottom of feet
 const WATER_FLOAT_CENTER_Y := 4.85    # Buoyancy equilibrium Y so camera stays above water surface
+const HELD_PART_BASE_POS := Vector3(0.0, 0.0, -2.0) # Base hold offset in front of camera
 
 # ===== NODE REFERENCES =====
 @onready var camera := $Camera3D # Player camera
@@ -87,6 +88,7 @@ var _crouch_cam_offset := 0.0         # Vertical eye-height offset during crouch
 var _peak_fall_speed := 0.0           # Peak downward speed tracked while airborne
 var _landing_dip := 0.0               # Tactile downward camera offset on touchdown
 var _camera_shake_trauma := 0.0       # Decaying trauma [0..1] for knockback camera shake
+var _carry_sway_time := 0.0           # Phase timer for carried body-part sway
 var raw_input_dir := Vector2.ZERO     # Raw input direction
 var vision_modifier: float  = 1.0
 var render_distance_modifier: float = 1.0
@@ -787,7 +789,7 @@ func pick_up_body_part(partPath : NodePath) -> void:
 	held_body_part = part
 	part.set_carried(true)
 	part.reparent(head_position, true)
-	part.position = Vector3(0, 0, -2)
+	part.position = HELD_PART_BASE_POS
 	part.part_collected.connect(_on_part_collected)
 	print("[Player] SUCCESS: Carrying body part: ", part.name)
 
@@ -1112,6 +1114,15 @@ func update_camera_effects(delta):
 	_landing_dip = lerpf(_landing_dip, 0.0, clampf(delta * 11.0, 0.0, 1.0))
 
 	camera.position = _base_camera_pos + Vector3(_bob_offset.x, _bob_offset.y + _crouch_cam_offset + _landing_dip, 0.0)
+
+	# Subtle walk and breathing sway on carried body part
+	if is_instance_valid(held_body_part) and held_body_part.get_parent() == head_position:
+		var moving_on_ground := is_on_floor() and horiz_speed > 0.5
+		_carry_sway_time += delta * (clampf(horiz_speed * 0.75, 4.5, 11.0) if moving_on_ground else 1.8)
+		var sway_x := (0.06 if moving_on_ground else 0.012) * cos(_carry_sway_time * 0.5)
+		var sway_y := (0.045 if moving_on_ground else 0.015) * sin(_carry_sway_time)
+		var target_hold_pos := HELD_PART_BASE_POS + Vector3(sway_x, sway_y, 0.0)
+		held_body_part.position = held_body_part.position.lerp(target_hold_pos, clampf(delta * 10.0, 0.0, 1.0))
 
 # ===== NETWORK UPDATES =====
 func send_network_update():
