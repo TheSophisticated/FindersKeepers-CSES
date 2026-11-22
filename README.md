@@ -52,16 +52,27 @@ Mid-match, `GameManager.gd` halts normal flow, locks player camera/movement inpu
 - **Lobby & Settings QoL**: Hosts see their local LAN IPv4 with a one-click **Copy IP** button, players can cycle characters with keyboard shortcuts and drag to spin the 3D preview, Direct IP persists across launches (`last_direct_ip`), the Pause Menu includes a compact Controls card, and Settings expose Master/SFX/Ambience sliders with live numeric readouts, Shadow Quality, SSAO/SSR/SDFGI toggles, deduplicated resolutions, and full gamepad focus navigation.
 - **Playtest utilities**: `AudioManager.gd` automatically mutes unfocused windows for clean multi-instance testing on one PC, and pressing `F3` toggles a live FPS and ENet RTT ping overlay.
 
-### 4. Networking & Replication (`Networking/NetworkManager.gd`)
+### 5. Networking & Replication (`Networking/NetworkManager.gd`)
 
 Built using Godot's `ENetMultiplayerPeer` on port `8910`.
 
 - **Authoritative host**: Match timers, player life states, body part spawn seeds, and sacrifice validations live strictly on the server/host instance.
-- **LAN Auto-Discovery**: To avoid manually typing local IP addresses during playtesting, `NetworkManager.gd` spins up a lightweight UDP listener and broadcast loop on port `8911` using `PacketPeerUDP`. The host broadcasts a `FINDERS_KEEPERS_HOST` beacon every 0.2s; clients listen, parse sender IPs, and populate the server list automatically.
+- **LAN Auto-Discovery & Direct IP**: To avoid manually typing local IP addresses during playtesting, `NetworkManager.gd` spins up a lightweight UDP listener and broadcast loop on port `8911` using `PacketPeerUDP`. The host broadcasts a `FINDERS_KEEPERS_HOST` beacon; clients listen, parse sender IPs, and connect automatically. For networks where broadcast packets are blocked, players can enter a Direct IP on the Main Menu (saved across launches via `Settings.gd`) or copy the host's LAN IP directly from the Lobby.
 - **Position & Rotation Interpolation**: Remote player movement is broadcast at 20Hz. Clients push received states into a sliding buffer (`network_position_buffer`, `network_timestamp_buffer`) and evaluate positions at `current_time - interpolation_time (0.12s)` using linear/spherical interpolation to keep remote puppets smooth without rubber-banding.
-- **Background Scene Loading**: Because the island terrain and forest meshes are relatively heavy, the client uses `ResourceLoader.load_threaded_request` to preload `GameMode.tscn` in the background during the lobby phase, preventing frame freezes on match start.
+- **Deferred Background Scene Loading**: Rather than competing with Main Menu startup, `NetworkManager` defers `ResourceLoader.load_threaded_request` until entering the Lobby (`load_lobby()`), streaming the binary `Maps/GameMode.scn` (with automatic `.tscn` fallback) in the background while players pick characters.
 
-### 5. Automated Mesh Slicing Tool (`tools/split_character_parts.py`)
+### 6. Performance & Load-Time Optimization (`tools/optimize_gamemode_scene.gd`)
+
+Large 3D Godot projects easily get bogged down by eager `preload()` chains, ASCII `.tscn` parsing, and un-merged foliage meshes. Startup and runtime performance were overhauled in three layers:
+
+- **Fast cold boot (~30s → ~1s)**: `CharacterDefinition.gd` and `Player1..8.tres` load character FBX models lazily via `model_scene_path` instead of preloading all 8 characters (~368 MB imported / 68 4K textures) at startup. Legacy 3D `WorldObjects` and its SDFGI/SSIL/SSR/SSAO `WorldEnvironment` were stripped from `MainMenu.tscn`, and gameplay-only SFX in `AudioManager.gd` are deferred until match start.
+- **Binary map pipeline (`Maps/GameMode.scn`)**: A reproducible headless Godot tool (`tools/optimize_gamemode_scene.gd` via `tools/optimize_gamemode_runner.tscn`) converts the 254.5 MB text `Maps/GameMode.tscn` into a ZSTD-compressed binary `Maps/GameMode.scn` (~122 MB, ~10× faster load):
+  - Extracts 20 embedded raw `Image` sub-resources (~140.7 MB ASCII Base64) to `Maps/extracted_textures/` for VRAM-compressed `.s3tc.ctex` import.
+  - Merges 6,471 individual foliage leaf meshes under `skull_area` into 11 indexed `ArrayMesh`es (-14,031 scene nodes total) and strips 604 empty `StaticBody3D` nodes.
+  - Removes hidden `OceanTerrain3D` (81 unused ocean region files), redundant runtime `create_trimesh_shape()` calls on already-baked meshes, off-viewport stray geometry, and replaces the decorative 50k-tri angel statue concave collider with a fitted `BoxShape3D`.
+- **Runtime GPU, animation & VRAM tuning**: `BoujieOcean` LODs and `far_edge` (`1800m`) were tuned to cut frame-1 `SurfaceTool` ocean generation by ~75–80%; `Sky3D` cumulus raymarching (`SkyMaterial.gdshader`) was reduced from 80 → 24 texture taps/pixel (~3.3× faster sky pass); `PlayerAnimationController.gd` caches remapped `AnimationLibrary` instances per `character_id`; and `.import` `process/size_limit` caps (1024px characters/props, 512px split body parts) plus removing `collision_baker.gd` from pickupable `SplitParts` GLBs slash VRAM without modifying source textures.
+
+### 7. Automated Mesh Slicing Tool (`tools/split_character_parts.py`)
 
 Rather than manually taking 8 character models into Blender, separating meshes, and exporting each limb by hand, we wrote a headless Blender Python script that automates the pipeline.
 
