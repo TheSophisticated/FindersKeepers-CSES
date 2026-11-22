@@ -14,6 +14,7 @@ extends Control
 @onready var previous_character_btn: Button = $Panel/VBoxContainer/CharacterPicker/PreviousCharacter
 @onready var next_character_btn: Button = $Panel/VBoxContainer/CharacterPicker/NextCharacter
 @onready var character_name_label: Label = $Panel/VBoxContainer/CharacterPicker/CharacterName
+@onready var character_preview: Control = $Panel/VBoxContainer/CharacterPreview
 @onready var preview_stage: Node3D = $Panel/VBoxContainer/CharacterPreview/Viewport/PreviewStage
 @onready var preview_camera: Camera3D = $Panel/VBoxContainer/CharacterPreview/Viewport/PreviewStage/Camera3D
 
@@ -25,6 +26,7 @@ var _character_selection_ready := false
 var _preview_model: Node3D
 var _preview_pivot: Node3D
 var _preview_character_id: StringName = &""
+var _dragging_preview := false
 
 # Called when the node enters the scene tree
 func _ready():
@@ -38,6 +40,9 @@ func _ready():
 	leave_btn.pressed.connect(_on_leave_pressed)
 	previous_character_btn.pressed.connect(_on_previous_character_pressed)
 	next_character_btn.pressed.connect(_on_next_character_pressed)
+	if character_preview:
+		character_preview.mouse_filter = Control.MOUSE_FILTER_STOP
+		character_preview.gui_input.connect(_on_preview_gui_input)
 	NetworkManager.character_selections_changed.connect(_on_character_selections_changed)
 
 	var current_id := NetworkManager.get_local_character_id()
@@ -69,13 +74,28 @@ func _process(delta: float) -> void:
 	var dots := ".".repeat(int(_dots_time * 2.0) % 4)
 	var base := "Waiting for players to join" if multiplayer.is_server() else "Waiting for host to start the match"
 	status_label.text = base + dots
-	if is_instance_valid(_preview_pivot):
+	if is_instance_valid(_preview_pivot) and not _dragging_preview:
 		_preview_pivot.rotate_y(delta * 0.35)
+
+func _on_preview_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		_dragging_preview = event.pressed
+	elif event is InputEventMouseMotion and _dragging_preview and is_instance_valid(_preview_pivot):
+		_preview_pivot.rotate_y(event.relative.x * 0.015)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_on_leave_pressed()
 		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		var focus_owner := get_viewport().gui_get_focus_owner()
+		var on_action_buttons := (focus_owner == start_btn or focus_owner == leave_btn)
+		if event.physical_keycode in [KEY_A, KEY_Q] or (event.physical_keycode == KEY_LEFT and not on_action_buttons):
+			_on_previous_character_pressed()
+			get_viewport().set_input_as_handled()
+		elif event.physical_keycode in [KEY_D, KEY_E] or (event.physical_keycode == KEY_RIGHT and not on_action_buttons):
+			_on_next_character_pressed()
+			get_viewport().set_input_as_handled()
 
 func _setup_focus_styling() -> void:
 	var focus_box := StyleBoxFlat.new()
