@@ -95,6 +95,8 @@ func _try_bind_local_player() -> void:
 			_player = child
 			_player.tarot_card_added.connect(_on_tarot_card_added)
 			_player.tarot_card_removed.connect(_on_tarot_card_removed)
+			if _player.has_signal("tarot_capacity_changed"):
+				_player.tarot_capacity_changed.connect(_on_tarot_capacity_changed)
 			refresh_slots()
 			return
 
@@ -105,17 +107,43 @@ func _on_tarot_card_added(_card: TarotCard, _slot: int) -> void:
 func _on_tarot_card_removed(_slot: int)->void:
 	refresh_slots()
 
+func _on_tarot_capacity_changed(_new_capacity: int) -> void:
+	refresh_slots()
+
+func _ensure_slot_panels(target_count: int) -> void:
+	var hbox := get_node_or_null("HBoxContainer")
+	if hbox == null or slot_panels.is_empty():
+		return
+	while slot_panels.size() < target_count:
+		var new_idx := slot_panels.size() + 1
+		var panel_dup := slot_panels[0].duplicate() as Control
+		if panel_dup == null:
+			break
+		panel_dup.name = "Slot%d" % new_idx
+		hbox.add_child(panel_dup)
+		slot_panels.append(panel_dup)
+		_slot_art.append(panel_dup.get_node("CardArt") as TextureRect)
+		slot_labels.append(panel_dup.get_node("Label") as Label)
+
 # Redraws every slot from the player's inventory.
 func refresh_slots() -> void:
 	if not is_instance_valid(_player):
 		return
+
+	_ensure_slot_panels(_player.tarot_cards.size())
 
 	for i in range(slot_panels.size()):
 		var card: TarotCard = null
 		if i < _player.tarot_cards.size():
 			card = _player.tarot_cards[i]
 
-		var button_hint: String = "[1 / LB]" if i == 0 else "[2 / RB]"
+		var button_hint: String
+		if i == 0:
+			button_hint = "[1 / LB]"
+		elif i == 1:
+			button_hint = "[2 / RB]"
+		else:
+			button_hint = "[%d]" % (i + 1)
 		if card == null:
 			_slot_art[i].texture = null
 			slot_labels[i].text = button_hint

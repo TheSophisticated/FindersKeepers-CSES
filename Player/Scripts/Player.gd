@@ -363,6 +363,11 @@ func _input(event):
 		trigger_tarot_slot(0)
 	elif event.is_action_pressed("tarot_slot_2"):
 		trigger_tarot_slot(1)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.physical_keycode == KEY_3 and tarot_capacity >= 3:
+			trigger_tarot_slot(2)
+		elif event.physical_keycode == KEY_4 and tarot_capacity >= 4:
+			trigger_tarot_slot(3)
 		
 	if event.is_action_pressed("flashlight"):
 		set_flashlight.rpc(not flashlight.visible)
@@ -386,6 +391,7 @@ func set_flashlight(on : bool):
 # ===== TAROT INVENTORY =====
 signal tarot_card_added(card: TarotCard, slot: int)  # Emitted when a card fills a slot
 signal tarot_card_removed(slot: int)
+signal tarot_capacity_changed(new_capacity: int)
 
 var tarot_cards: Array[TarotCard] = []  # Fixed-size slots, empty slots hold null
 
@@ -567,6 +573,14 @@ func apply_hands_buff(push_force_multiplier: float, reach_distance_boost: float)
 	if pickup_assist_cast and look_at_ray:
 		pickup_assist_cast.target_position = look_at_ray.target_position
 	print("Applied Hands Buff: push_force=", push_force, " reach_distance=", reach_distance)
+
+func apply_torso_buff(extra_tarot_slots: int, slide_boost_multiplier: float) -> void:
+	slide_boost *= slide_boost_multiplier
+	if extra_tarot_slots > 0:
+		tarot_capacity += extra_tarot_slots
+		tarot_cards.resize(tarot_capacity)
+		tarot_capacity_changed.emit(tarot_capacity)
+	print("Applied Torso Buff: tarot_capacity=", tarot_capacity, " slide_boost=", slide_boost)
 
 func apply_speed_modifier(multiplier: float)->void:
 	speed_modifier *= multiplier
