@@ -1,6 +1,6 @@
 # Silence of the limbs 
 
-Multiplayer 3D game built in Godot 4 for Technozion / CSES.
+Multiplayer 3D game built in Godot 4 for Technozion / CSES. See [ABOUT.md](ABOUT.md) for the full overview, playable cast, and latest release notes (`v1.0.0`).
 
 The elevator pitch: 4 players spawn in an old church in the middle of a dense island. Everyone's body has been cut into four pieces (head, hands, torso, legs) and scattered across the zones. You run around, hunt down your opponents' body parts, haul them back to the center altar, and burn them. If all 4 of your parts get sacrificed, you're out. If the round timer expires, whoever deposited the most parts wins.
 
