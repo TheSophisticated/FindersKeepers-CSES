@@ -60,35 +60,39 @@ func _ready():
 		quit_btn.focus_neighbor_top = back_btn.get_path()
 		quit_btn.focus_neighbor_bottom = cont_btn.get_path()
 	
-	# Setup focus neighbors in SettingsMenu
+	# Setup focus neighbors in SettingsMenu (includes extended audio & graphics controls)
 	if has_node("SettingsMenu/VBoxContainer"):
-		var p_res = $SettingsMenu/VBoxContainer/ResOptionButton
-		var p_fs = $SettingsMenu/VBoxContainer/FullScreenCheckButton
-		var p_vsync = $SettingsMenu/VBoxContainer/VsyncCheckBox
-		var p_mouse = $SettingsMenu/VBoxContainer/MouseSensitivity/Text/Sensitivity
-		var p_ctrl = $SettingsMenu/VBoxContainer/ControllerSensitivity/Text/Sensitivity
-		var p_back = $SettingsMenu/VBoxContainer/SettingMenuBack
-
-		p_res.focus_neighbor_top = p_back.get_path()
-		p_res.focus_neighbor_bottom = p_fs.get_path()
-		p_fs.focus_neighbor_top = p_res.get_path()
-		p_fs.focus_neighbor_bottom = p_vsync.get_path()
-		p_vsync.focus_neighbor_top = p_fs.get_path()
-		p_vsync.focus_neighbor_bottom = p_mouse.get_path()
-		p_mouse.focus_neighbor_top = p_vsync.get_path()
-		p_mouse.focus_neighbor_bottom = p_ctrl.get_path()
-		p_ctrl.focus_neighbor_top = p_mouse.get_path()
-		p_ctrl.focus_neighbor_bottom = p_back.get_path()
-		p_back.focus_neighbor_top = p_ctrl.get_path()
-		p_back.focus_neighbor_bottom = p_res.get_path()
-
-		p_mouse.focus_entered.connect(func(): p_mouse.get_parent().modulate = Color(1.0, 0.84, 0.0))
-		p_mouse.focus_exited.connect(func(): p_mouse.get_parent().modulate = Color.WHITE)
-		p_ctrl.focus_entered.connect(func(): p_ctrl.get_parent().modulate = Color(1.0, 0.84, 0.0))
-		p_ctrl.focus_exited.connect(func(): p_ctrl.get_parent().modulate = Color.WHITE)
+		_wire_settings_focus_chain($SettingsMenu/VBoxContainer)
 	
 	# Setup high-visibility focus indicator for gamepad
 	_setup_focus_styling()
+
+func _collect_focusable_controls(node: Node, out: Array[Control]) -> void:
+	for child in node.get_children():
+		if child is BaseButton or child is Slider:
+			var ctrl := child as Control
+			if ctrl.visible and ctrl.focus_mode != Control.FOCUS_NONE:
+				out.append(ctrl)
+		else:
+			_collect_focusable_controls(child, out)
+
+func _wire_settings_focus_chain(vbox: VBoxContainer) -> void:
+	var controls: Array[Control] = []
+	_collect_focusable_controls(vbox, controls)
+	var count := controls.size()
+	if count == 0:
+		return
+	for i in range(count):
+		var curr := controls[i]
+		var prev := controls[posmod(i - 1, count)]
+		var next := controls[posmod(i + 1, count)]
+		curr.focus_neighbor_top = prev.get_path()
+		curr.focus_neighbor_bottom = next.get_path()
+		if curr is Slider:
+			var parent_ctrl := curr.get_parent() as Control
+			if parent_ctrl != null:
+				curr.focus_entered.connect(func(): parent_ctrl.modulate = Color(1.0, 0.84, 0.0))
+				curr.focus_exited.connect(func(): parent_ctrl.modulate = Color.WHITE)
 
 func _setup_focus_styling() -> void:
 	var focus_box := StyleBoxFlat.new()
@@ -127,15 +131,15 @@ func init_settings_controls():
 	if has_node("SettingsMenu/VBoxContainer/ResOptionButton"):
 		var res_option = $SettingsMenu/VBoxContainer/ResOptionButton
 		res_option.clear()
-		# Add the screen's native resolution first so any display can render 1:1
+		# Add the screen's native resolution first, then deduplicated common presets
 		var screen_res := DisplayServer.screen_get_size()
 		var screen_res_str := str(screen_res.x) + "x" + str(screen_res.y)
-		res_option.add_item(screen_res_str)
-		# Add common resolution options
-		res_option.add_item("1152x648")
-		res_option.add_item("1280x720")
-		res_option.add_item("1366x768")
-		res_option.add_item("1920x1080")
+		var res_choices: Array[String] = [screen_res_str]
+		for preset in ["1152x648", "1280x720", "1366x768", "1920x1080"]:
+			if not (preset in res_choices):
+				res_choices.append(preset)
+		for choice in res_choices:
+			res_option.add_item(choice)
 		
 		# Set current resolution from settings
 		var current_res = Settings.settings.get("resolution", Vector2i(1280, 960))

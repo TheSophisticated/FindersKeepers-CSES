@@ -145,12 +145,29 @@ func _on_banner_timeout() -> void:
 		banner_label.visible = false
  
 # ===== BLOOD SHRINE EVENT =====
+func _get_local_player() -> Node:
+	for player in get_tree().get_nodes_in_group("player"):
+		if is_instance_valid(player) and player.is_multiplayer_authority():
+			return player
+	return null
+
+func _is_pause_menu_open() -> bool:
+	var parent := get_parent()
+	if parent != null:
+		for child in parent.get_children():
+			if child.get("is_paused") == true:
+				return true
+	return false
+
 func _on_shrine_prompt_started() -> void:
 	if shrine_modal:
 		shrine_modal.visible = true
 		shrine_accept_btn.disabled = false
 		shrine_decline_btn.disabled = false
 		shrine_status_label.text = ""
+	var local_player := _get_local_player()
+	if local_player and local_player.has_method("set_input_enabled"):
+		local_player.set_input_enabled(false)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	if shrine_accept_btn:
 		shrine_accept_btn.grab_focus()
@@ -174,7 +191,17 @@ func _on_shrine_decline() -> void:
 func _on_shrine_resolved(accepted: bool) -> void:
 	if shrine_modal:
 		shrine_modal.visible = false
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	var game_over := GameManager != null and GameManager.current_state == GameManager.MatchState.GAME_OVER
+	if not _is_pause_menu_open() and not game_over:
+		var local_player := _get_local_player()
+		var my_id := multiplayer.get_unique_id()
+		var is_alive := true
+		if GameManager and GameManager.players.has(my_id):
+			is_alive = bool(GameManager.players[my_id].get("is_alive", true))
+		if local_player and is_alive and local_player.has_method("set_input_enabled"):
+			local_player.set_input_enabled(true)
+		elif is_alive:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	if accepted:
 		_show_banner("The Blood Deal was accepted! -20s from match clock.", Color(0.9, 0.2, 0.2))
 	else:
@@ -182,6 +209,9 @@ func _on_shrine_resolved(accepted: bool) -> void:
  
 # ===== GAME OVER =====
 func _on_game_over(winner_id: int, winner_name: String) -> void:
+	var local_player := _get_local_player()
+	if local_player and local_player.has_method("set_input_enabled"):
+		local_player.set_input_enabled(false)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	if game_over_panel:
 		game_over_panel.visible = true

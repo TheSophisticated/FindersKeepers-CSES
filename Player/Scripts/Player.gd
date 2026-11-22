@@ -14,6 +14,8 @@ extends CharacterBody3D
 @export var air_control := 0.3         # Air movement control factor
 @export var sprint_grace_time := 0.25  # Sprint still counts this long after release (A -> B thumb travel)
 @export var slide_boost: float = 1.0   # Slide speed boost multiplier (boosted by Torso part)
+@export var push_force: float = 14.0   # Player shove knockback strength (boosted by Hands part)
+@export var reach_distance: float = 3.0 # Max player shove distance (boosted by Hands part)
 @export var character_turn_speed := 12.0 # How quickly the visible character faces movement
 @export var character_facing_yaw: float = PI # Replicated visual facing, relative to the player root
 
@@ -167,7 +169,7 @@ func _process(delta):
 		# Preserve existing interaction prompts with contextual labels.
 		if interact_prompt:
 			if ray_hit is CharacterBody3D and ray_hit.is_in_group("player"):
-				var is_in_range := global_position.distance_to(ray_hit.global_position) <= 3.0
+				var is_in_range := global_position.distance_to(ray_hit.global_position) <= reach_distance
 				interact_prompt.text = "[Q] / [B] — Push Player" if is_in_range else ""
 				interact_prompt.visible = is_in_range
 				is_hovering_actionable = is_in_range
@@ -361,6 +363,11 @@ func _input(event):
 		trigger_tarot_slot(0)
 	elif event.is_action_pressed("tarot_slot_2"):
 		trigger_tarot_slot(1)
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.physical_keycode == KEY_3 and tarot_capacity >= 3:
+			trigger_tarot_slot(2)
+		elif event.physical_keycode == KEY_4 and tarot_capacity >= 4:
+			trigger_tarot_slot(3)
 		
 	if event.is_action_pressed("flashlight"):
 		set_flashlight.rpc(not flashlight.visible)
@@ -384,6 +391,7 @@ func set_flashlight(on : bool):
 # ===== TAROT INVENTORY =====
 signal tarot_card_added(card: TarotCard, slot: int)  # Emitted when a card fills a slot
 signal tarot_card_removed(slot: int)
+signal tarot_capacity_changed(new_capacity: int)
 
 var tarot_cards: Array[TarotCard] = []  # Fixed-size slots, empty slots hold null
 
@@ -551,11 +559,28 @@ func _get_push_target() -> CharacterBody3D:
 	if not hit_node.is_in_group("player"):
 		return null
 
-	# The target must be within 3 units.
-	if global_position.distance_to(hit_node.global_position) > 3.0:
+	# The target must be within reach_distance units.
+	if global_position.distance_to(hit_node.global_position) > reach_distance:
 		return null
 
 	return hit_node
+
+func apply_hands_buff(push_force_multiplier: float, reach_distance_boost: float) -> void:
+	push_force *= push_force_multiplier
+	reach_distance += reach_distance_boost
+	if look_at_ray:
+		look_at_ray.target_position.z = minf(look_at_ray.target_position.z, -reach_distance)
+	if pickup_assist_cast and look_at_ray:
+		pickup_assist_cast.target_position = look_at_ray.target_position
+	print("Applied Hands Buff: push_force=", push_force, " reach_distance=", reach_distance)
+
+func apply_torso_buff(extra_tarot_slots: int, slide_boost_multiplier: float) -> void:
+	slide_boost *= slide_boost_multiplier
+	if extra_tarot_slots > 0:
+		tarot_capacity += extra_tarot_slots
+		tarot_cards.resize(tarot_capacity)
+		tarot_capacity_changed.emit(tarot_capacity)
+	print("Applied Torso Buff: tarot_capacity=", tarot_capacity, " slide_boost=", slide_boost)
 
 func apply_speed_modifier(multiplier: float)->void:
 	speed_modifier *= multiplier
@@ -594,9 +619,12 @@ func remove_render_distance_modifier(multiplier: float)->void:
 	if multiplier == 0.0:
 		return
 	render_distance_modifier /= multiplier
-	camera.far = normal_render_distance
+	if is_equal_approx(render_distance_modifier, 1.0):
+		render_distance_modifier = 1.0
+	if camera:
+		camera.far = normal_render_distance * render_distance_modifier
 
-	print("render distance modifer removed : ",multiplier," | Far : ",camera.far)
+	print("render distance modifier removed : ", multiplier, " | Far : ", camera.far if camera else 0.0)
 
 func apply_input_modifier(multiplier:float)->void:
 	input_multiplier  *= multiplier
@@ -641,7 +669,7 @@ func request_push_player(target_path: NodePath) -> void:
 		return
 
 	# Validate the distance on the server.
-	if global_position.distance_to(target.global_position) > 3.0:
+	if global_position.distance_to(target.global_position) > reach_distance:
 		return
 
 	# Push away from the requesting player.
@@ -656,13 +684,13 @@ func request_push_player(target_path: NodePath) -> void:
 	var target_peer_id := target.get_multiplayer_authority()
 
 	if target_peer_id == 1:
-		target._apply_tower_knockback_local(direction, 14.0, 0.45)
+		target._apply_tower_knockback_local(direction, push_force, 0.45)
 	else:
 		target.rpc_id(
 			target_peer_id,
 			"apply_tower_knockback",
 			direction,
-			14.0,
+			push_force,
 			0.45
 		)
 
@@ -819,8 +847,6 @@ func process_local_movement(delta):
 
 	# Handle jumping
 	handle_jump_mechanics(delta)
-	# Handle tarot inputs polled every tick
-	handle_tarot_inputs()
 
 	# Update movement state
 	update_movement_state(delta)
@@ -829,14 +855,6 @@ func process_local_movement(delta):
 
 	# Apply gravity
 	apply_gravity(delta)
-
-func handle_tarot_inputs() -> void:
-	if not is_multiplayer_authority() or not input_enabled:
-		return
-	if Input.is_action_just_pressed("tarot_slot_1"):
-		trigger_tarot_slot(0)
-	elif Input.is_action_just_pressed("tarot_slot_2"):
-		trigger_tarot_slot(1)
 
 # ===== JUMP MECHANICS =====
 func handle_jump_mechanics(delta):

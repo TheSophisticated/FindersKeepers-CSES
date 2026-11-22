@@ -30,7 +30,7 @@ enum BodyPartType {
 const MIN_PLAYERS: int = 2
 const MAX_PLAYERS: int = 4
 
-const MATCH_DURATION_SECONDS: float = 300.0    # 6 minutes total round duration
+const MATCH_DURATION_SECONDS: float = 300.0    # 5 minutes total round duration
 const BLOOD_SHRINE_TRIGGER_TIME: float = 180.0 # Triggers halfway through (at 3:00)
 const SHRINE_PENALTY_SECONDS: float = 20.0     # Time stripped if players accept the deal
 const SHRINE_REWARD_CARD_PATH: String = "res://Tarot/Cards/Definitions/Recaller.tres" # Super card given to every yes-voter
@@ -422,7 +422,7 @@ func evaluate_shrine_votes() -> void:
 @rpc("authority", "call_local", "reliable")
 func broadcast_shrine_result(accepted: bool) -> void:
 	blood_shrine_resolved.emit(accepted)
-	if accepted:
+	if accepted and tarot_card_spawner != null and is_instance_valid(tarot_card_spawner):
 		tarot_card_spawner.spawn_super_tarot()
 
 
@@ -447,19 +447,42 @@ func check_last_player_standing() -> void:
 
 
 ## Fallback win condition: if time runs out, the player who deposited the most parts wins.
+## Ties are broken by fewest parts lost; an exact tie ends in a draw.
 func end_match_by_timeout() -> void:
 	if current_state != MatchState.IN_PROGRESS and current_state != MatchState.BLOOD_SHRINE_ACTIVE:
 		return
 
 	var top_score: int = -1
-	var leading_player_id: int = -1
+	var leaders: Array[int] = []
 
 	for pid in players:
-		if players[pid]["is_connected"] and players[pid]["parts_deposited"] > top_score:
-			top_score = players[pid]["parts_deposited"]
-			leading_player_id = pid
+		if not players[pid]["is_connected"]:
+			continue
+		var score: int = int(players[pid]["parts_deposited"])
+		if score > top_score:
+			top_score = score
+			leaders = [pid]
+		elif score == top_score:
+			leaders.append(pid)
 
-	conclude_match(leading_player_id)
+	if leaders.size() == 1:
+		conclude_match(leaders[0])
+		return
+	elif leaders.size() > 1:
+		var fewest_lost: int = 999
+		var tie_winners: Array[int] = []
+		for pid in leaders:
+			var lost_count: int = (players[pid]["parts_lost"] as Array).size()
+			if lost_count < fewest_lost:
+				fewest_lost = lost_count
+				tie_winners = [pid]
+			elif lost_count == fewest_lost:
+				tie_winners.append(pid)
+		if tie_winners.size() == 1:
+			conclude_match(tie_winners[0])
+			return
+
+	conclude_match(-1)
 
 
 func conclude_match(winner_id: int) -> void:
