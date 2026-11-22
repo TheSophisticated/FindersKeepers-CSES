@@ -24,6 +24,7 @@ extends Control
 @onready var player_legend_rows: VBoxContainer = $PlayerLegend/LegendVBox/LegendRows
  
 var local_parts_lost: int = 0
+var _banner_tween: Tween = null
  
 func _ready() -> void:
 	# Hide overlays initially
@@ -134,15 +135,27 @@ func _display_name(peer_id: int, fallback: String) -> String:
  
 func _show_banner(text: String, color: Color = Color.WHITE) -> void:
 	if banner_label:
+		if _banner_tween and _banner_tween.is_valid():
+			_banner_tween.kill()
 		banner_label.text = text
 		banner_label.add_theme_color_override("font_color", color)
+		banner_label.modulate.a = 0.0
 		banner_label.visible = true
+		_banner_tween = create_tween()
+		_banner_tween.tween_property(banner_label, "modulate:a", 1.0, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		if banner_timer:
 			banner_timer.start(3.5)
  
 func _on_banner_timeout() -> void:
-	if banner_label:
-		banner_label.visible = false
+	if banner_label and banner_label.visible:
+		if _banner_tween and _banner_tween.is_valid():
+			_banner_tween.kill()
+		_banner_tween = create_tween()
+		_banner_tween.tween_property(banner_label, "modulate:a", 0.0, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		_banner_tween.tween_callback(func():
+			if is_instance_valid(banner_label):
+				banner_label.visible = false
+		)
  
 # ===== BLOOD SHRINE EVENT =====
 func _get_local_player() -> Node:
