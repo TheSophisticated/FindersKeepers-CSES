@@ -84,6 +84,8 @@ var _base_camera_pos := Vector3.ZERO  # Cached standing camera local position
 var _bob_phase := 0.0                 # Headbob sine phase
 var _bob_offset := Vector2.ZERO       # Current smoothed headbob offset (x, y)
 var _crouch_cam_offset := 0.0         # Vertical eye-height offset during crouch/slide
+var _peak_fall_speed := 0.0           # Peak downward speed tracked while airborne
+var _landing_dip := 0.0               # Tactile downward camera offset on touchdown
 var raw_input_dir := Vector2.ZERO     # Raw input direction
 var vision_modifier: float  = 1.0
 var render_distance_modifier: float = 1.0
@@ -880,8 +882,13 @@ func handle_jump_mechanics(delta):
 			can_jump = true
 			jump_count = 0
 			air_speed = 0.0
+			if _peak_fall_speed > 5.0:
+				_landing_dip = -clampf(_peak_fall_speed * 0.014, 0.06, 0.28)
+			_peak_fall_speed = 0.0
 	else:
 		coyote_timer = max(coyote_timer - delta, 0)
+		if velocity.y < 0.0:
+			_peak_fall_speed = maxf(_peak_fall_speed, -velocity.y)
 
 	was_on_floor = is_on_floor()
 
@@ -1091,7 +1098,10 @@ func update_camera_effects(delta):
 		target_crouch_offset = -0.45
 	_crouch_cam_offset = lerpf(_crouch_cam_offset, target_crouch_offset, clampf(delta * 12.0, 0.0, 1.0))
 
-	camera.position = _base_camera_pos + Vector3(_bob_offset.x, _bob_offset.y + _crouch_cam_offset, 0.0)
+	# Smoothly recover landing dip back to standing eye height
+	_landing_dip = lerpf(_landing_dip, 0.0, clampf(delta * 11.0, 0.0, 1.0))
+
+	camera.position = _base_camera_pos + Vector3(_bob_offset.x, _bob_offset.y + _crouch_cam_offset + _landing_dip, 0.0)
 
 # ===== NETWORK UPDATES =====
 func send_network_update():
