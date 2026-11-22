@@ -819,8 +819,6 @@ func process_local_movement(delta):
 
 	# Handle jumping
 	handle_jump_mechanics(delta)
-	# Handle tarot inputs polled every tick
-	handle_tarot_inputs()
 
 	# Update movement state
 	update_movement_state(delta)
@@ -829,14 +827,6 @@ func process_local_movement(delta):
 
 	# Apply gravity
 	apply_gravity(delta)
-
-func handle_tarot_inputs() -> void:
-	if not is_multiplayer_authority() or not input_enabled:
-		return
-	if Input.is_action_just_pressed("tarot_slot_1"):
-		trigger_tarot_slot(0)
-	elif Input.is_action_just_pressed("tarot_slot_2"):
-		trigger_tarot_slot(1)
 
 # ===== JUMP MECHANICS =====
 func handle_jump_mechanics(delta):
