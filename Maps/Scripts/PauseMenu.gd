@@ -163,10 +163,10 @@ func _setup_extended_settings_ui() -> void:
 	if vbox.get_node_or_null("AudioSectionHeader") != null:
 		return
 
-	settings_panel.offset_top = -82.0
-	settings_panel.offset_bottom = 82.0
-	vbox.offset_top = -140.0
-	vbox.offset_bottom = 220.0
+	settings_panel.offset_top = -100.0
+	settings_panel.offset_bottom = 100.0
+	vbox.offset_top = -155.0
+	vbox.offset_bottom = 255.0
 
 	var back_btn := vbox.get_node_or_null("SettingMenuBack")
 
@@ -208,6 +208,24 @@ func _setup_extended_settings_ui() -> void:
 	shadow_row.add_child(shadow_lbl)
 	shadow_row.add_child(shadow_opt)
 	vbox.add_child(shadow_row)
+
+	var ssao_chk := CheckBox.new()
+	ssao_chk.name = "SSAOCheckBox"
+	ssao_chk.text = "Ambient Occlusion (SSAO)"
+	ssao_chk.button_pressed = bool(Settings.settings.get("ssao_enabled", true))
+	ssao_chk.toggled.connect(func(on: bool):
+		Settings.set_setting("ssao_enabled", on)
+	)
+	vbox.add_child(ssao_chk)
+
+	var ssr_chk := CheckBox.new()
+	ssr_chk.name = "SSRCheckBox"
+	ssr_chk.text = "Screen-Space Reflections (SSR)"
+	ssr_chk.button_pressed = bool(Settings.settings.get("ssr_enabled", false))
+	ssr_chk.toggled.connect(func(on: bool):
+		Settings.set_setting("ssr_enabled", on)
+	)
+	vbox.add_child(ssr_chk)
 
 	var sdfgi_chk := CheckBox.new()
 	sdfgi_chk.name = "SDFGICheckBox"
