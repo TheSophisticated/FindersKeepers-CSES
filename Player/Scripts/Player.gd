@@ -14,6 +14,8 @@ extends CharacterBody3D
 @export var air_control := 0.3         # Air movement control factor
 @export var sprint_grace_time := 0.25  # Sprint still counts this long after release (A -> B thumb travel)
 @export var slide_boost: float = 1.0   # Slide speed boost multiplier (boosted by Torso part)
+@export var push_force: float = 14.0   # Player shove knockback strength (boosted by Hands part)
+@export var reach_distance: float = 3.0 # Max player shove distance (boosted by Hands part)
 @export var character_turn_speed := 12.0 # How quickly the visible character faces movement
 @export var character_facing_yaw: float = PI # Replicated visual facing, relative to the player root
 
@@ -167,7 +169,7 @@ func _process(delta):
 		# Preserve existing interaction prompts with contextual labels.
 		if interact_prompt:
 			if ray_hit is CharacterBody3D and ray_hit.is_in_group("player"):
-				var is_in_range := global_position.distance_to(ray_hit.global_position) <= 3.0
+				var is_in_range := global_position.distance_to(ray_hit.global_position) <= reach_distance
 				interact_prompt.text = "[Q] / [B] — Push Player" if is_in_range else ""
 				interact_prompt.visible = is_in_range
 				is_hovering_actionable = is_in_range
@@ -551,11 +553,20 @@ func _get_push_target() -> CharacterBody3D:
 	if not hit_node.is_in_group("player"):
 		return null
 
-	# The target must be within 3 units.
-	if global_position.distance_to(hit_node.global_position) > 3.0:
+	# The target must be within reach_distance units.
+	if global_position.distance_to(hit_node.global_position) > reach_distance:
 		return null
 
 	return hit_node
+
+func apply_hands_buff(push_force_multiplier: float, reach_distance_boost: float) -> void:
+	push_force *= push_force_multiplier
+	reach_distance += reach_distance_boost
+	if look_at_ray:
+		look_at_ray.target_position.z = minf(look_at_ray.target_position.z, -reach_distance)
+	if pickup_assist_cast and look_at_ray:
+		pickup_assist_cast.target_position = look_at_ray.target_position
+	print("Applied Hands Buff: push_force=", push_force, " reach_distance=", reach_distance)
 
 func apply_speed_modifier(multiplier: float)->void:
 	speed_modifier *= multiplier
@@ -641,7 +652,7 @@ func request_push_player(target_path: NodePath) -> void:
 		return
 
 	# Validate the distance on the server.
-	if global_position.distance_to(target.global_position) > 3.0:
+	if global_position.distance_to(target.global_position) > reach_distance:
 		return
 
 	# Push away from the requesting player.
@@ -656,13 +667,13 @@ func request_push_player(target_path: NodePath) -> void:
 	var target_peer_id := target.get_multiplayer_authority()
 
 	if target_peer_id == 1:
-		target._apply_tower_knockback_local(direction, 14.0, 0.45)
+		target._apply_tower_knockback_local(direction, push_force, 0.45)
 	else:
 		target.rpc_id(
 			target_peer_id,
 			"apply_tower_knockback",
 			direction,
-			14.0,
+			push_force,
 			0.45
 		)
 
