@@ -619,9 +619,12 @@ func remove_render_distance_modifier(multiplier: float)->void:
 	if multiplier == 0.0:
 		return
 	render_distance_modifier /= multiplier
-	camera.far = normal_render_distance
+	if is_equal_approx(render_distance_modifier, 1.0):
+		render_distance_modifier = 1.0
+	if camera:
+		camera.far = normal_render_distance * render_distance_modifier
 
-	print("render distance modifer removed : ",multiplier," | Far : ",camera.far)
+	print("render distance modifier removed : ", multiplier, " | Far : ", camera.far if camera else 0.0)
 
 func apply_input_modifier(multiplier:float)->void:
 	input_multiplier  *= multiplier
