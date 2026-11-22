@@ -422,7 +422,7 @@ func evaluate_shrine_votes() -> void:
 @rpc("authority", "call_local", "reliable")
 func broadcast_shrine_result(accepted: bool) -> void:
 	blood_shrine_resolved.emit(accepted)
-	if accepted:
+	if accepted and tarot_card_spawner != null and is_instance_valid(tarot_card_spawner):
 		tarot_card_spawner.spawn_super_tarot()
 
 
