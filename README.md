@@ -18,19 +18,21 @@ Default 3D character movement in Godot often feels like sliding on wet ice when 
 - **Sliding**: Holding sprint and pressing crouch triggers a directional slide. It calculates an initial boost factor (`1.35 * slide_boost * (0.6 + 0.4 * (slide_timer / 0.65))`) that decays over a 0.65s timer, blending into crouch-walk if you stay down.
 - **Takeoff speed preservation**: Air control is limited (`air_control = 0.3`), but your horizontal takeoff speed is captured at the moment of jumping (`air_speed = max(current_speed, air_speed)`) so you don't instantly lose sprint momentum in mid-air.
 - **Input buffers and coyote time**: 0.15s jump buffer window and 0.10s coyote timer off ledges.
-- **Player shoving (`push_player`)**: You can walk up to an opponent and trigger an impulse knockback to physically knock them away from an altar deposit or a pickup.
+- **Ocean buoyancy**: Wading slows movement smoothly by submerge depth, and deep water floats the player at shoulder height (`WATER_FLOAT_CENTER_Y = 4.85`) with gentle wave bobbing so the camera stays above the surface.
+- **Player shoving (`push_player`)**: You can walk up to an opponent and trigger an impulse knockback to physically knock them away from an altar deposit or a pickup, gated by a 1.5s client + server cooldown (`push_cooldown`) to prevent stunlock spam.
+- **First-person camera feel**: Movement drives a speed-scaled sinusoidal headbob, smooth eye-height drop and roll tilt during crouch/slide, a velocity-scaled landing dip on touchdown, quadratic decaying trauma shake on shove/Tower knockback hits, and subtle rotational lag on the handheld flashlight.
 
 ### 2. Physical Body Parts (`BodyParts/bodypart.gd`)
 
 Body parts are not just inventory numbers. They are actual `RigidBody3D` nodes with collision shapes and mass:
 - When dropped or spawned, they react to terrain gravity and physics impulses.
-- Players pick them up into an active hold slot attached to the camera's `HeadPosition` node.
-- Carrying parts gives passive stat bonuses based on part type (e.g. legs give a slight speed boost, torso boosts slide speed and tarot capacity, hands increase push force).
-- Depositing an opponent's part at the central altar (`SpellCenter.gd`) registers the sacrifice on the authoritative host via RPC. When a player's 4th part is deposited, the host emits `player_eliminated`.
+- Players pick them up into an active hold slot attached to the camera's `HeadPosition` node with subtle walk/breathing carry sway and owner-aware hover/carry prompts (warning you if you hover your own limb).
+- Depositing opponent parts grants passive stat bonuses based on part type: `LegsPart` permanently increases walk/sprint speed, `HeadPart` widens FOV, `HandsPart` scales `push_force` and `reach_distance`, and `TorsoPart` boosts `slide_boost` while dynamically expanding `tarot_capacity` (and adding extra HUD slots).
+- Depositing an opponent's part at the central altar (`SpellCenter.gd`) registers the sacrifice on the authoritative host via RPC. When a player's 4th part is deposited, the host emits `player_eliminated`. On a 5-minute timeout, ties in deposits are broken by fewest parts lost before declaring a draw.
 
 ### 3. Tarot Cards & Status Effects (`Tarot/`)
 
-Cards are structured as Godot custom resources (`TarotCard.gd` inheriting `Resource`), pairing a card definition with a `TarotEffect` script. Players have 2 inventory slots.
+Cards are structured as Godot custom resources (`TarotCard.gd` inheriting `Resource`), pairing a card definition with a `TarotEffect` script. Players start with 2 inventory slots (expandable via the `TorsoPart` buff), get hover/toast warnings when slots are full, and grounded pickups pulse with a subtle violet rim shimmer so they stay readable in dark woods.
 
 - **Dark Moon**: Overrides the target's camera far plane and fog density, dropping view distance to near-blindness and narrowing FOV for 5 seconds.
 - **Hanged Man**: Flips `input_multiplier = -1.0` on the victim client. All directional input is completely inverted for the duration.
@@ -38,10 +40,17 @@ Cards are structured as Godot custom resources (`TarotCard.gd` inheriting `Resou
 - **The Tower**: Applies radial impulse knockback, launching nearby opponents away from you.
 - **Recaller (Super Card)**: Teleports opponents back to their ritual stations.
 
-#### The 3-Minute Blood Shrine Event
-At the 3:00 mark, `GameManager.gd` halts normal flow and broadcasts a voting prompt to all clients. If the majority votes to accept the deal:
+#### The Blood Shrine Event
+Mid-match, `GameManager.gd` halts normal flow, locks player camera/movement input, and broadcasts a voting prompt to all clients. If the majority votes to accept the deal:
 - 20 seconds are permanently deducted from the match timer.
 - Every player who voted yes gets the `Recaller` super card.
+
+### 4. HUD, Compass & Lobby UX (`Maps/Scripts/MatchHUD.gd`, `CompassUI.gd`, `MainMenu/`)
+
+- **Context-aware compass (`CompassUI.gd`)**: Smoothly interpolates (`lerp_angle`) toward the nearest opponent limb, tinted to that player's color. The moment you pick up a body part, the compass automatically flips to crimson and points straight back to the Church Altar (`SpellCenter`).
+- **Tension feedback & spectator clarity**: Banners, tarot toasts, and tooltips fade smoothly with tweens; under 60 seconds, a procedural red edge vignette pulses alongside the heartbeat audio (with timer pulse under 15s); sacrificed players get a clear spectator overlay instead of freezing silently.
+- **Lobby & Settings QoL**: Hosts see their local LAN IPv4 with a one-click **Copy IP** button, players can cycle characters with keyboard shortcuts and drag to spin the 3D preview, Direct IP persists across launches (`last_direct_ip`), the Pause Menu includes a compact Controls card, and Settings expose Master/SFX/Ambience sliders with live numeric readouts, Shadow Quality, SSAO/SSR/SDFGI toggles, deduplicated resolutions, and full gamepad focus navigation.
+- **Playtest utilities**: `AudioManager.gd` automatically mutes unfocused windows for clean multi-instance testing on one PC, and pressing `F3` toggles a live FPS and ENet RTT ping overlay.
 
 ### 4. Networking & Replication (`Networking/NetworkManager.gd`)
 
