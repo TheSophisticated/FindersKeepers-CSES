@@ -86,6 +86,7 @@ var _bob_offset := Vector2.ZERO       # Current smoothed headbob offset (x, y)
 var _crouch_cam_offset := 0.0         # Vertical eye-height offset during crouch/slide
 var _peak_fall_speed := 0.0           # Peak downward speed tracked while airborne
 var _landing_dip := 0.0               # Tactile downward camera offset on touchdown
+var _camera_shake_trauma := 0.0       # Decaying trauma [0..1] for knockback camera shake
 var raw_input_dir := Vector2.ZERO     # Raw input direction
 var vision_modifier: float  = 1.0
 var render_distance_modifier: float = 1.0
@@ -493,6 +494,7 @@ func _apply_tower_knockback_local(
 
 	knockback_velocity = direction.normalized() * strength
 	knockback_time_remaining = duration
+	_camera_shake_trauma = clampf(_camera_shake_trauma + 0.65, 0.0, 1.0)
 
 	if held_body_part != null:
 		drop_body_part.rpc()
@@ -1061,7 +1063,15 @@ func update_camera_effects(delta):
 		target_tilt = -raw_input_dir.x * camera_tilt_amount
 
 	camera_tilt = lerp(camera_tilt, target_tilt, delta * sway_smoothness)
-	camera.rotation.z = deg_to_rad(camera_tilt)
+	var shake_roll := 0.0
+	var shake_pitch := 0.0
+	if _camera_shake_trauma > 0.001:
+		_camera_shake_trauma = maxf(_camera_shake_trauma - delta * 1.9, 0.0)
+		var shake := _camera_shake_trauma * _camera_shake_trauma
+		shake_roll = deg_to_rad(randf_range(-4.5, 4.5) * shake)
+		shake_pitch = deg_to_rad(randf_range(-3.0, 3.0) * shake)
+	camera.rotation.x = clampf(pitch + shake_pitch, deg_to_rad(-89), deg_to_rad(89))
+	camera.rotation.z = deg_to_rad(camera_tilt) + shake_roll
 
 	# FOV changes when sprinting
 	var target_fov := fov_normal
