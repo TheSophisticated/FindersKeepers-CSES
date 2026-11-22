@@ -196,9 +196,14 @@ func _process(delta):
 					interact_prompt.visible = true
 					is_hovering_actionable = true
 			elif tarot_target != null and tarot_target.card != null:
-				interact_prompt.text = "[E] / [X] — Take %s" % tarot_target.card.card_name
-				interact_prompt.visible = true
-				is_hovering_actionable = true
+				if _has_empty_tarot_slot():
+					interact_prompt.text = "[E] / [X] — Take %s" % tarot_target.card.card_name
+					interact_prompt.visible = true
+					is_hovering_actionable = true
+				else:
+					interact_prompt.text = "Tarot Slots Full (Use [1] or [2] first)"
+					interact_prompt.visible = true
+					is_hovering_actionable = false
 			else:
 				interact_prompt.text = "[E] / [X] — Interact"
 				interact_prompt.visible = pickup_target != null
@@ -418,6 +423,12 @@ signal tarot_capacity_changed(new_capacity: int)
 
 var tarot_cards: Array[TarotCard] = []  # Fixed-size slots, empty slots hold null
 
+func _has_empty_tarot_slot() -> bool:
+	for card in tarot_cards:
+		if card == null:
+			return true
+	return false
+
 # Stores a card in the first empty slot. Returns true if it fit.
 
 @rpc("any_peer", "call_local", "reliable")
@@ -434,6 +445,7 @@ func add_tarot_card(card: TarotCard) -> bool:
 			return true
 
 	print("Tarot inventory full.")
+	show_tarot_notification("Tarot inventory full!")
 	return false
 
 # Server-granted card (e.g. Blood Shrine reward). Uses the first empty slot,
