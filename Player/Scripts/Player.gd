@@ -16,6 +16,7 @@ extends CharacterBody3D
 @export var slide_boost: float = 1.0   # Slide speed boost multiplier (boosted by Torso part)
 @export var push_force: float = 14.0   # Player shove knockback strength (boosted by Hands part)
 @export var reach_distance: float = 3.0 # Max player shove distance (boosted by Hands part)
+@export var push_cooldown: float = 1.5  # Cooldown in seconds between shoves
 @export var character_turn_speed := 12.0 # How quickly the visible character faces movement
 @export var character_facing_yaw: float = PI # Replicated visual facing, relative to the player root
 
@@ -67,6 +68,8 @@ var speed_modifier: float = 1.0 # Used while using demon speed
 var input_multiplier: float  = 1.0 # Used for inverting the controls while using hanged man
 var knockback_velocity: Vector3 = Vector3.ZERO
 var knockback_time_remaining: float = 0.0
+var _push_cooldown_timer: float = 0.0
+var _server_last_push_time: float = -10.0
 var sprint_grace_timer := 0.0          # Time left in which a released sprint still counts
 var air_speed := 0.0                   # Horizontal speed carried from takeoff
 var is_sliding: bool = false           # Whether player is currently sliding
@@ -149,6 +152,9 @@ func _process(delta):
 	if not is_multiplayer_authority():
 		return
 
+	if _push_cooldown_timer > 0.0:
+		_push_cooldown_timer = maxf(_push_cooldown_timer - delta, 0.0)
+
 	var current_hovered_part: BodyPart = null
 	var ray_hit = look_at_ray.get_collider() if look_at_ray and look_at_ray.is_colliding() else null
 	var pickup_target = _get_pickup_target()
@@ -181,9 +187,18 @@ func _process(delta):
 		if interact_prompt:
 			if ray_hit is CharacterBody3D and ray_hit.is_in_group("player"):
 				var is_in_range := global_position.distance_to(ray_hit.global_position) <= reach_distance
-				interact_prompt.text = "[Q] / [B] — Push Player" if is_in_range else ""
-				interact_prompt.visible = is_in_range
-				is_hovering_actionable = is_in_range
+				if is_in_range:
+					if _push_cooldown_timer > 0.0:
+						interact_prompt.text = "[Q] / [B] — Push (%.1fs)" % _push_cooldown_timer
+						is_hovering_actionable = false
+					else:
+						interact_prompt.text = "[Q] / [B] — Push Player"
+						is_hovering_actionable = true
+					interact_prompt.visible = true
+				else:
+					interact_prompt.text = ""
+					interact_prompt.visible = false
+					is_hovering_actionable = false
 			elif current_hovered_part != null:
 				var part_names := ["Head", "Hands", "Torso", "Legs"]
 				var p_idx := clampi(int(current_hovered_part.part_type), 0, 3)
@@ -359,8 +374,11 @@ func _input(event):
 
 	# Push player input
 	if event.is_action_pressed("push_player"):
+		if _push_cooldown_timer > 0.0:
+			return
 		var target := _get_push_target()
 		if target:
+			_push_cooldown_timer = push_cooldown
 			request_push_player.rpc_id(1, target.get_path())
 			print("[Push] Target: ", target.name)
 		else:
@@ -707,6 +725,12 @@ func request_push_player(target_path: NodePath) -> void:
 	# Validate the distance on the server.
 	if global_position.distance_to(target.global_position) > reach_distance:
 		return
+
+	# Enforce server-side shove cooldown to prevent spam.
+	var now_sec := Time.get_ticks_msec() / 1000.0
+	if now_sec - _server_last_push_time < (push_cooldown - 0.1):
+		return
+	_server_last_push_time = now_sec
 
 	# Push away from the requesting player.
 	var direction :Vector3 = target.global_position - global_position
