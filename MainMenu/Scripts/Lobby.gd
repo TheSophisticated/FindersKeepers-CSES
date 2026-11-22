@@ -14,6 +14,7 @@ extends Control
 @onready var previous_character_btn: Button = $Panel/VBoxContainer/CharacterPicker/PreviousCharacter
 @onready var next_character_btn: Button = $Panel/VBoxContainer/CharacterPicker/NextCharacter
 @onready var character_name_label: Label = $Panel/VBoxContainer/CharacterPicker/CharacterName
+@onready var character_preview: Control = $Panel/VBoxContainer/CharacterPreview
 @onready var preview_stage: Node3D = $Panel/VBoxContainer/CharacterPreview/Viewport/PreviewStage
 @onready var preview_camera: Camera3D = $Panel/VBoxContainer/CharacterPreview/Viewport/PreviewStage/Camera3D
 
@@ -25,6 +26,7 @@ var _character_selection_ready := false
 var _preview_model: Node3D
 var _preview_pivot: Node3D
 var _preview_character_id: StringName = &""
+var _dragging_preview := false
 
 # Called when the node enters the scene tree
 func _ready():
@@ -38,6 +40,9 @@ func _ready():
 	leave_btn.pressed.connect(_on_leave_pressed)
 	previous_character_btn.pressed.connect(_on_previous_character_pressed)
 	next_character_btn.pressed.connect(_on_next_character_pressed)
+	if character_preview:
+		character_preview.mouse_filter = Control.MOUSE_FILTER_STOP
+		character_preview.gui_input.connect(_on_preview_gui_input)
 	NetworkManager.character_selections_changed.connect(_on_character_selections_changed)
 
 	var current_id := NetworkManager.get_local_character_id()
@@ -52,6 +57,8 @@ func _ready():
 	title_label.text = "Hosting Game" if is_host else "Joined Game"
 	start_btn.visible = is_host
 	leave_btn.text = "Cancel" if is_host else "Leave"
+	if is_host:
+		_setup_host_ip_row()
 
 	_setup_focus_styling()
 	if is_host:
@@ -67,13 +74,28 @@ func _process(delta: float) -> void:
 	var dots := ".".repeat(int(_dots_time * 2.0) % 4)
 	var base := "Waiting for players to join" if multiplayer.is_server() else "Waiting for host to start the match"
 	status_label.text = base + dots
-	if is_instance_valid(_preview_pivot):
+	if is_instance_valid(_preview_pivot) and not _dragging_preview:
 		_preview_pivot.rotate_y(delta * 0.35)
+
+func _on_preview_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		_dragging_preview = event.pressed
+	elif event is InputEventMouseMotion and _dragging_preview and is_instance_valid(_preview_pivot):
+		_preview_pivot.rotate_y(event.relative.x * 0.015)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_on_leave_pressed()
 		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		var focus_owner := get_viewport().gui_get_focus_owner()
+		var on_action_buttons := (focus_owner == start_btn or focus_owner == leave_btn)
+		if event.physical_keycode in [KEY_A, KEY_Q] or (event.physical_keycode == KEY_LEFT and not on_action_buttons):
+			_on_previous_character_pressed()
+			get_viewport().set_input_as_handled()
+		elif event.physical_keycode in [KEY_D, KEY_E] or (event.physical_keycode == KEY_RIGHT and not on_action_buttons):
+			_on_next_character_pressed()
+			get_viewport().set_input_as_handled()
 
 func _setup_focus_styling() -> void:
 	var focus_box := StyleBoxFlat.new()
@@ -81,10 +103,52 @@ func _setup_focus_styling() -> void:
 	focus_box.set_border_width_all(2)
 	focus_box.border_color = Color(1.0, 0.84, 0.0, 1.0)
 	focus_box.set_corner_radius_all(4)
-	start_btn.add_theme_stylebox_override("focus", focus_box)
-	leave_btn.add_theme_stylebox_override("focus", focus_box)
-	previous_character_btn.add_theme_stylebox_override("focus", focus_box)
-	next_character_btn.add_theme_stylebox_override("focus", focus_box)
+	for btn in find_children("*", "Button", true, false):
+		btn.add_theme_stylebox_override("focus", focus_box)
+
+func _get_local_lan_ip() -> String:
+	var fallback := "127.0.0.1"
+	for addr in IP.get_local_addresses():
+		if ":" in addr or addr.begins_with("127.") or addr.begins_with("169.254."):
+			continue
+		if addr.begins_with("192.168.") or addr.begins_with("10."):
+			return addr
+		if fallback == "127.0.0.1":
+			fallback = addr
+	return fallback
+
+func _setup_host_ip_row() -> void:
+	var vbox := get_node_or_null("Panel/VBoxContainer") as VBoxContainer
+	if vbox == null or vbox.get_node_or_null("HostIPRow") != null:
+		return
+	var host_ip := _get_local_lan_ip()
+	var row := HBoxContainer.new()
+	row.name = "HostIPRow"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 8)
+
+	var ip_label := Label.new()
+	ip_label.text = "LAN IP: %s" % host_ip
+	ip_label.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0))
+
+	var copy_btn := Button.new()
+	copy_btn.name = "CopyIPButton"
+	copy_btn.text = "Copy IP"
+	copy_btn.pressed.connect(func():
+		DisplayServer.clipboard_set(host_ip)
+		copy_btn.text = "Copied!"
+		var timer := get_tree().create_timer(1.5)
+		timer.timeout.connect(func():
+			if is_instance_valid(copy_btn):
+				copy_btn.text = "Copy IP"
+		)
+	)
+
+	row.add_child(ip_label)
+	row.add_child(copy_btn)
+	vbox.add_child(row)
+	if status_label != null:
+		vbox.move_child(row, status_label.get_index() + 1)
 
 func _on_peers_changed(_id: int) -> void:
 	if not is_inside_tree():

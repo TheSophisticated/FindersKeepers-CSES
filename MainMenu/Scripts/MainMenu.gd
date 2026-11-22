@@ -59,6 +59,7 @@ func _ready():
 			sensitivity_slider.value_changed.connect(_on_sensitivity_changed)
 		# Convert sensitivity setting to slider value (assuming stored as 0.002)
 		sensitivity_slider.value = Settings.settings.get("mouse_sensitivity", 0.002) * 1000
+		_attach_slider_value_label(sensitivity_slider, "%.1f")
 	
 	# Connect and initialize controller sensitivity setting
 	if has_node("SettingsMenu/VBoxContainer/ControllerSensitivity/Text/Sensitivity"):
@@ -66,6 +67,7 @@ func _ready():
 		if not ctrl_slider.value_changed.is_connected(_on_controller_sensitivity_changed):
 			ctrl_slider.value_changed.connect(_on_controller_sensitivity_changed)
 		ctrl_slider.value = Settings.settings.get("controller_sensitivity", 3.0)
+		_attach_slider_value_label(ctrl_slider, "%.1f")
 	
 	# Connect and initialize fullscreen setting
 	if has_node("SettingsMenu/VBoxContainer/FullScreenCheckButton"):
@@ -274,6 +276,7 @@ func _setup_direct_ip_and_status_ui() -> void:
 		_direct_ip_input = LineEdit.new()
 		_direct_ip_input.name = "DirectIPInput"
 		_direct_ip_input.placeholder_text = "Direct IP (empty = LAN)"
+		_direct_ip_input.text = str(Settings.settings.get("last_direct_ip", ""))
 		_direct_ip_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_direct_ip_input.add_theme_font_size_override("font_size", 9)
 		_direct_ip_input.text_submitted.connect(func(_t): _on_join_pressed())
@@ -306,10 +309,10 @@ func _setup_extended_settings_ui() -> void:
 		return
 
 	# Expand panel vertically to comfortably house audio and graphics options
-	settings_panel.offset_top = -82.0
-	settings_panel.offset_bottom = 82.0
-	vbox.offset_top = -140.0
-	vbox.offset_bottom = 220.0
+	settings_panel.offset_top = -100.0
+	settings_panel.offset_bottom = 100.0
+	vbox.offset_top = -155.0
+	vbox.offset_bottom = 255.0
 
 	var back_btn := vbox.get_node_or_null("SettingMenuBack")
 
@@ -354,6 +357,24 @@ func _setup_extended_settings_ui() -> void:
 	shadow_row.add_child(shadow_opt)
 	vbox.add_child(shadow_row)
 
+	var ssao_chk := CheckBox.new()
+	ssao_chk.name = "SSAOCheckBox"
+	ssao_chk.text = "Ambient Occlusion (SSAO)"
+	ssao_chk.button_pressed = bool(Settings.settings.get("ssao_enabled", true))
+	ssao_chk.toggled.connect(func(on: bool):
+		Settings.set_setting("ssao_enabled", on)
+	)
+	vbox.add_child(ssao_chk)
+
+	var ssr_chk := CheckBox.new()
+	ssr_chk.name = "SSRCheckBox"
+	ssr_chk.text = "Screen-Space Reflections (SSR)"
+	ssr_chk.button_pressed = bool(Settings.settings.get("ssr_enabled", false))
+	ssr_chk.toggled.connect(func(on: bool):
+		Settings.set_setting("ssr_enabled", on)
+	)
+	vbox.add_child(ssr_chk)
+
 	var sdfgi_chk := CheckBox.new()
 	sdfgi_chk.name = "SDFGICheckBox"
 	sdfgi_chk.text = "Global Illumination (SDFGI - Heavy)"
@@ -367,6 +388,20 @@ func _setup_extended_settings_ui() -> void:
 		vbox.move_child(back_btn, vbox.get_child_count() - 1)
 
 
+func _attach_slider_value_label(slider: HSlider, fmt: String = "%.1f") -> void:
+	var parent := slider.get_parent()
+	if parent == null or parent.get_node_or_null("ValueLabel") != null:
+		return
+	var val_lbl := Label.new()
+	val_lbl.name = "ValueLabel"
+	val_lbl.custom_minimum_size = Vector2(44, 0)
+	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	val_lbl.text = fmt % slider.value
+	slider.value_changed.connect(func(v: float):
+		val_lbl.text = fmt % v
+	)
+	parent.add_child(val_lbl)
+
 func _add_volume_slider(parent_vbox: VBoxContainer, node_name: String, label_text: String, setting_key: String, default_val: float) -> void:
 	var row := HBoxContainer.new()
 	row.name = node_name
@@ -379,12 +414,19 @@ func _add_volume_slider(parent_vbox: VBoxContainer, node_name: String, label_tex
 	slider.step = 0.05
 	slider.value = float(Settings.settings.get(setting_key, default_val))
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slider.custom_minimum_size = Vector2(180, 18)
+	slider.custom_minimum_size = Vector2(160, 18)
+	var val_lbl := Label.new()
+	val_lbl.name = "ValueLabel"
+	val_lbl.custom_minimum_size = Vector2(44, 0)
+	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	val_lbl.text = "%d%%" % int(round(slider.value * 100.0))
 	slider.value_changed.connect(func(val: float):
+		val_lbl.text = "%d%%" % int(round(val * 100.0))
 		Settings.set_setting(setting_key, val)
 	)
 	row.add_child(lbl)
 	row.add_child(slider)
+	row.add_child(val_lbl)
 	parent_vbox.add_child(row)
 
 
@@ -407,6 +449,7 @@ func _on_join_pressed():
 	$MenuPanel/VBoxContainer/Join.disabled = true  # Disable button while attempting
 	var target_ip := _direct_ip_input.text.strip_edges() if _direct_ip_input != null else ""
 	if not target_ip.is_empty():
+		Settings.set_setting("last_direct_ip", target_ip)
 		if _status_label:
 			_status_label.text = "Connecting to %s..." % target_ip
 			_status_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))

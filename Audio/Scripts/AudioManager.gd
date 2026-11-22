@@ -35,6 +35,10 @@ var is_ambience_playing: bool = false
 # Heartbeat state
 var is_heartbeat_active: bool = false
 
+# Window focus mute state (keeps multi-instance local playtesting clean)
+var _muted_by_focus_loss: bool = false
+var _was_master_muted_before_blur: bool = false
+
 func _load_sound(path: String) -> AudioStream:
 	if ResourceLoader.exists(path):
 		return load(path) as AudioStream
@@ -142,6 +146,24 @@ func _process(delta: float) -> void:
 	if is_ambience_playing and ambience_player and current_ambience_volume < target_ambience_volume:
 		current_ambience_volume = lerp(current_ambience_volume, target_ambience_volume, delta * 1.5)
 		ambience_player.volume_db = current_ambience_volume
+
+func _notification(what: int) -> void:
+	var master_idx := AudioServer.get_bus_index(&"Master")
+	if master_idx == -1:
+		return
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		if not _muted_by_focus_loss:
+			_was_master_muted_before_blur = AudioServer.is_bus_mute(master_idx)
+			AudioServer.set_bus_mute(master_idx, true)
+			_muted_by_focus_loss = true
+	elif what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		if _muted_by_focus_loss:
+			_muted_by_focus_loss = false
+			var settings_node := get_node_or_null("/root/Settings")
+			if settings_node and settings_node.has_method("apply_audio_settings"):
+				settings_node.apply_audio_settings()
+			else:
+				AudioServer.set_bus_mute(master_idx, _was_master_muted_before_blur)
 
 func start_ambience() -> void:
 	if SND_AMBIENCE == null or ambience_player == null or not is_inside_tree():

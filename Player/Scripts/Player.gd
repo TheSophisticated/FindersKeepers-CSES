@@ -16,6 +16,7 @@ extends CharacterBody3D
 @export var slide_boost: float = 1.0   # Slide speed boost multiplier (boosted by Torso part)
 @export var push_force: float = 14.0   # Player shove knockback strength (boosted by Hands part)
 @export var reach_distance: float = 3.0 # Max player shove distance (boosted by Hands part)
+@export var push_cooldown: float = 1.5  # Cooldown in seconds between shoves
 @export var character_turn_speed := 12.0 # How quickly the visible character faces movement
 @export var character_facing_yaw: float = PI # Replicated visual facing, relative to the player root
 
@@ -67,6 +68,8 @@ var speed_modifier: float = 1.0 # Used while using demon speed
 var input_multiplier: float  = 1.0 # Used for inverting the controls while using hanged man
 var knockback_velocity: Vector3 = Vector3.ZERO
 var knockback_time_remaining: float = 0.0
+var _push_cooldown_timer: float = 0.0
+var _server_last_push_time: float = -10.0
 var sprint_grace_timer := 0.0          # Time left in which a released sprint still counts
 var air_speed := 0.0                   # Horizontal speed carried from takeoff
 var is_sliding: bool = false           # Whether player is currently sliding
@@ -122,22 +125,12 @@ var held_object: Node3D = null        # Currently held interactable object
 var held_body_part: BodyPart = null   # Body part being carried, deposited at the spell center
 var hovered_body_part: BodyPart = null # Body part which is being hovered
 var _reticle_dot: ColorRect = null    # Central retro crosshair dot
-var _t := 0.0
 
 func show_tarot_notification(message: String) -> void:
 	print("Notification requested: ", message)
 	if not is_multiplayer_authority():
 		return
 	tarot_notification.show_notification(message)
-
-func flicker_lights(delta) -> void:
-	# Calls hotel.set_light() on a stuttery pattern.
-	var hotel := get_node("/root/GameMode/SubViewportContainer/SubViewport/WorldObjects/hotel_map")
-	_t -= delta
-	if _t > 0.0:
-		return
-	_t = randf_range(0.03, 0.12) if hotel.is_light_on() else randf_range(0.05, 0.4)
-	hotel.set_light(not hotel.is_light_on())
 
 
 func _process(delta):
@@ -148,6 +141,9 @@ func _process(delta):
 	# Hover identification is local to this player
 	if not is_multiplayer_authority():
 		return
+
+	if _push_cooldown_timer > 0.0:
+		_push_cooldown_timer = maxf(_push_cooldown_timer - delta, 0.0)
 
 	var current_hovered_part: BodyPart = null
 	var ray_hit = look_at_ray.get_collider() if look_at_ray and look_at_ray.is_colliding() else null
@@ -181,19 +177,38 @@ func _process(delta):
 		if interact_prompt:
 			if ray_hit is CharacterBody3D and ray_hit.is_in_group("player"):
 				var is_in_range := global_position.distance_to(ray_hit.global_position) <= reach_distance
-				interact_prompt.text = "[Q] / [B] — Push Player" if is_in_range else ""
-				interact_prompt.visible = is_in_range
-				is_hovering_actionable = is_in_range
+				if is_in_range:
+					if _push_cooldown_timer > 0.0:
+						interact_prompt.text = "[Q] / [B] — Push (%.1fs)" % _push_cooldown_timer
+						is_hovering_actionable = false
+					else:
+						interact_prompt.text = "[Q] / [B] — Push Player"
+						is_hovering_actionable = true
+					interact_prompt.visible = true
+				else:
+					interact_prompt.text = ""
+					interact_prompt.visible = false
+					is_hovering_actionable = false
 			elif current_hovered_part != null:
 				var part_names := ["Head", "Hands", "Torso", "Legs"]
 				var p_idx := clampi(int(current_hovered_part.part_type), 0, 3)
-				interact_prompt.text = "[E] / [X] — Collect %s" % part_names[p_idx]
-				interact_prompt.visible = true
-				is_hovering_actionable = true
+				if current_hovered_part.owner_id == player_id:
+					interact_prompt.text = "Your Own %s — Defend It!" % part_names[p_idx]
+					interact_prompt.visible = true
+					is_hovering_actionable = false
+				else:
+					interact_prompt.text = "[E] / [X] — Steal %s" % _format_body_part_label(current_hovered_part)
+					interact_prompt.visible = true
+					is_hovering_actionable = true
 			elif tarot_target != null and tarot_target.card != null:
-				interact_prompt.text = "[E] / [X] — Take %s" % tarot_target.card.card_name
-				interact_prompt.visible = true
-				is_hovering_actionable = true
+				if _has_empty_tarot_slot():
+					interact_prompt.text = "[E] / [X] — Take %s" % tarot_target.card.card_name
+					interact_prompt.visible = true
+					is_hovering_actionable = true
+				else:
+					interact_prompt.text = "Tarot Slots Full (Use [1] or [2] first)"
+					interact_prompt.visible = true
+					is_hovering_actionable = false
 			else:
 				interact_prompt.text = "[E] / [X] — Interact"
 				interact_prompt.visible = pickup_target != null
@@ -201,7 +216,7 @@ func _process(delta):
 	else:
 		if interact_prompt:
 			if held_body_part != null:
-				interact_prompt.text = "Carrying Body Part — Deliver to Church Altar | [E] Drop"
+				interact_prompt.text = "Carrying %s — Deliver to Church Altar | [E] Drop" % _format_body_part_label(held_body_part)
 				interact_prompt.visible = true
 			else:
 				interact_prompt.visible = false
@@ -349,8 +364,11 @@ func _input(event):
 
 	# Push player input
 	if event.is_action_pressed("push_player"):
+		if _push_cooldown_timer > 0.0:
+			return
 		var target := _get_push_target()
 		if target:
+			_push_cooldown_timer = push_cooldown
 			request_push_player.rpc_id(1, target.get_path())
 			print("[Push] Target: ", target.name)
 		else:
@@ -413,6 +431,12 @@ signal tarot_capacity_changed(new_capacity: int)
 
 var tarot_cards: Array[TarotCard] = []  # Fixed-size slots, empty slots hold null
 
+func _has_empty_tarot_slot() -> bool:
+	for card in tarot_cards:
+		if card == null:
+			return true
+	return false
+
 # Stores a card in the first empty slot. Returns true if it fit.
 
 @rpc("any_peer", "call_local", "reliable")
@@ -429,6 +453,7 @@ func add_tarot_card(card: TarotCard) -> bool:
 			return true
 
 	print("Tarot inventory full.")
+	show_tarot_notification("Tarot inventory full!")
 	return false
 
 # Server-granted card (e.g. Blood Shrine reward). Uses the first empty slot,
@@ -691,6 +716,12 @@ func request_push_player(target_path: NodePath) -> void:
 	if global_position.distance_to(target.global_position) > reach_distance:
 		return
 
+	# Enforce server-side shove cooldown to prevent spam.
+	var now_sec := Time.get_ticks_msec() / 1000.0
+	if now_sec - _server_last_push_time < (push_cooldown - 0.1):
+		return
+	_server_last_push_time = now_sec
+
 	# Push away from the requesting player.
 	var direction :Vector3 = target.global_position - global_position
 	direction.y = 0.0
@@ -776,6 +807,14 @@ func drop_object() -> void:
 # Carries a body part to the spell center. No buffs, progress or removal
 # happen here; that all waits for deposit_body_part().
 
+func _format_body_part_label(part: BodyPart) -> String:
+	var part_names := ["Head", "Hands", "Torso", "Legs"]
+	var p_idx := clampi(int(part.part_type), 0, 3)
+	var owner_name := GameManager.get_player_display_name(part.owner_id) if GameManager else "Player %d" % part.owner_id
+	if owner_name == "Unknown":
+		owner_name = "Player %d" % part.owner_id
+	return "%s's %s" % [owner_name, part_names[p_idx]]
+
 @rpc("any_peer", "call_local", "reliable")
 func pick_up_body_part(partPath : NodePath) -> void:
 	var part := get_node_or_null(partPath)
@@ -785,6 +824,7 @@ func pick_up_body_part(partPath : NodePath) -> void:
 
 	if part.owner_id == player_id:
 		print("You cant pick up your own parts!")
+		show_tarot_notification("You can't pick up your own body part!")
 		return
 
 	if held_body_part != null or held_object != null:
@@ -1275,6 +1315,8 @@ func _on_player_eliminated(peer_id : int, name : String) -> void:
 	if peer_id != player_id:
 		return
 	set_input_enabled(false)
+	if has_node("InteractPrompt"):
+		$InteractPrompt.visible = false
 	collision_layer = 0
 	collision_mask = 0
 	hide()

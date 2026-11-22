@@ -8,15 +8,21 @@ class_name CompassUI
 
 const FADE_FULL_DISTANCE: float = 25.0
 const FADE_ZERO_DISTANCE: float = 10.0
+const ALTAR_FADE_FULL_DISTANCE: float = 10.0
+const ALTAR_FADE_ZERO_DISTANCE: float = 3.5
 
 @onready var distance_label: Label = $DistanceLabel
 
 var world_objects: Node = null
+var spell_center: Node3D = null
 var local_player_id: int = -1
 var target_part: Node = null
+var _targeting_altar: bool = false
+var _arrow_color: Color = Color(1.0, 1.0, 1.0, 0.9)
 var _last_angle: float = 0.0
 var _current_angle: float = 0.0
-var _angle_epsilon: float = 0.01  # ~0.5 degrees
+var _has_angle: bool = false
+var _angle_epsilon: float = 0.005  # ~0.3 degrees
 
 func _ready() -> void:
 	# Find WorldObjects node (same path as GameMode uses)
@@ -48,14 +54,39 @@ func _process(delta: float) -> void:
 		visible = false
 		return
 
-	# Find nearest valid body part
-	target_part = _find_nearest_valid_body_part(local_player)
+	# While carrying a body part, guide the player back to the Church Altar (SpellCenter)
+	var held_part = local_player.get("held_body_part")
+	if held_part != null and is_instance_valid(held_part):
+		_targeting_altar = true
+		target_part = _get_spell_center()
+	else:
+		_targeting_altar = false
+		target_part = _find_nearest_valid_body_part(local_player)
 
 	if target_part:
-		_update_compass(local_player, target_part)
+		var next_color := Color(1.0, 1.0, 1.0, 0.9)
+		if _targeting_altar:
+			next_color = Color(1.0, 0.22, 0.22, 0.95)
+		elif target_part is BodyPart:
+			var c: Color = (target_part as BodyPart).part_color.lightened(0.15)
+			next_color = Color(c.r, c.g, c.b, 0.95)
+		if not next_color.is_equal_approx(_arrow_color):
+			_arrow_color = next_color
+			queue_redraw()
+		_update_compass(local_player, target_part, delta)
 		visible = true
 	else:
+		_has_angle = false
 		visible = false
+
+func _get_spell_center() -> Node3D:
+	if is_instance_valid(spell_center):
+		return spell_center
+	if world_objects:
+		spell_center = world_objects.get_node_or_null("SpellCenter") as Node3D
+	if spell_center == null and get_tree() and get_tree().root:
+		spell_center = get_tree().root.find_child("SpellCenter", true, false) as Node3D
+	return spell_center
 
 func _get_local_player() -> Node:
 	# Find the player node that has multiplayer authority (our local player)
@@ -95,7 +126,7 @@ func _find_nearest_valid_body_part(player: Node) -> Node:
 
 	return nearest
 
-func _update_compass(player: Node, target: Node) -> void:
+func _update_compass(player: Node, target: Node, delta: float) -> void:
 	var camera = player.camera
 	if not camera:
 		return
@@ -127,21 +158,29 @@ func _update_compass(player: Node, target: Node) -> void:
 	# Normalize to [-PI, PI]
 	angle_diff = fmod(angle_diff + PI, 2 * PI) - PI
 
-	# Only queue redraw if angle changed significantly
-	if abs(angle_diff - _last_angle) > _angle_epsilon:
-		_last_angle = angle_diff
+	# Smoothly interpolate needle angle; snap on first frame after becoming visible
+	if not _has_angle:
 		_current_angle = angle_diff
+		_has_angle = true
+	else:
+		_current_angle = lerp_angle(_current_angle, angle_diff, clampf(delta * 12.0, 0.0, 1.0))
+
+	# Only queue redraw if drawn angle changed significantly
+	if abs(angle_difference(_current_angle, _last_angle)) > _angle_epsilon:
+		_last_angle = _current_angle
 		queue_redraw()
 
-	# Update fade based on distance to target
+	# Update fade based on distance to target (keep Altar visible closer)
 	var distance = player.global_position.distance_to(target.global_position)
+	var fade_full := ALTAR_FADE_FULL_DISTANCE if _targeting_altar else FADE_FULL_DISTANCE
+	var fade_zero := ALTAR_FADE_ZERO_DISTANCE if _targeting_altar else FADE_ZERO_DISTANCE
 	var alpha: float = 0.0
-	if distance >= FADE_FULL_DISTANCE:
+	if distance >= fade_full:
 		alpha = 1.0
-	elif distance <= FADE_ZERO_DISTANCE:
+	elif distance <= fade_zero:
 		alpha = 0.0
 	else:
-		alpha = (distance - FADE_ZERO_DISTANCE) / (FADE_FULL_DISTANCE - FADE_ZERO_DISTANCE)
+		alpha = (distance - fade_zero) / (fade_full - fade_zero)
 	modulate.a = alpha
 
 # Draw a simple arrow triangle programmatically
@@ -166,9 +205,8 @@ func _draw() -> void:
 		var ry = p.x * sin_a + p.y * cos_a
 		points[i] = Vector2(rx, ry) + center
 
-	# White arrow with slight transparency
-	var color = Color(1.0, 1.0, 1.0, 0.9)
-	draw_polygon(points, [color], [])
+	# Tinted arrow matching target owner color (or crimson for Church Altar)
+	draw_polygon(points, [_arrow_color], [])
 
 	# Optional: thin outline
 	var outline_color = Color(0.0, 0.0, 0.0, 0.6)
