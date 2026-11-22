@@ -18,6 +18,7 @@ var spell_center: Node3D = null
 var local_player_id: int = -1
 var target_part: Node = null
 var _targeting_altar: bool = false
+var _arrow_color: Color = Color(1.0, 1.0, 1.0, 0.9)
 var _last_angle: float = 0.0
 var _current_angle: float = 0.0
 var _angle_epsilon: float = 0.01  # ~0.5 degrees
@@ -62,6 +63,15 @@ func _process(delta: float) -> void:
 		target_part = _find_nearest_valid_body_part(local_player)
 
 	if target_part:
+		var next_color := Color(1.0, 1.0, 1.0, 0.9)
+		if _targeting_altar:
+			next_color = Color(1.0, 0.22, 0.22, 0.95)
+		elif target_part is BodyPart:
+			var c: Color = (target_part as BodyPart).part_color.lightened(0.15)
+			next_color = Color(c.r, c.g, c.b, 0.95)
+		if not next_color.is_equal_approx(_arrow_color):
+			_arrow_color = next_color
+			queue_redraw()
 		_update_compass(local_player, target_part)
 		visible = true
 	else:
@@ -187,9 +197,8 @@ func _draw() -> void:
 		var ry = p.x * sin_a + p.y * cos_a
 		points[i] = Vector2(rx, ry) + center
 
-	# White arrow with slight transparency
-	var color = Color(1.0, 1.0, 1.0, 0.9)
-	draw_polygon(points, [color], [])
+	# Tinted arrow matching target owner color (or crimson for Church Altar)
+	draw_polygon(points, [_arrow_color], [])
 
 	# Optional: thin outline
 	var outline_color = Color(0.0, 0.0, 0.0, 0.6)
