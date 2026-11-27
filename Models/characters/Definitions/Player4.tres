@@ -5,5 +5,5 @@
 [resource]
 script = ExtResource("1_definition")
 character_id = &"player_4"
-display_name = "Aditya"
+display_name = "Adithya"
 model_scene_path = "res://Models/characters/Player4/Ch37_nonPBR.fbx"
