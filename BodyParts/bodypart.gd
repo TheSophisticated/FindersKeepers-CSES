@@ -106,10 +106,18 @@ func _load_part_visual() -> void:
 			push_error("Invalid body part type: " + str(part_type))
 			return
 
-	var model_path := "res://Models/characters/SplitParts/%s/%s_fixed.tscn" % [
+	var fixed_path := "res://Models/characters/SplitParts/%s/%s_fixed.tscn" % [
 		character_folder,
 		part_name
 	]
+	var glb_path := "res://Models/characters/SplitParts/%s/%s.glb" % [
+		character_folder,
+		part_name
+	]
+	var fallback_path := "res://Models/characters/SplitParts/Player1/%s_fixed.tscn" % part_name
+	var model_path := fixed_path
+	if not ResourceLoader.exists(model_path):
+		model_path = glb_path if ResourceLoader.exists(glb_path) else fallback_path
 
 	var packed_model := load(model_path) as PackedScene
 	if packed_model == null:
