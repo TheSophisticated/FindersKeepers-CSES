@@ -29,6 +29,12 @@ var _preview_character_id: StringName = &""
 var _dragging_preview := false
 var _player_name_input: LineEdit = null
 var _player_name_hint: Label = null
+var _selected_skin_index: int = 0
+var _selected_hair_index: int = 0
+var _skin_label: Label = null
+var _skin_swatch: ColorRect = null
+var _hair_label: Label = null
+var _hair_swatch: ColorRect = null
 
 # Called when the node enters the scene tree
 func _ready():
@@ -47,10 +53,12 @@ func _ready():
 		character_preview.gui_input.connect(_on_preview_gui_input)
 	NetworkManager.character_selections_changed.connect(_on_character_selections_changed)
 	NetworkManager.player_names_changed.connect(_on_player_names_changed)
+	NetworkManager.player_customizations_changed.connect(_on_customizations_changed)
 	if Settings != null and Settings.has_signal("input_device_changed"):
 		Settings.input_device_changed.connect(_on_input_device_changed)
 
 	_setup_player_name_row()
+	_setup_customization_rows()
 
 	var current_id := NetworkManager.get_local_character_id()
 	for i in CHARACTER_CATALOG.characters.size():
@@ -60,6 +68,7 @@ func _ready():
 	_refresh_character_selection()
 	NetworkManager.request_character_selections()
 	NetworkManager.request_player_names()
+	NetworkManager.request_player_customizations()
 
 	var is_host := multiplayer.is_server()
 	title_label.text = "Hosting Game" if is_host else "Joined Game"
@@ -211,6 +220,152 @@ func _commit_player_name(raw_text: String) -> void:
 	NetworkManager.set_local_player_name(clean)
 
 func _on_player_names_changed(_names: Dictionary) -> void:
+	if is_inside_tree():
+		_refresh()
+
+func _setup_customization_rows() -> void:
+	var vbox := get_node_or_null("Panel/VBoxContainer") as VBoxContainer
+	var picker := get_node_or_null("Panel/VBoxContainer/CharacterPicker")
+	if vbox == null or picker == null or vbox.get_node_or_null("CustomizationRow") != null:
+		return
+
+	if character_preview != null:
+		character_preview.custom_minimum_size = Vector2(320, 185)
+
+	var saved_skin := "default"
+	var saved_hair := "default"
+	if Settings != null:
+		saved_skin = PlayerCustomization.sanitize_skin_id(str(Settings.settings.get("skin_tone", "default")))
+		saved_hair = PlayerCustomization.sanitize_hair_id(str(Settings.settings.get("hair_style", "default")))
+	_selected_skin_index = maxi(0, PlayerCustomization.SKIN_ORDER.find(saved_skin))
+	_selected_hair_index = maxi(0, PlayerCustomization.HAIR_ORDER.find(saved_hair))
+
+	var row := HBoxContainer.new()
+	row.name = "CustomizationRow"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 18)
+
+	# Skin Tone Picker
+	var skin_box := HBoxContainer.new()
+	skin_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	skin_box.add_theme_constant_override("separation", 6)
+
+	var skin_prev := Button.new()
+	skin_prev.name = "PrevSkinBtn"
+	skin_prev.text = "◀"
+	skin_prev.custom_minimum_size = Vector2(32, 30)
+	skin_prev.pressed.connect(_on_prev_skin_pressed)
+
+	_skin_swatch = ColorRect.new()
+	_skin_swatch.custom_minimum_size = Vector2(14, 14)
+	_skin_swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	_skin_label = Label.new()
+	_skin_label.custom_minimum_size = Vector2(120, 28)
+	_skin_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_skin_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_skin_label.add_theme_font_size_override("font_size", 14)
+
+	var skin_next := Button.new()
+	skin_next.name = "NextSkinBtn"
+	skin_next.text = "▶"
+	skin_next.custom_minimum_size = Vector2(32, 30)
+	skin_next.pressed.connect(_on_next_skin_pressed)
+
+	skin_box.add_child(skin_prev)
+	skin_box.add_child(_skin_swatch)
+	skin_box.add_child(_skin_label)
+	skin_box.add_child(skin_next)
+
+	# Hair Picker
+	var hair_box := HBoxContainer.new()
+	hair_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	hair_box.add_theme_constant_override("separation", 6)
+
+	var hair_prev := Button.new()
+	hair_prev.name = "PrevHairBtn"
+	hair_prev.text = "◀"
+	hair_prev.custom_minimum_size = Vector2(32, 30)
+	hair_prev.pressed.connect(_on_prev_hair_pressed)
+
+	_hair_swatch = ColorRect.new()
+	_hair_swatch.custom_minimum_size = Vector2(14, 14)
+	_hair_swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	_hair_label = Label.new()
+	_hair_label.custom_minimum_size = Vector2(128, 28)
+	_hair_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hair_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_hair_label.add_theme_font_size_override("font_size", 14)
+
+	var hair_next := Button.new()
+	hair_next.name = "NextHairBtn"
+	hair_next.text = "▶"
+	hair_next.custom_minimum_size = Vector2(32, 30)
+	hair_next.pressed.connect(_on_next_hair_pressed)
+
+	hair_box.add_child(hair_prev)
+	hair_box.add_child(_hair_swatch)
+	hair_box.add_child(_hair_label)
+	hair_box.add_child(hair_next)
+
+	row.add_child(skin_box)
+	row.add_child(hair_box)
+	vbox.add_child(row)
+	vbox.move_child(row, picker.get_index() + 1)
+
+	_refresh_customization_ui()
+	NetworkManager.set_local_customization(
+		PlayerCustomization.SKIN_ORDER[_selected_skin_index],
+		PlayerCustomization.HAIR_ORDER[_selected_hair_index]
+	)
+
+func _on_prev_skin_pressed() -> void:
+	_selected_skin_index = posmod(_selected_skin_index - 1, PlayerCustomization.SKIN_ORDER.size())
+	_apply_and_sync_customization()
+
+func _on_next_skin_pressed() -> void:
+	_selected_skin_index = posmod(_selected_skin_index + 1, PlayerCustomization.SKIN_ORDER.size())
+	_apply_and_sync_customization()
+
+func _on_prev_hair_pressed() -> void:
+	_selected_hair_index = posmod(_selected_hair_index - 1, PlayerCustomization.HAIR_ORDER.size())
+	_apply_and_sync_customization()
+
+func _on_next_hair_pressed() -> void:
+	_selected_hair_index = posmod(_selected_hair_index + 1, PlayerCustomization.HAIR_ORDER.size())
+	_apply_and_sync_customization()
+
+func _apply_and_sync_customization() -> void:
+	var skin_id := PlayerCustomization.SKIN_ORDER[_selected_skin_index]
+	var hair_id := PlayerCustomization.HAIR_ORDER[_selected_hair_index]
+	if Settings != null:
+		Settings.set_setting("skin_tone", skin_id)
+		Settings.set_setting("hair_style", hair_id)
+	_refresh_customization_ui()
+	_apply_customization_to_preview()
+	NetworkManager.set_local_customization(skin_id, hair_id)
+
+func _refresh_customization_ui() -> void:
+	var skin_id := PlayerCustomization.SKIN_ORDER[_selected_skin_index]
+	var hair_id := PlayerCustomization.HAIR_ORDER[_selected_hair_index]
+	if _skin_label != null:
+		_skin_label.text = "Skin: %s" % PlayerCustomization.get_skin_label(skin_id)
+	if _skin_swatch != null:
+		_skin_swatch.color = PlayerCustomization.get_skin_swatch(skin_id)
+	if _hair_label != null:
+		_hair_label.text = "Hair: %s" % PlayerCustomization.get_hair_label(hair_id)
+	if _hair_swatch != null:
+		_hair_swatch.color = PlayerCustomization.get_hair_swatch(hair_id)
+
+func _apply_customization_to_preview() -> void:
+	if not is_instance_valid(_preview_model):
+		return
+	var skin_id := PlayerCustomization.SKIN_ORDER[_selected_skin_index]
+	var hair_id := PlayerCustomization.HAIR_ORDER[_selected_hair_index]
+	PlayerCustomization.apply_to_character(_preview_model, skin_id, hair_id)
+
+func _on_customizations_changed(_customs: Dictionary) -> void:
 	if is_inside_tree():
 		_refresh()
 
@@ -367,6 +522,7 @@ func _update_character_preview(definition: CharacterDefinition) -> void:
 	_preview_model.scale = definition.model_scale
 	_preview_model.rotation.y = 0.0
 	_preview_pivot.add_child(_preview_model)
+	_apply_customization_to_preview()
 	call_deferred("_frame_preview_model")
 
 
@@ -442,3 +598,5 @@ func _exit_tree() -> void:
 		NetworkManager.player_names_changed.disconnect(_on_player_names_changed)
 	if NetworkManager != null and NetworkManager.character_selections_changed.is_connected(_on_character_selections_changed):
 		NetworkManager.character_selections_changed.disconnect(_on_character_selections_changed)
+	if NetworkManager != null and NetworkManager.player_customizations_changed.is_connected(_on_customizations_changed):
+		NetworkManager.player_customizations_changed.disconnect(_on_customizations_changed)
