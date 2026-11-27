@@ -38,6 +38,7 @@ var _debug_refresh_accum: float = 0.0
 var _minimap: Control = null
 var _export_btn: Button = null
 var _export_status_label: Label = null
+var _export_dialog: FileDialog = null
  
 func _ready() -> void:
 	# Hide overlays initially
@@ -106,14 +107,21 @@ func _setup_game_over_export_ui() -> void:
 		menu_btn.focus_neighbor_bottom = _export_btn.get_path()
 
 func _on_export_match_pressed() -> void:
-	var result: Dictionary = MatchExporter.export_match_to_text_file(GameManager, NetworkManager)
+	if is_instance_valid(_export_dialog) and _export_dialog.visible:
+		return
+	_export_dialog = MatchExporter.open_save_dialog(self, GameManager, NetworkManager, _on_export_match_finished)
+
+func _on_export_match_finished(result: Dictionary) -> void:
+	_export_dialog = null
 	if _export_status_label == null:
+		return
+	if bool(result.get("canceled", false)):
 		return
 	if bool(result.get("ok", false)):
 		var gpath: String = str(result.get("global_path", ""))
 		DisplayServer.clipboard_set(gpath)
 		_export_status_label.add_theme_color_override("font_color", Color(0.76, 0.95, 0.78))
-		_export_status_label.text = "Exported: %s (full path copied)" % str(result.get("file_name", ""))
+		_export_status_label.text = "Exported: %s (path copied)" % str(result.get("file_name", ""))
 	else:
 		_export_status_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
 		_export_status_label.text = "Export failed: %s" % str(result.get("error", "Unknown error"))

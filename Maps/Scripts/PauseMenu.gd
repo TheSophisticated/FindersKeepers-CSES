@@ -16,6 +16,7 @@ var local_player: Node = null  # Reference to local player
 var _controls_card: PanelContainer = null # Quick-reference controls overlay
 var _export_btn: Button = null
 var _export_status_label: Label = null
+var _export_dialog: FileDialog = null
 
 # Called when node enters scene tree
 func _ready():
@@ -106,8 +107,15 @@ func _setup_pause_export_button() -> void:
 		container.move_child(_export_status_label, _export_btn.get_index() + 1)
 
 func _on_export_game_pressed() -> void:
-	var result: Dictionary = MatchExporter.export_match_to_text_file(GameManager, NetworkManager)
+	if is_instance_valid(_export_dialog) and _export_dialog.visible:
+		return
+	_export_dialog = MatchExporter.open_save_dialog(self, GameManager, NetworkManager, _on_export_game_finished)
+
+func _on_export_game_finished(result: Dictionary) -> void:
+	_export_dialog = null
 	if _export_status_label == null:
+		return
+	if bool(result.get("canceled", false)):
 		return
 	if bool(result.get("ok", false)):
 		DisplayServer.clipboard_set(str(result.get("global_path", "")))
@@ -405,6 +413,9 @@ func find_local_player():
 
 # Handle input events
 func _input(event):
+	# Let the Save File Dialog handle Escape/Cancel without unpausing the game
+	if is_instance_valid(_export_dialog) and _export_dialog.visible:
+		return
 	# Process pause and ui_cancel (B button)
 	if event.is_action_pressed("pause"):
 		if settings_menu.visible:

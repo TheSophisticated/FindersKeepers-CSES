@@ -6,6 +6,8 @@ extends RefCounted
 const PlayerCustomization = preload("res://Models/characters/PlayerCustomization.gd")
 const EXPORT_DIR := "user://exports"
 
+static var _last_export_dir: String = ""
+
 
 static func _format_mmss(total_sec: float) -> String:
 	var s := maxi(0, int(round(total_sec)))
@@ -111,40 +113,112 @@ static func build_match_report(game_manager: Node, network_manager: Node = null)
 	return "\n".join(lines) + "\n"
 
 
-static func export_match_to_text_file(game_manager: Node, network_manager: Node = null) -> Dictionary:
-	var abs_dir := ProjectSettings.globalize_path(EXPORT_DIR)
-	var mk_err := DirAccess.make_dir_recursive_absolute(abs_dir)
-	if mk_err != OK and mk_err != ERR_ALREADY_EXISTS:
+static func get_default_export_filename() -> String:
+	var stamp := Time.get_datetime_string_from_system(false, false).replace(":", "-").replace("T", "_")
+	return "match_%s.txt" % stamp
+
+
+static func get_default_export_dir() -> String:
+	if not _last_export_dir.is_empty() and DirAccess.dir_exists_absolute(_last_export_dir):
+		return _last_export_dir
+	var docs_dir := OS.get_system_dir(OS.SYSTEM_DIR_DOCUMENTS)
+	if not docs_dir.is_empty() and DirAccess.dir_exists_absolute(docs_dir):
+		return docs_dir
+	var fallback := ProjectSettings.globalize_path(EXPORT_DIR)
+	DirAccess.make_dir_recursive_absolute(fallback)
+	return fallback
+
+
+static func export_match_to_path(target_path: String, game_manager: Node, network_manager: Node = null) -> Dictionary:
+	var clean_path := target_path.strip_edges()
+	if clean_path.is_empty():
 		return {
 			"ok": false,
 			"user_path": "",
 			"global_path": "",
 			"file_name": "",
-			"error": "Could not create export directory (err %d)" % mk_err
+			"error": "No output path specified"
 		}
 
-	var stamp := Time.get_datetime_string_from_system(false, false).replace(":", "-").replace("T", "_")
-	var file_name := "match_%s.txt" % stamp
-	var user_path := "%s/%s" % [EXPORT_DIR, file_name]
-	var global_path := ProjectSettings.globalize_path(user_path)
+	if clean_path.get_extension().is_empty():
+		clean_path += ".txt"
+
+	var global_path := ProjectSettings.globalize_path(clean_path) if (clean_path.begins_with("user://") or clean_path.begins_with("res://")) else clean_path
+	var parent_dir := global_path.get_base_dir()
+	if not parent_dir.is_empty():
+		var mk_err := DirAccess.make_dir_recursive_absolute(parent_dir)
+		if mk_err != OK and mk_err != ERR_ALREADY_EXISTS:
+			return {
+				"ok": false,
+				"user_path": clean_path,
+				"global_path": global_path,
+				"file_name": clean_path.get_file(),
+				"error": "Could not create directory (err %d)" % mk_err
+			}
 
 	var report := build_match_report(game_manager, network_manager)
-	var f := FileAccess.open(user_path, FileAccess.WRITE)
+	var f := FileAccess.open(clean_path, FileAccess.WRITE)
 	if f == null:
 		return {
 			"ok": false,
-			"user_path": user_path,
+			"user_path": clean_path,
 			"global_path": global_path,
-			"file_name": file_name,
+			"file_name": clean_path.get_file(),
 			"error": "Failed to open file for writing (err %d)" % FileAccess.get_open_error()
 		}
 	f.store_string(report)
 	f.close()
+	if not parent_dir.is_empty():
+		_last_export_dir = parent_dir
 	print("MatchExporter: Exported match report to ", global_path)
 	return {
 		"ok": true,
-		"user_path": user_path,
+		"user_path": clean_path,
 		"global_path": global_path,
-		"file_name": file_name,
+		"file_name": clean_path.get_file(),
 		"error": ""
 	}
+
+
+static func export_match_to_text_file(game_manager: Node, network_manager: Node = null) -> Dictionary:
+	var file_name := get_default_export_filename()
+	var user_path := "%s/%s" % [EXPORT_DIR, file_name]
+	return export_match_to_path(user_path, game_manager, network_manager)
+
+
+static func open_save_dialog(parent: Node, game_manager: Node, network_manager: Node, on_complete: Callable) -> FileDialog:
+	if parent == null or not is_instance_valid(parent):
+		return null
+
+	var dialog := FileDialog.new()
+	dialog.name = "ExportMatchFileDialog"
+	dialog.title = "Export Match Report (.txt)"
+	dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	dialog.access = FileDialog.ACCESS_FILESYSTEM
+	dialog.use_native_dialog = true
+	dialog.filters = PackedStringArray(["*.txt ; Plain Text Files"])
+	dialog.current_dir = get_default_export_dir()
+	dialog.current_file = get_default_export_filename()
+	dialog.process_mode = Node.PROCESS_MODE_ALWAYS
+	dialog.min_size = Vector2i(680, 440)
+
+	dialog.file_selected.connect(func(selected_path: String) -> void:
+		var result := export_match_to_path(selected_path, game_manager, network_manager)
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		if on_complete.is_valid():
+			on_complete.call(result)
+		if is_instance_valid(dialog):
+			dialog.queue_free()
+	)
+	dialog.canceled.connect(func() -> void:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		if on_complete.is_valid():
+			on_complete.call({"ok": false, "canceled": true})
+		if is_instance_valid(dialog):
+			dialog.queue_free()
+	)
+
+	parent.add_child(dialog)
+	if dialog.is_inside_tree():
+		dialog.popup_centered()
+	return dialog
