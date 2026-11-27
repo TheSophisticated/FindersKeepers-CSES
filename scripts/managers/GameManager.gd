@@ -72,6 +72,12 @@ var active_body_parts: Array[Dictionary] = []
 var tarot_card_spawner : Node = null
 var body_part_spawner : Node = null
 
+## Chronological match event timeline used by MatchExporter (.txt export)
+var match_event_log: Array[Dictionary] = []
+var match_start_datetime: String = ""
+var last_winner_id: int = -1
+var last_winner_name: String = ""
+
 
 # ENGINE CALLBACKS
 
@@ -178,6 +184,8 @@ func _on_peer_disconnected(disconnected_peer_id: int) -> void:
 
 @rpc("authority", "call_local", "reliable")
 func broadcast_player_connection_change(peer_id: int, is_connected: bool) -> void:
+	if not is_connected:
+		_record_event("DISCONNECT", "%s disconnected from the match." % get_player_display_name(peer_id))
 	player_connection_status_changed.emit(peer_id, is_connected)
 
 
@@ -219,6 +227,11 @@ func sync_match_start(server_players: Dictionary, server_active_parts: Array) ->
 	players = server_players
 	active_body_parts.assign(server_active_parts)
 	current_state = MatchState.IN_PROGRESS
+	match_event_log.clear()
+	match_start_datetime = Time.get_datetime_string_from_system(false, true)
+	last_winner_id = -1
+	last_winner_name = ""
+	_record_event("START", "Match started with %d player(s)." % players.size())
 	match_state_changed.emit(current_state)
 	active_parts_manifest_generated.emit(active_body_parts)
 
@@ -328,6 +341,13 @@ func broadcast_part_deposit(depositor_id: int, victim_id: int, part_type: int) -
 			players[depositor_id]["parts_deposited"] += 1
 		if players.has(victim_id) and not (part_type in players[victim_id]["parts_lost"]):
 			players[victim_id]["parts_lost"].append(part_type)
+	var part_names: Array[String] = ["Head", "Hands", "Torso", "Legs"]
+	var p_label: String = part_names[part_type] if part_type >= 0 and part_type < part_names.size() else "Body Part"
+	_record_event("SACRIFICE", "%s sacrificed %s's %s at the Church Altar." % [
+		get_player_display_name(depositor_id),
+		get_player_display_name(victim_id),
+		p_label
+	])
 	part_deposited_broadcast.emit(depositor_id, victim_id, part_type as BodyPartType)
 
 
@@ -343,6 +363,7 @@ func eliminate_player(victim_id: int) -> void:
 @rpc("authority", "call_local", "reliable")
 func broadcast_player_elimination(victim_id: int) -> void:
 	var victim_name: String = get_player_display_name(victim_id) if players.has(victim_id) else "Unknown"
+	_record_event("ELIMINATION", "%s was eliminated." % victim_name)
 	player_eliminated.emit(victim_id, victim_name)
 
 
@@ -363,6 +384,7 @@ func trigger_blood_shrine() -> void:
 
 @rpc("authority", "call_local", "reliable")
 func broadcast_shrine_prompt() -> void:
+	_record_event("SHRINE", "Blood Shrine ritual vote started.")
 	blood_shrine_prompt_started.emit()
 
 
@@ -425,6 +447,7 @@ func evaluate_shrine_votes() -> void:
 
 @rpc("authority", "call_local", "reliable")
 func broadcast_shrine_result(accepted: bool) -> void:
+	_record_event("SHRINE", "Blood Shrine deal %s." % ("ACCEPTED (-20s from clock)" if accepted else "DECLINED"))
 	blood_shrine_resolved.emit(accepted)
 	if accepted and tarot_card_spawner != null and is_instance_valid(tarot_card_spawner):
 		tarot_card_spawner.spawn_super_tarot()
@@ -503,7 +526,19 @@ func conclude_match(winner_id: int) -> void:
 @rpc("authority", "call_local", "reliable")
 func broadcast_game_over(winner_id: int, winner_name: String) -> void:
 	current_state = MatchState.GAME_OVER
+	last_winner_id = winner_id
+	last_winner_name = winner_name
+	var outcome := "Draw (No winner)" if winner_id == -1 else ("Winner: %s" % get_player_display_name(winner_id))
+	_record_event("GAME_OVER", "Match concluded — %s." % outcome)
 	game_over_announced.emit(winner_id, winner_name)
+
+func _record_event(kind: String, message: String) -> void:
+	var elapsed := clampf(MATCH_DURATION_SECONDS - time_remaining, 0.0, MATCH_DURATION_SECONDS)
+	match_event_log.append({
+		"elapsed_sec": elapsed,
+		"kind": kind,
+		"message": message
+	})
 
 # Helper Functions
 func get_player_color(peer_id : int) -> String:
@@ -550,6 +585,10 @@ func reset_state() -> void:
 	timer_sync_accumulator = 0.0
 	tarot_card_spawner = null
 	body_part_spawner = null
+	match_event_log.clear()
+	match_start_datetime = ""
+	last_winner_id = -1
+	last_winner_name = ""
 	set_process(false)
 	player_roster_updated.emit()
 	
