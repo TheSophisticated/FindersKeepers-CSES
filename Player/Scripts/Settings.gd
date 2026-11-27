@@ -14,8 +14,14 @@ var settings := {
 	"sdfgi_enabled": false,
 	"ssao_enabled": true,
 	"ssr_enabled": false,
-	"last_direct_ip": ""
+	"last_direct_ip": "",
+	"player_name": ""
 }
+
+signal input_device_changed(using_controller: bool)
+var is_using_controller: bool = false
+
+const MAX_PLAYER_NAME_LENGTH := 16
 
 const BODY_FONT_PATH := "res://Assets/Fonts/HorrorBodySerif.ttf"
 const TITLE_FONT_PATH := "res://Assets/Fonts/HorrorDisplayTitle.ttf"
@@ -29,6 +35,43 @@ func _ready():
 	_init_custom_fonts()
 	# Apply settings on startup
 	load_settings()
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventJoypadButton and event.pressed:
+		_set_using_controller(true)
+	elif event is InputEventJoypadMotion and absf(event.axis_value) > 0.25:
+		_set_using_controller(true)
+	elif event is InputEventKey and event.pressed:
+		_set_using_controller(false)
+	elif event is InputEventMouseButton and event.pressed:
+		_set_using_controller(false)
+
+func _set_using_controller(using_ctrl: bool) -> void:
+	if is_using_controller == using_ctrl:
+		return
+	is_using_controller = using_ctrl
+	input_device_changed.emit(is_using_controller)
+
+static func sanitize_player_name(raw_name: String) -> String:
+	var cleaned := ""
+	var prev_space := false
+	for i in range(raw_name.length()):
+		var code := raw_name.unicode_at(i)
+		# Keep printable ASCII and basic letters/numbers; strip control/newline chars
+		if code < 32 or code == 127:
+			continue
+		var ch := raw_name.substr(i, 1)
+		if ch == " " or ch == "\t":
+			if not prev_space and not cleaned.is_empty():
+				cleaned += " "
+				prev_space = true
+		else:
+			cleaned += ch
+			prev_space = false
+	cleaned = cleaned.strip_edges()
+	if cleaned.length() > MAX_PLAYER_NAME_LENGTH:
+		cleaned = cleaned.substr(0, MAX_PLAYER_NAME_LENGTH).strip_edges()
+	return cleaned
 
 func _load_font_safe(res_path: String) -> Font:
 	var ff := FontFile.new()
