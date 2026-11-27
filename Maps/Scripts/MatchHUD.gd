@@ -262,12 +262,12 @@ func _on_player_eliminated(peer_id: int, player_name: String) -> void:
 	if peer_id == multiplayer.get_unique_id() and _spectator_banner != null:
 		_spectator_banner.visible = true
  
-# Roster names are "Player_<peer_id>"; show the player number ("Player 2") instead.
+# Shows the player's synced custom name or falls back to "Player N".
 func _display_name(peer_id: int, fallback: String) -> String:
 	if GameManager:
-		var number: int = GameManager.get_player_display_number(peer_id)
-		if number != -1:
-			return "Player %d" % number
+		var dname: String = GameManager.get_player_display_name(peer_id)
+		if dname != "Unknown":
+			return dname
 	return fallback
  
 func _show_banner(text: String, color: Color = Color.WHITE) -> void:
@@ -428,7 +428,11 @@ func _update_player_legend() -> void:
 		row.add_child(color_swatch)
  
 		var label := Label.new()
-		label.text = "P%d" % display_number
+		var custom_name: String = str(player_data.get("display_name", "")).strip_edges()
+		if custom_name.is_empty():
+			label.text = "P%d" % display_number
+		else:
+			label.text = custom_name if custom_name.length() <= 10 else (custom_name.substr(0, 9) + "…")
 		if peer_id == local_id:
 			label.text += " (YOU)"
 		if not is_alive:

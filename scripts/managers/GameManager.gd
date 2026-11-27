@@ -124,10 +124,14 @@ func register_player(peer_id: int, player_name: String) -> void:
 
 	# Automatically assign one of the 4 colors based on join order.
 	var assigned_color: PlayerColor = players.size() as PlayerColor
+	var custom_name: String = ""
+	if NetworkManager != null and NetworkManager.has_method("get_player_name_for_peer"):
+		custom_name = NetworkManager.get_player_name_for_peer(peer_id)
 
 	players[peer_id] = {
 		"peer_id": peer_id,
 		"name": player_name,
+		"display_name": custom_name,
 		"color": assigned_color,
 		"is_alive": true,
 		"is_connected": true,    # Tracks if the player is actively in the match
@@ -520,9 +524,17 @@ func get_player_display_number(peer_id: int) -> int:
 
 	return index + 1
 
-## Name shown to players on banners and the end screen, e.g. "Player 2".
-## The roster "name" is "Player_<peer_id>", which exposes the raw peer ID.
+## Name shown to players on banners, HUD legend, prompts, and the end screen.
+## Prefers the player's synced keyboard custom name and falls back to "Player N".
 func get_player_display_name(peer_id: int) -> String:
+	if players.has(peer_id):
+		var custom_name: String = str(players[peer_id].get("display_name", "")).strip_edges()
+		if not custom_name.is_empty():
+			return custom_name
+	if NetworkManager != null and NetworkManager.has_method("get_player_name_for_peer"):
+		var net_name: String = NetworkManager.get_player_name_for_peer(peer_id).strip_edges()
+		if not net_name.is_empty():
+			return net_name
 	var number: int = get_player_display_number(peer_id)
 	if number == -1:
 		return "Unknown"
