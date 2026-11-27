@@ -339,6 +339,13 @@ func _spawn_object(
 
 		var c: int = GameManager.players[owner_id]["color"]
 		object.part_color = GameManager.PLAYER_COLOR_VALUES[c]
+		if NetworkManager != null:
+			var cid := String(NetworkManager.get_character_id_for_peer(owner_id))
+			if cid.begins_with("player_"):
+				object.character_folder = "Player" + cid.get_slice("_", 1)
+			var look: Dictionary = NetworkManager.get_customization_for_peer(owner_id)
+			object.skin_tone = str(look.get("skin", "default"))
+			object.hair_style = str(look.get("hair", "default"))
 
 	var world_node: Node = _find_world_node()
 

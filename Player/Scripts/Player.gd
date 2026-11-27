@@ -3,6 +3,8 @@
 
 extends CharacterBody3D
 
+const PlayerCustomization = preload("res://Models/characters/PlayerCustomization.gd")
+
 # ===== EXPORTED SETTINGS =====
 @export_category("Movement Settings")
 @export var walk_speed := 10.0          # Normal movement speed
@@ -115,6 +117,16 @@ var player_id: int = -1
 		character_id = value
 		if is_node_ready() and animation_controller != null:
 			animation_controller.set_character_by_id(value)
+@export var skin_tone: String = "default":
+	set(value):
+		skin_tone = PlayerCustomization.sanitize_skin_id(value)
+		if is_node_ready() and animation_controller != null and animation_controller.has_method("set_customization"):
+			animation_controller.set_customization(skin_tone, hair_style)
+@export var hair_style: String = "default":
+	set(value):
+		hair_style = PlayerCustomization.sanitize_hair_id(value)
+		if is_node_ready() and animation_controller != null and animation_controller.has_method("set_customization"):
+			animation_controller.set_customization(skin_tone, hair_style)
 
 # ===== LOOK-AT DETECTION =====
 var look_at_ray: RayCast3D            # Raycast for detecting objects in front of player
@@ -321,9 +333,17 @@ func _ready():
 
 	GameManager.player_eliminated.connect(_on_player_eliminated)
 
-	# Initialize animations
+	# Initialize animations and player skin/hair customization
+	if NetworkManager != null and NetworkManager.has_method("get_customization_for_peer"):
+		var net_custom: Dictionary = NetworkManager.get_customization_for_peer(player_id)
+		if skin_tone == "default":
+			skin_tone = str(net_custom.get("skin", "default"))
+		if hair_style == "default":
+			hair_style = str(net_custom.get("hair", "default"))
 	if animation_controller and animation_controller.has_method("setup"):
 		animation_controller.default_character_id = character_id
+		if animation_controller.has_method("set_customization"):
+			animation_controller.set_customization(skin_tone, hair_style)
 		animation_controller.setup(self)
 
 func _setup_reticle() -> void:

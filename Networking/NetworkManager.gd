@@ -30,12 +30,17 @@ const MAX_SEARCH_TICKS := 25 # 5 seconds at 0.2s interval
 var match_started := false  # Set once the host leaves the lobby and starts the match
 var loaded_peers := {}  # Server only: client peer IDs whose GameMode scene has finished loading
 var player_character_selections: Dictionary = {}
+var player_names: Dictionary = {}
+var player_customizations: Dictionary = {}
 const CHARACTER_CATALOG: CharacterCatalog = preload("res://Models/characters/Definitions/CharacterCatalog.tres")
+const PlayerCustomization = preload("res://Models/characters/PlayerCustomization.gd")
 const DEFAULT_CHARACTER_ID: StringName = &"player_1"
  
 # Signals
 signal player_update_received(peer_id, position, velocity, rotation, camera_rotation)
 signal character_selections_changed(selections: Dictionary)
+signal player_names_changed(names: Dictionary)
+signal player_customizations_changed(customizations: Dictionary)
  
 # Called when the node enters the scene tree
 func _ready():
@@ -109,6 +114,17 @@ func host_game():
 	match_started = false
 	player_character_selections.clear()
 	player_character_selections[1] = DEFAULT_CHARACTER_ID
+	player_names.clear()
+	player_customizations.clear()
+	if Settings != null:
+		player_customizations[1] = {
+			"skin": PlayerCustomization.sanitize_skin_id(str(Settings.settings.get("skin_tone", "default"))),
+			"hair": PlayerCustomization.sanitize_hair_id(str(Settings.settings.get("hair_style", "default")))
+		}
+	if Settings != null and not Settings.is_using_controller:
+		var saved_name := Settings.sanitize_player_name(str(Settings.settings.get("player_name", "")))
+		if not saved_name.is_empty():
+			player_names[1] = saved_name
 	GameManager.reset_state()
 	start_host_discovery()
 	load_lobby()
@@ -177,6 +193,8 @@ func join_game(ip: String = "127.0.0.1", custom_port: int = PORT):
 	# Set as multiplayer peer
 	multiplayer.multiplayer_peer = peer
 	player_character_selections.clear()
+	player_names.clear()
+	player_customizations.clear()
 	GameManager.reset_state()
 	print("Joining game at ", clean_ip, ":", custom_port)
 	return true
@@ -225,6 +243,8 @@ func leave_session():
 	match_started = false
 	loaded_peers.clear()
 	player_character_selections.clear()
+	player_names.clear()
+	player_customizations.clear()
 	GameManager.reset_state()
 	get_tree().change_scene_to_file("res://MainMenu/MainMenu.tscn")
 
@@ -305,6 +325,114 @@ func rpc_submit_character_selection(character_id: StringName) -> void:
 		_broadcast_character_selections()
 	else:
 		rpc_sync_character_selections.rpc_id(peer_id, player_character_selections.duplicate())
+
+func get_player_name_for_peer(peer_id: int) -> String:
+	return str(player_names.get(peer_id, ""))
+
+func set_local_player_name(raw_name: String) -> void:
+	# Custom names can only be edited when using keyboard/mouse, not controller.
+	if Settings != null and Settings.is_using_controller:
+		return
+	var clean_name := Settings.sanitize_player_name(raw_name) if Settings != null else raw_name.strip_edges().substr(0, 16)
+	var peer_id := multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		rpc_submit_player_name.rpc_id(1, clean_name)
+		return
+	if clean_name.is_empty():
+		player_names.erase(peer_id)
+	else:
+		player_names[peer_id] = clean_name
+	_broadcast_player_names()
+
+func request_player_names() -> void:
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		rpc_request_player_names.rpc_id(1)
+	elif multiplayer.is_server():
+		player_names_changed.emit(player_names.duplicate())
+
+func _broadcast_player_names() -> void:
+	var names_copy := player_names.duplicate()
+	player_names_changed.emit(names_copy)
+	if multiplayer.is_server() and multiplayer.has_multiplayer_peer():
+		rpc_sync_player_names.rpc(names_copy)
+
+@rpc("any_peer", "reliable")
+func rpc_request_player_names() -> void:
+	if not multiplayer.is_server():
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	rpc_sync_player_names.rpc_id(peer_id, player_names.duplicate())
+
+@rpc("authority", "call_remote", "reliable")
+func rpc_sync_player_names(names_dict: Dictionary) -> void:
+	player_names = names_dict.duplicate()
+	player_names_changed.emit(player_names.duplicate())
+
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_submit_player_name(raw_name: String) -> void:
+	if not multiplayer.is_server():
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	var clean_name := Settings.sanitize_player_name(raw_name) if Settings != null else raw_name.strip_edges().substr(0, 16)
+	if clean_name.is_empty():
+		player_names.erase(peer_id)
+	else:
+		player_names[peer_id] = clean_name
+	_broadcast_player_names()
+
+func get_customization_for_peer(peer_id: int) -> Dictionary:
+	var raw = player_customizations.get(peer_id, null)
+	if raw is Dictionary:
+		return {
+			"skin": PlayerCustomization.sanitize_skin_id(str(raw.get("skin", "default"))),
+			"hair": PlayerCustomization.sanitize_hair_id(str(raw.get("hair", "default")))
+		}
+	return {"skin": "default", "hair": "default"}
+
+func set_local_customization(skin_id: String, hair_id: String) -> void:
+	var clean_skin := PlayerCustomization.sanitize_skin_id(skin_id)
+	var clean_hair := PlayerCustomization.sanitize_hair_id(hair_id)
+	var peer_id := multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		rpc_submit_customization.rpc_id(1, clean_skin, clean_hair)
+		return
+	player_customizations[peer_id] = {"skin": clean_skin, "hair": clean_hair}
+	_broadcast_player_customizations()
+
+func request_player_customizations() -> void:
+	if multiplayer.has_multiplayer_peer() and not multiplayer.is_server():
+		rpc_request_customizations.rpc_id(1)
+	elif multiplayer.is_server():
+		player_customizations_changed.emit(player_customizations.duplicate(true))
+
+func _broadcast_player_customizations() -> void:
+	var copy := player_customizations.duplicate(true)
+	player_customizations_changed.emit(copy)
+	if multiplayer.is_server() and multiplayer.has_multiplayer_peer():
+		rpc_sync_customizations.rpc(copy)
+
+@rpc("any_peer", "reliable")
+func rpc_request_customizations() -> void:
+	if not multiplayer.is_server():
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	rpc_sync_customizations.rpc_id(peer_id, player_customizations.duplicate(true))
+
+@rpc("authority", "call_remote", "reliable")
+func rpc_sync_customizations(customs: Dictionary) -> void:
+	player_customizations = customs.duplicate(true)
+	player_customizations_changed.emit(player_customizations.duplicate(true))
+
+@rpc("any_peer", "call_remote", "reliable")
+func rpc_submit_customization(skin_id: String, hair_id: String) -> void:
+	if not multiplayer.is_server():
+		return
+	var peer_id := multiplayer.get_remote_sender_id()
+	player_customizations[peer_id] = {
+		"skin": PlayerCustomization.sanitize_skin_id(skin_id),
+		"hair": PlayerCustomization.sanitize_hair_id(hair_id)
+	}
+	_broadcast_player_customizations()
  
 # Remote procedure call to load game world on clients
 @rpc("any_peer", "call_local", "reliable")
@@ -322,6 +450,8 @@ func _on_peer_connected(id):
 			p.set_timeout(32, 600000, 900000)
 		_assign_character_if_needed(id)
 		_broadcast_character_selections()
+		_broadcast_player_names()
+		_broadcast_player_customizations()
 	# Late joiners go straight into a running match; otherwise they wait in the lobby
 	if multiplayer.is_server() and match_started:
 		rpc_start_game.rpc_id(id)
@@ -332,6 +462,10 @@ func _on_peer_disconnected(id):
 	loaded_peers.erase(id)
 	if multiplayer.is_server() and player_character_selections.erase(id):
 		_broadcast_character_selections()
+	if multiplayer.is_server() and player_names.erase(id):
+		_broadcast_player_names()
+	if multiplayer.is_server() and player_customizations.erase(id):
+		_broadcast_player_customizations()
 	# Remove player from game if in game scene
 	var game_scene = get_tree().current_scene
 	if game_scene and game_scene.has_method("remove_player"):
@@ -357,6 +491,14 @@ func _on_connected_to_server():
 	var p = peer.get_peer(1)
 	if p:
 		p.set_timeout(32, 600000, 900000)
+	if Settings != null:
+		var saved_skin := PlayerCustomization.sanitize_skin_id(str(Settings.settings.get("skin_tone", "default")))
+		var saved_hair := PlayerCustomization.sanitize_hair_id(str(Settings.settings.get("hair_style", "default")))
+		rpc_submit_customization.rpc_id(1, saved_skin, saved_hair)
+	if Settings != null and not Settings.is_using_controller:
+		var saved_name := Settings.sanitize_player_name(str(Settings.settings.get("player_name", "")))
+		if not saved_name.is_empty():
+			rpc_submit_player_name.rpc_id(1, saved_name)
 	load_lobby()
  
 # Called when connection attempt fails

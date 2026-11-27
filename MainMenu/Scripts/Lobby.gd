@@ -19,6 +19,7 @@ extends Control
 @onready var preview_camera: Camera3D = $Panel/VBoxContainer/CharacterPreview/Viewport/PreviewStage/Camera3D
 
 const CHARACTER_CATALOG: CharacterCatalog = preload("res://Models/characters/Definitions/CharacterCatalog.tres")
+const PlayerCustomization = preload("res://Models/characters/PlayerCustomization.gd")
 
 var _dots_time := 0.0
 var _selected_character_index := 0
@@ -27,6 +28,14 @@ var _preview_model: Node3D
 var _preview_pivot: Node3D
 var _preview_character_id: StringName = &""
 var _dragging_preview := false
+var _player_name_input: LineEdit = null
+var _player_name_hint: Label = null
+var _selected_skin_index: int = 0
+var _selected_hair_index: int = 0
+var _skin_label: Label = null
+var _skin_swatch: ColorRect = null
+var _hair_label: Label = null
+var _hair_swatch: ColorRect = null
 
 # Called when the node enters the scene tree
 func _ready():
@@ -44,6 +53,13 @@ func _ready():
 		character_preview.mouse_filter = Control.MOUSE_FILTER_STOP
 		character_preview.gui_input.connect(_on_preview_gui_input)
 	NetworkManager.character_selections_changed.connect(_on_character_selections_changed)
+	NetworkManager.player_names_changed.connect(_on_player_names_changed)
+	NetworkManager.player_customizations_changed.connect(_on_customizations_changed)
+	if Settings != null and Settings.has_signal("input_device_changed"):
+		Settings.input_device_changed.connect(_on_input_device_changed)
+
+	_setup_player_name_row()
+	_setup_customization_rows()
 
 	var current_id := NetworkManager.get_local_character_id()
 	for i in CHARACTER_CATALOG.characters.size():
@@ -52,6 +68,8 @@ func _ready():
 			break
 	_refresh_character_selection()
 	NetworkManager.request_character_selections()
+	NetworkManager.request_player_names()
+	NetworkManager.request_player_customizations()
 
 	var is_host := multiplayer.is_server()
 	title_label.text = "Hosting Game" if is_host else "Joined Game"
@@ -84,6 +102,11 @@ func _on_preview_gui_input(event: InputEvent) -> void:
 		_preview_pivot.rotate_y(event.relative.x * 0.015)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _player_name_input != null and _player_name_input.has_focus():
+		if event.is_action_pressed("ui_cancel"):
+			_player_name_input.release_focus()
+			get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("ui_cancel"):
 		_on_leave_pressed()
 		get_viewport().set_input_as_handled()
@@ -96,6 +119,256 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.physical_keycode in [KEY_D, KEY_E] or (event.physical_keycode == KEY_RIGHT and not on_action_buttons):
 			_on_next_character_pressed()
 			get_viewport().set_input_as_handled()
+
+func _setup_player_name_row() -> void:
+	var vbox := get_node_or_null("Panel/VBoxContainer") as VBoxContainer
+	if vbox == null or vbox.get_node_or_null("PlayerNameRow") != null:
+		return
+	var panel := get_node_or_null("Panel") as Control
+	if panel != null:
+		panel.offset_top = -350.0
+		panel.offset_bottom = 350.0
+	vbox.add_theme_constant_override("separation", 10)
+
+	var row := HBoxContainer.new()
+	row.name = "PlayerNameRow"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 8)
+
+	var lbl := Label.new()
+	lbl.text = "Your Name:"
+	lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+
+	_player_name_input = LineEdit.new()
+	_player_name_input.name = "PlayerNameInput"
+	_player_name_input.custom_minimum_size = Vector2(210, 32)
+	_player_name_input.max_length = Settings.MAX_PLAYER_NAME_LENGTH if Settings != null else 16
+	_player_name_input.placeholder_text = "Default (Player #)"
+	_player_name_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var saved_name := ""
+	if Settings != null:
+		saved_name = Settings.sanitize_player_name(str(Settings.settings.get("player_name", "")))
+	_player_name_input.text = saved_name
+	_player_name_input.text_changed.connect(_on_player_name_changed)
+	_player_name_input.text_submitted.connect(_on_player_name_submitted)
+	_player_name_input.focus_exited.connect(_on_player_name_focus_exited)
+
+	_player_name_hint = Label.new()
+	_player_name_hint.name = "PlayerNameHint"
+	_player_name_hint.text = "(Keyboard only)"
+	_player_name_hint.add_theme_font_size_override("font_size", 12)
+	_player_name_hint.add_theme_color_override("font_color", Color(0.72, 0.68, 0.62))
+
+	row.add_child(lbl)
+	row.add_child(_player_name_input)
+	row.add_child(_player_name_hint)
+	vbox.add_child(row)
+	if count_label != null:
+		vbox.move_child(row, count_label.get_index() + 1)
+
+	_apply_input_device_to_name_field(Settings != null and Settings.is_using_controller)
+
+func _on_input_device_changed(using_controller: bool) -> void:
+	_apply_input_device_to_name_field(using_controller)
+
+func _apply_input_device_to_name_field(using_controller: bool) -> void:
+	if _player_name_input == null:
+		return
+	if using_controller:
+		if _player_name_input.has_focus():
+			_player_name_input.release_focus()
+			if multiplayer.is_server() and start_btn != null and start_btn.visible:
+				start_btn.grab_focus()
+			elif leave_btn != null:
+				leave_btn.grab_focus()
+		_player_name_input.editable = false
+		_player_name_input.focus_mode = Control.FOCUS_NONE
+		_player_name_input.modulate = Color(0.68, 0.68, 0.72, 0.65)
+		if _player_name_hint != null:
+			_player_name_hint.text = "(Keyboard only)"
+			_player_name_hint.visible = true
+	else:
+		_player_name_input.editable = true
+		# Click-only focus keeps gamepad D-pad/stick from ever focusing this field
+		_player_name_input.focus_mode = Control.FOCUS_CLICK
+		_player_name_input.modulate = Color.WHITE
+		if _player_name_hint != null:
+			_player_name_hint.visible = false
+
+func _on_player_name_changed(new_text: String) -> void:
+	if Settings != null and Settings.is_using_controller:
+		return
+	var clean := Settings.sanitize_player_name(new_text) if Settings != null else new_text.strip_edges().substr(0, 16)
+	NetworkManager.set_local_player_name(clean)
+
+func _on_player_name_submitted(new_text: String) -> void:
+	if _player_name_input != null:
+		_player_name_input.release_focus()
+	_commit_player_name(new_text)
+
+func _on_player_name_focus_exited() -> void:
+	if _player_name_input != null:
+		_commit_player_name(_player_name_input.text)
+
+func _commit_player_name(raw_text: String) -> void:
+	if Settings != null and Settings.is_using_controller:
+		return
+	var clean := Settings.sanitize_player_name(raw_text) if Settings != null else raw_text.strip_edges().substr(0, 16)
+	if _player_name_input != null and _player_name_input.text != clean:
+		_player_name_input.text = clean
+	if Settings != null:
+		Settings.set_setting("player_name", clean)
+	NetworkManager.set_local_player_name(clean)
+
+func _on_player_names_changed(_names: Dictionary) -> void:
+	if is_inside_tree():
+		_refresh()
+
+func _setup_customization_rows() -> void:
+	var vbox := get_node_or_null("Panel/VBoxContainer") as VBoxContainer
+	var picker := get_node_or_null("Panel/VBoxContainer/CharacterPicker")
+	if vbox == null or picker == null or vbox.get_node_or_null("CustomizationRow") != null:
+		return
+
+	if character_preview != null:
+		character_preview.custom_minimum_size = Vector2(320, 185)
+
+	var saved_skin := "default"
+	var saved_hair := "default"
+	if Settings != null:
+		saved_skin = PlayerCustomization.sanitize_skin_id(str(Settings.settings.get("skin_tone", "default")))
+		saved_hair = PlayerCustomization.sanitize_hair_id(str(Settings.settings.get("hair_style", "default")))
+	_selected_skin_index = maxi(0, PlayerCustomization.SKIN_ORDER.find(saved_skin))
+	_selected_hair_index = maxi(0, PlayerCustomization.HAIR_ORDER.find(saved_hair))
+
+	var row := HBoxContainer.new()
+	row.name = "CustomizationRow"
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 18)
+
+	# Skin Tone Picker
+	var skin_box := HBoxContainer.new()
+	skin_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	skin_box.add_theme_constant_override("separation", 6)
+
+	var skin_prev := Button.new()
+	skin_prev.name = "PrevSkinBtn"
+	skin_prev.text = "◀"
+	skin_prev.custom_minimum_size = Vector2(32, 30)
+	skin_prev.pressed.connect(_on_prev_skin_pressed)
+
+	_skin_swatch = ColorRect.new()
+	_skin_swatch.custom_minimum_size = Vector2(14, 14)
+	_skin_swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	_skin_label = Label.new()
+	_skin_label.custom_minimum_size = Vector2(120, 28)
+	_skin_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_skin_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_skin_label.add_theme_font_size_override("font_size", 14)
+
+	var skin_next := Button.new()
+	skin_next.name = "NextSkinBtn"
+	skin_next.text = "▶"
+	skin_next.custom_minimum_size = Vector2(32, 30)
+	skin_next.pressed.connect(_on_next_skin_pressed)
+
+	skin_box.add_child(skin_prev)
+	skin_box.add_child(_skin_swatch)
+	skin_box.add_child(_skin_label)
+	skin_box.add_child(skin_next)
+
+	# Hair Picker
+	var hair_box := HBoxContainer.new()
+	hair_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	hair_box.add_theme_constant_override("separation", 6)
+
+	var hair_prev := Button.new()
+	hair_prev.name = "PrevHairBtn"
+	hair_prev.text = "◀"
+	hair_prev.custom_minimum_size = Vector2(32, 30)
+	hair_prev.pressed.connect(_on_prev_hair_pressed)
+
+	_hair_swatch = ColorRect.new()
+	_hair_swatch.custom_minimum_size = Vector2(14, 14)
+	_hair_swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	_hair_label = Label.new()
+	_hair_label.custom_minimum_size = Vector2(128, 28)
+	_hair_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hair_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_hair_label.add_theme_font_size_override("font_size", 14)
+
+	var hair_next := Button.new()
+	hair_next.name = "NextHairBtn"
+	hair_next.text = "▶"
+	hair_next.custom_minimum_size = Vector2(32, 30)
+	hair_next.pressed.connect(_on_next_hair_pressed)
+
+	hair_box.add_child(hair_prev)
+	hair_box.add_child(_hair_swatch)
+	hair_box.add_child(_hair_label)
+	hair_box.add_child(hair_next)
+
+	row.add_child(skin_box)
+	row.add_child(hair_box)
+	vbox.add_child(row)
+	vbox.move_child(row, picker.get_index() + 1)
+
+	_refresh_customization_ui()
+	NetworkManager.set_local_customization(
+		PlayerCustomization.SKIN_ORDER[_selected_skin_index],
+		PlayerCustomization.HAIR_ORDER[_selected_hair_index]
+	)
+
+func _on_prev_skin_pressed() -> void:
+	_selected_skin_index = posmod(_selected_skin_index - 1, PlayerCustomization.SKIN_ORDER.size())
+	_apply_and_sync_customization()
+
+func _on_next_skin_pressed() -> void:
+	_selected_skin_index = posmod(_selected_skin_index + 1, PlayerCustomization.SKIN_ORDER.size())
+	_apply_and_sync_customization()
+
+func _on_prev_hair_pressed() -> void:
+	_selected_hair_index = posmod(_selected_hair_index - 1, PlayerCustomization.HAIR_ORDER.size())
+	_apply_and_sync_customization()
+
+func _on_next_hair_pressed() -> void:
+	_selected_hair_index = posmod(_selected_hair_index + 1, PlayerCustomization.HAIR_ORDER.size())
+	_apply_and_sync_customization()
+
+func _apply_and_sync_customization() -> void:
+	var skin_id := PlayerCustomization.SKIN_ORDER[_selected_skin_index]
+	var hair_id := PlayerCustomization.HAIR_ORDER[_selected_hair_index]
+	if Settings != null:
+		Settings.set_setting("skin_tone", skin_id)
+		Settings.set_setting("hair_style", hair_id)
+	_refresh_customization_ui()
+	_apply_customization_to_preview()
+	NetworkManager.set_local_customization(skin_id, hair_id)
+
+func _refresh_customization_ui() -> void:
+	var skin_id := PlayerCustomization.SKIN_ORDER[_selected_skin_index]
+	var hair_id := PlayerCustomization.HAIR_ORDER[_selected_hair_index]
+	if _skin_label != null:
+		_skin_label.text = "Skin: %s" % PlayerCustomization.get_skin_label(skin_id)
+	if _skin_swatch != null:
+		_skin_swatch.color = PlayerCustomization.get_skin_swatch(skin_id)
+	if _hair_label != null:
+		_hair_label.text = "Hair: %s" % PlayerCustomization.get_hair_label(hair_id)
+	if _hair_swatch != null:
+		_hair_swatch.color = PlayerCustomization.get_hair_swatch(hair_id)
+
+func _apply_customization_to_preview() -> void:
+	if not is_instance_valid(_preview_model):
+		return
+	var skin_id := PlayerCustomization.SKIN_ORDER[_selected_skin_index]
+	var hair_id := PlayerCustomization.HAIR_ORDER[_selected_hair_index]
+	PlayerCustomization.apply_to_character(_preview_model, skin_id, hair_id)
+
+func _on_customizations_changed(_customs: Dictionary) -> void:
+	if is_inside_tree():
+		_refresh()
 
 func _setup_focus_styling() -> void:
 	var focus_box := StyleBoxFlat.new()
@@ -170,7 +443,8 @@ func _refresh() -> void:
 		var id: int = ids[i]
 		var entry := Label.new()
 		entry.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		entry.text = "Player %d" % (i + 1)
+		var custom_name := NetworkManager.get_player_name_for_peer(id)
+		entry.text = custom_name if not custom_name.is_empty() else ("Player %d" % (i + 1))
 		if id == 1:
 			entry.text += " (Host)"
 		if id == multiplayer.get_unique_id():
@@ -249,6 +523,7 @@ func _update_character_preview(definition: CharacterDefinition) -> void:
 	_preview_model.scale = definition.model_scale
 	_preview_model.rotation.y = 0.0
 	_preview_pivot.add_child(_preview_model)
+	_apply_customization_to_preview()
 	call_deferred("_frame_preview_model")
 
 
@@ -316,3 +591,13 @@ func _on_character_selections_changed(_selections: Dictionary) -> void:
 func _on_server_disconnected() -> void:
 	print("Host closed the lobby")
 	NetworkManager.leave_session()
+
+func _exit_tree() -> void:
+	if Settings != null and Settings.has_signal("input_device_changed") and Settings.input_device_changed.is_connected(_on_input_device_changed):
+		Settings.input_device_changed.disconnect(_on_input_device_changed)
+	if NetworkManager != null and NetworkManager.player_names_changed.is_connected(_on_player_names_changed):
+		NetworkManager.player_names_changed.disconnect(_on_player_names_changed)
+	if NetworkManager != null and NetworkManager.character_selections_changed.is_connected(_on_character_selections_changed):
+		NetworkManager.character_selections_changed.disconnect(_on_character_selections_changed)
+	if NetworkManager != null and NetworkManager.player_customizations_changed.is_connected(_on_customizations_changed):
+		NetworkManager.player_customizations_changed.disconnect(_on_customizations_changed)

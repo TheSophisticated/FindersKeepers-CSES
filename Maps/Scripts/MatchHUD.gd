@@ -23,6 +23,9 @@ extends Control
  
 @onready var player_legend_rows: VBoxContainer = $PlayerLegend/LegendVBox/LegendRows
  
+const MinimapUIScript = preload("res://Maps/Scripts/MinimapUI.gd")
+const MatchExporter = preload("res://scripts/managers/MatchExporter.gd")
+
 var local_parts_lost: int = 0
 var _banner_tween: Tween = null
 var _panic_vignette: ColorRect = null
@@ -32,6 +35,10 @@ var _last_time_remaining: float = 300.0
 var _spectator_banner: PanelContainer = null
 var _debug_overlay_label: Label = null
 var _debug_refresh_accum: float = 0.0
+var _minimap: Control = null
+var _export_btn: Button = null
+var _export_status_label: Label = null
+var _export_dialog: FileDialog = null
  
 func _ready() -> void:
 	# Hide overlays initially
@@ -59,9 +66,74 @@ func _ready() -> void:
 		shrine_decline_btn.focus_neighbor_right = shrine_accept_btn.get_path()
  
 	_setup_panic_vignette()
+	_setup_minimap()
 	_setup_spectator_banner()
 	_setup_debug_overlay()
+	_setup_game_over_export_ui()
 	_setup_focus_styling()
+
+func _setup_game_over_export_ui() -> void:
+	if game_over_panel == null or _export_btn != null:
+		return
+	var vbox := game_over_panel.get_node_or_null("VBoxContainer") as VBoxContainer
+	if vbox == null:
+		return
+	game_over_panel.offset_top = -185.0
+	game_over_panel.offset_bottom = 185.0
+
+	_export_btn = Button.new()
+	_export_btn.name = "ExportMatchBtn"
+	_export_btn.custom_minimum_size = Vector2(200, 36)
+	_export_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_export_btn.text = "Export Match (.txt)"
+	_export_btn.pressed.connect(_on_export_match_pressed)
+
+	_export_status_label = Label.new()
+	_export_status_label.name = "ExportStatusLabel"
+	_export_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_export_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_export_status_label.add_theme_font_size_override("font_size", 12)
+	_export_status_label.add_theme_color_override("font_color", Color(0.76, 0.95, 0.78))
+	_export_status_label.visible = false
+
+	vbox.add_child(_export_btn)
+	vbox.add_child(_export_status_label)
+	if menu_btn != null:
+		vbox.move_child(_export_btn, menu_btn.get_index())
+		vbox.move_child(_export_status_label, _export_btn.get_index() + 1)
+		_export_btn.focus_neighbor_bottom = menu_btn.get_path()
+		_export_btn.focus_neighbor_top = menu_btn.get_path()
+		menu_btn.focus_neighbor_top = _export_btn.get_path()
+		menu_btn.focus_neighbor_bottom = _export_btn.get_path()
+
+func _on_export_match_pressed() -> void:
+	if is_instance_valid(_export_dialog) and _export_dialog.visible:
+		return
+	_export_dialog = MatchExporter.open_save_dialog(self, GameManager, NetworkManager, _on_export_match_finished)
+
+func _on_export_match_finished(result: Dictionary) -> void:
+	_export_dialog = null
+	if _export_status_label == null:
+		return
+	if bool(result.get("canceled", false)):
+		return
+	if bool(result.get("ok", false)):
+		var gpath: String = str(result.get("global_path", ""))
+		DisplayServer.clipboard_set(gpath)
+		_export_status_label.add_theme_color_override("font_color", Color(0.76, 0.95, 0.78))
+		_export_status_label.text = "Exported: %s (path copied)" % str(result.get("file_name", ""))
+	else:
+		_export_status_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
+		_export_status_label.text = "Export failed: %s" % str(result.get("error", "Unknown error"))
+	_export_status_label.visible = true
+
+func _setup_minimap() -> void:
+	if _minimap != null or get_node_or_null("MinimapUI") != null:
+		return
+	_minimap = MinimapUIScript.new()
+	add_child(_minimap)
+	# Place above PanicVignette (index 0) and below modal overlays
+	move_child(_minimap, 1)
 
 func _setup_debug_overlay() -> void:
 	_debug_overlay_label = Label.new()
@@ -262,12 +334,12 @@ func _on_player_eliminated(peer_id: int, player_name: String) -> void:
 	if peer_id == multiplayer.get_unique_id() and _spectator_banner != null:
 		_spectator_banner.visible = true
  
-# Roster names are "Player_<peer_id>"; show the player number ("Player 2") instead.
+# Shows the player's synced custom name or falls back to "Player N".
 func _display_name(peer_id: int, fallback: String) -> String:
 	if GameManager:
-		var number: int = GameManager.get_player_display_number(peer_id)
-		if number != -1:
-			return "Player %d" % number
+		var dname: String = GameManager.get_player_display_name(peer_id)
+		if dname != "Unknown":
+			return dname
 	return fallback
  
 func _show_banner(text: String, color: Color = Color.WHITE) -> void:
@@ -361,12 +433,16 @@ func _on_shrine_resolved(accepted: bool) -> void:
 func _on_game_over(winner_id: int, winner_name: String) -> void:
 	if _spectator_banner != null:
 		_spectator_banner.visible = false
+	if _minimap != null:
+		_minimap.visible = false
 	var local_player := _get_local_player()
 	if local_player and local_player.has_method("set_input_enabled"):
 		local_player.set_input_enabled(false)
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	if game_over_panel:
 		game_over_panel.visible = true
+		if _export_status_label != null:
+			_export_status_label.visible = false
 		if winner_label:
 			var summary := ""
 			if winner_id == -1:
@@ -428,7 +504,11 @@ func _update_player_legend() -> void:
 		row.add_child(color_swatch)
  
 		var label := Label.new()
-		label.text = "P%d" % display_number
+		var custom_name: String = str(player_data.get("display_name", "")).strip_edges()
+		if custom_name.is_empty():
+			label.text = "P%d" % display_number
+		else:
+			label.text = custom_name if custom_name.length() <= 10 else (custom_name.substr(0, 9) + "…")
 		if peer_id == local_id:
 			label.text += " (YOU)"
 		if not is_alive:

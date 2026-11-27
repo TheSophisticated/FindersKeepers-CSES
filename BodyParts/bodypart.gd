@@ -1,6 +1,8 @@
 class_name BodyPart
 extends RigidBody3D
 
+const PlayerCustomization = preload("res://Models/characters/PlayerCustomization.gd")
+
 @onready var owner_label: Label3D = $OwnerTag/OwnerLabel
 @onready var owner_label_background: MeshInstance3D = $OwnerTag/OwnerLabelBackground
 @onready var owner_label_frame: MeshInstance3D = $OwnerTag/OwnerLabelFrame
@@ -64,6 +66,8 @@ const DEFAULT_COLLISION_MASK: int = 3   # 1 | 2 (Layer 1 Floor + Layer 2 Player)
 
 @export_group("Visual Model")
 @export var character_folder: String = "Player1"
+@export var skin_tone: String = "default"
+@export var hair_style: String = "default"
 
 
 
@@ -129,6 +133,7 @@ func _load_part_visual() -> void:
 	model.position = model_position
 	model.scale = model_scale
 	add_child(model)
+	_apply_owner_customization_to_model(model)
 
 	# Disable imported static colliders inside the visual model.
 	for node in model.find_children("*", "StaticBody3D", true, false):
@@ -155,7 +160,19 @@ func _load_part_visual() -> void:
 		push_warning("CollisionShape3D was not found.")
 
 
+func _apply_owner_customization_to_model(model: Node) -> void:
+	var s_id := skin_tone
+	var h_id := hair_style
+	if owner_id >= 0 and NetworkManager != null and NetworkManager.has_method("get_customization_for_peer"):
+		var look: Dictionary = NetworkManager.get_customization_for_peer(owner_id)
+		if s_id == "default":
+			s_id = str(look.get("skin", "default"))
+		if h_id == "default":
+			h_id = str(look.get("hair", "default"))
+	PlayerCustomization.apply_to_body_part(model, part_type, s_id, h_id)
+
 func _ready() -> void:
+	add_to_group("body_parts")
 	# Prevent body parts from pushing the player back through
 	# rigid-body collision response.
 	lock_rotation = false
@@ -257,11 +274,10 @@ func set_owner_label_visible(show_label: bool) -> void:
 	if show_label:
 		var part_names := ["Head", "Hands", "Torso", "Legs"]
 		var part_name: String = part_names[part_type]
-		# owner_id is the owner's network peer ID; show their player number instead.
-		var player_number: int = GameManager.get_player_display_number(owner_id) if GameManager else -1
-		if player_number == -1:
-			player_number = owner_id
-		owner_label.text = "Player %d's %s" % [player_number, part_name]
+		var owner_display: String = GameManager.get_player_display_name(owner_id) if GameManager else "Player %d" % owner_id
+		if owner_display == "Unknown":
+			owner_display = "Player %d" % owner_id
+		owner_label.text = "%s's %s" % [owner_display, part_name]
 
 	owner_label.visible = show_label
 
