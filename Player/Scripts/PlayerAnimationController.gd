@@ -31,6 +31,8 @@ var anim_library: AnimationLibrary = null
 @export var default_character_id: StringName = &"player_1"
 var current_character: CharacterDefinition
 var player_node: Node3D
+var skin_tone: String = "default"
+var hair_style: String = "default"
 
 
 func setup(player_node: Node3D) -> void:
@@ -63,6 +65,7 @@ func load_character_model(player_node: Node3D, definition: CharacterDefinition) 
 	player_node.add_child(character_node)
 
 	character_node.rotation = Vector3(0, PI, 0)
+	PlayerCustomization.apply_to_character(character_node, skin_tone, hair_style)
 
 	skeleton = _find_skeleton(character_node)
 	if skeleton == null:
@@ -98,6 +101,12 @@ func set_character_by_id(character_id: StringName) -> bool:
 		push_warning("Character '%s' was not found in the catalog" % character_id)
 		return false
 	return set_character_definition(definition)
+
+func set_customization(new_skin_tone: String, new_hair_style: String) -> void:
+	skin_tone = PlayerCustomization.sanitize_skin_id(new_skin_tone)
+	hair_style = PlayerCustomization.sanitize_hair_id(new_hair_style)
+	if is_instance_valid(character_node):
+		PlayerCustomization.apply_to_character(character_node, skin_tone, hair_style)
 
 
 ## Backward-compatible path setter for callers that still supply an FBX path.

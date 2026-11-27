@@ -64,6 +64,8 @@ const DEFAULT_COLLISION_MASK: int = 3   # 1 | 2 (Layer 1 Floor + Layer 2 Player)
 
 @export_group("Visual Model")
 @export var character_folder: String = "Player1"
+@export var skin_tone: String = "default"
+@export var hair_style: String = "default"
 
 
 
@@ -129,6 +131,7 @@ func _load_part_visual() -> void:
 	model.position = model_position
 	model.scale = model_scale
 	add_child(model)
+	_apply_owner_customization_to_model(model)
 
 	# Disable imported static colliders inside the visual model.
 	for node in model.find_children("*", "StaticBody3D", true, false):
@@ -154,6 +157,17 @@ func _load_part_visual() -> void:
 	else:
 		push_warning("CollisionShape3D was not found.")
 
+
+func _apply_owner_customization_to_model(model: Node) -> void:
+	var s_id := skin_tone
+	var h_id := hair_style
+	if owner_id >= 0 and NetworkManager != null and NetworkManager.has_method("get_customization_for_peer"):
+		var look: Dictionary = NetworkManager.get_customization_for_peer(owner_id)
+		if s_id == "default":
+			s_id = str(look.get("skin", "default"))
+		if h_id == "default":
+			h_id = str(look.get("hair", "default"))
+	PlayerCustomization.apply_to_body_part(model, part_type, s_id, h_id)
 
 func _ready() -> void:
 	# Prevent body parts from pushing the player back through

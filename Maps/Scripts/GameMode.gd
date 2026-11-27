@@ -133,9 +133,12 @@ func spawn_player(peer_id: int):
 
 	var spawnPos : Vector3= get_next_spawn_position(nextSpawnIdx)
 	var character_id: StringName = NetworkManager.get_character_id_for_peer(peer_id)
+	var custom_look: Dictionary = NetworkManager.get_customization_for_peer(peer_id)
 	var player := player_spawner.spawn({
 		"peer_id": peer_id,
 		"character_id": character_id,
+		"skin_tone": str(custom_look.get("skin", "default")),
+		"hair_style": str(custom_look.get("hair", "default")),
 		"position": spawnPos
 	})
 	if player == null:
@@ -155,6 +158,8 @@ func _create_player_from_spawn_data(data: Variant) -> Node:
 	player.name = "Player_" + str(peer_id)
 	player.set_multiplayer_authority(peer_id)
 	player.character_id = StringName(data.get("character_id", &"player_1"))
+	player.skin_tone = str(data.get("skin_tone", "default"))
+	player.hair_style = str(data.get("hair_style", "default"))
 	player.position = data.get("position", Vector3.ZERO)
 	return player
 

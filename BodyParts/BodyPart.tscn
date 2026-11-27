@@ -19,6 +19,15 @@ properties/2/replication_mode = 0
 properties/3/path = NodePath(".:part_color")
 properties/3/spawn = true
 properties/3/replication_mode = 0
+properties/4/path = NodePath(".:character_folder")
+properties/4/spawn = true
+properties/4/replication_mode = 0
+properties/5/path = NodePath(".:skin_tone")
+properties/5/spawn = true
+properties/5/replication_mode = 0
+properties/6/path = NodePath(".:hair_style")
+properties/6/spawn = true
+properties/6/replication_mode = 0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gocp0"]
 transparency = 1
