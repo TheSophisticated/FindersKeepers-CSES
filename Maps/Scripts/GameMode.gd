@@ -26,6 +26,7 @@ func get_game_time() -> String:
 
 # Called when the node is ready
 func _ready():
+	add_to_group("GameMode")
 	player_spawner.spawn_function = _create_player_from_spawn_data
 	if Settings and Settings.has_method("apply_graphics_settings"):
 		Settings.apply_graphics_settings()
@@ -84,19 +85,21 @@ func _start_match_when_peers_loaded() -> void:
 		spawn_player(peer_id)
 	GameManager.start_match()
 	_match_running = true
-	# Ensure MatchHUD is present under CanvasLayer
+	# Ensure MatchHUD is present under CanvasLayer (preserve existing instance cleanly)
 	if has_node("CanvasLayer"):
 		var canvas = $CanvasLayer
-		# Remove any existing MatchHUD
-		var old = canvas.get_node_or_null("MatchHUD")
-		if old:
-			old.queue_free()
-		# Instantiate a fresh MatchHUD (which includes CompassUI from the tscn)
-		var hud_scene = load("res://Maps/MatchHUD.tscn")
-		if hud_scene:
-			var hud = hud_scene.instantiate()
-			hud.name = "MatchHUD"
-			canvas.add_child(hud)
+		var existing_hud = canvas.get_node_or_null("MatchHUD")
+		if existing_hud == null:
+			var hud_scene = load("res://Maps/MatchHUD.tscn")
+			if hud_scene:
+				var hud = hud_scene.instantiate()
+				hud.name = "MatchHUD"
+				canvas.add_child(hud)
+		else:
+			if existing_hud.has_method("_update_score_display"):
+				existing_hud._update_score_display()
+			if existing_hud.has_method("_update_player_legend"):
+				existing_hud._update_player_legend()
 	print("Match Started")
 
 # Called on the host by NetworkManager when a client reports its map is loaded.

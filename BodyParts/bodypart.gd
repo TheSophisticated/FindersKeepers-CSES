@@ -172,6 +172,7 @@ func _apply_owner_customization_to_model(model: Node) -> void:
 	PlayerCustomization.apply_to_body_part(model, part_type, s_id, h_id)
 
 func _ready() -> void:
+	add_to_group("body_parts")
 	# Prevent body parts from pushing the player back through
 	# rigid-body collision response.
 	lock_rotation = false

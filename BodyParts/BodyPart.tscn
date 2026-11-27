@@ -28,6 +28,12 @@ properties/5/replication_mode = 0
 properties/6/path = NodePath(".:hair_style")
 properties/6/spawn = true
 properties/6/replication_mode = 0
+properties/7/path = NodePath(".:is_carried")
+properties/7/spawn = true
+properties/7/replication_mode = 2
+properties/8/path = NodePath(".:is_collected")
+properties/8/spawn = true
+properties/8/replication_mode = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gocp0"]
 transparency = 1
