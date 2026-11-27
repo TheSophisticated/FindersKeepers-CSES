@@ -15,7 +15,9 @@ var settings := {
 	"ssao_enabled": true,
 	"ssr_enabled": false,
 	"last_direct_ip": "",
-	"player_name": ""
+	"player_name": "",
+	"skin_tone": "default",
+	"hair_style": "default"
 }
 
 signal input_device_changed(using_controller: bool)
