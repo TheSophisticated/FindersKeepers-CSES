@@ -26,7 +26,7 @@ Eight custom Mixamo-rigged characters selectable in the pre-match 3D Lobby (with
 | Player 1 | Kamran | `Ch21_nonPBR.fbx` |
 | Player 2 | Tanmay | `Ch02_nonPBR.fbx` |
 | Player 3 | Soham | `Ch23_nonPBR.fbx` |
-| Player 4 | Aditya | `Ch37_nonPBR.fbx` |
+| Player 4 | Adithya | `Ch37_nonPBR.fbx` |
 | Player 5 | Ram | `Ch33_nonPBR.fbx` |
 | Player 6 | Donyak Bhatia | `Ch22_nonPBR.fbx` |
 | Player 7 | Ishaan | `Ch31_nonPBR.fbx` |
