@@ -43,7 +43,18 @@ Eight custom Mixamo-rigged characters selectable in the pre-match 3D Lobby (with
 
 ---
 
-## Latest Release — `v1.0.0`
+## Latest Release — `v2.0.0`
+
+**Highlights in `v2.0.0`**:
+- **GTA V-Style Rotating Minimap Radar**: Bottom-left tactical radar backed by a pre-baked 512×512 top-down island map (`tools/bake_minimap.gd` → `Maps/Textures/minimap_island.png`) showing real `Terrain3D` contours, ocean coastline, Church Altar cross, forest, ruins, graveyard, skull area, rotating North badge, player FOV cone, `[M]` expanded zoom toggle, and color-coded circular dots for other living players (with zero extra 3D camera overhead).
+- **Keyboard-Only Custom Player Names**: Players on keyboard/mouse can set a custom display name in the Lobby (persisted in `Settings` and synced over `NetworkManager` to Lobby, HUD legend, banners, prompts, 3D owner tags, and Game Over), while controller players remain locked to default player labels.
+- **Skin Tone & Hair Customization**: Live 3D Lobby preview and networked avatar + severed limb customization across 4 preset skin tones (`Black`, `Caucasian`, `Indian`, `Chinese` + `Default`) and 7 hair presets (`Jet Black`, `Dark Brown`, `Blonde`, `Auburn`, `Silver`, `Crimson`, `Shaved` + `Default`) using a cached lightweight shader that leaves clothing untouched.
+- **Multiplayer White Arrow Compass Hardening**: Restored crisp white arrow body-part guidance (with subtle owner-color base pip and crimson Altar redirect), replicated `is_carried`/`is_collected` states, added `"body_parts"`/`"GameMode"` group discovery, and fixed premature 10m fade-out.
+- **Plain-Text Match Export with Native Save Dialog**: Export full match summaries, player loadouts/standings, and timestamped event timelines to `.txt` via a native Save File Dialog from either the Game Over screen or Pause Menu.
+
+---
+
+## Previous Release — `v1.0.0`
 
 **Highlights in `v1.0.0`**:
 - **Complete 2–4 player LAN & Direct IP multiplayer loop**: Pre-match 3D character lobby with LAN IP copy button, authoritative sacrifice tracking, 5-minute match timer with tie-breaking, Blood Shrine voting event, and eliminated spectator overlay.
