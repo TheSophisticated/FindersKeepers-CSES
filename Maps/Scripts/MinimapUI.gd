@@ -27,6 +27,7 @@ var _altar_world_xz: Vector2 = Vector2(-107.25, 25.07)
 var _altar_node: Node3D = null
 var _local_player: Node = null
 var _has_local_player: bool = false
+var _other_players: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -119,8 +120,30 @@ func _refresh_altar_position() -> void:
 
 
 func _sample_radar_entities() -> void:
-	# Extended in multiplayer player-blip layer
-	pass
+	_other_players.clear()
+	var local_peer_id := multiplayer.get_unique_id() if multiplayer != null and multiplayer.has_multiplayer_peer() else -1
+	for p in get_tree().get_nodes_in_group("player"):
+		if not is_instance_valid(p) or not (p is Node3D):
+			continue
+		if p == _local_player or p.is_multiplayer_authority():
+			continue
+		if not (p as Node3D).visible:
+			continue
+		var pid: int = int(p.get("player_id")) if p.get("player_id") != null else -1
+		if pid == local_peer_id and local_peer_id != -1:
+			continue
+		var dot_color := Color(0.95, 0.35, 0.35, 1.0)
+		if GameManager != null and GameManager.players.has(pid):
+			var pdata: Dictionary = GameManager.players[pid]
+			if not bool(pdata.get("is_alive", true)):
+				continue
+			var c_idx := clampi(int(pdata.get("color", 0)), 0, GameManager.PLAYER_COLOR_VALUES.size() - 1)
+			dot_color = GameManager.PLAYER_COLOR_VALUES[c_idx].lightened(0.18)
+		var pos: Vector3 = (p as Node3D).global_position
+		_other_players.append({
+			"xz": Vector2(pos.x, pos.z),
+			"color": dot_color
+		})
 
 
 func _world_delta_to_radar(world_xz: Vector2, center: Vector2, px_per_meter: float) -> Vector2:
@@ -248,5 +271,22 @@ func _draw_north_badge(center: Vector2) -> void:
 		draw_string(font, np + Vector2(-3.5, 3.6), "N", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(1.0, 1.0, 1.0, 0.95))
 
 
-func _draw_other_players(_center: Vector2, _px_per_meter: float) -> void:
-	pass
+func _draw_other_players(center: Vector2, px_per_meter: float) -> void:
+	for entry in _other_players:
+		var world_xz: Vector2 = entry["xz"]
+		var base_col: Color = entry["color"]
+		var raw_pt := _world_delta_to_radar(world_xz, center, px_per_meter)
+		var clamped_info := _clamp_to_radar_rect(raw_pt, 8.5)
+		var pt: Vector2 = clamped_info["pos"]
+		var is_clamped: bool = bool(clamped_info["clamped"])
+
+		var dot_r := 3.1 if is_clamped else 4.0
+		var ring_r := dot_r + 1.4
+		var alpha := 0.78 if is_clamped else 0.98
+		var col := Color(base_col.r, base_col.g, base_col.b, alpha)
+
+		# GTA V-style small circular dot with dark contrast outline
+		draw_circle(pt, ring_r, Color(0.03, 0.03, 0.05, 0.92 * alpha))
+		draw_circle(pt, dot_r, col)
+		if not is_clamped:
+			draw_circle(pt + Vector2(-0.9, -0.9), 1.0, Color(1.0, 1.0, 1.0, 0.45))
