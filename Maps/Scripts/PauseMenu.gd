@@ -4,6 +4,8 @@
 # Extends Control for UI elements
 extends Control
 
+const MatchExporter = preload("res://scripts/managers/MatchExporter.gd")
+
 # Node references
 @onready var settings_menu = $SettingsMenu  # Settings submenu
 @onready var main_menu = $PauseContainer   # Main pause menu
@@ -12,6 +14,8 @@ extends Control
 var is_paused := false         # Current pause state
 var local_player: Node = null  # Reference to local player
 var _controls_card: PanelContainer = null # Quick-reference controls overlay
+var _export_btn: Button = null
+var _export_status_label: Label = null
 
 # Called when node enters scene tree
 func _ready():
@@ -45,8 +49,9 @@ func _ready():
 	# Initialize settings controls with saved values
 	init_settings_controls()
 	
-	# Setup focus neighbors on PauseContainer
+	# Setup focus neighbors on PauseContainer (including Export Match button)
 	if has_node("PauseContainer"):
+		_setup_pause_export_button()
 		var cont_btn = $PauseContainer/Continue
 		var sett_btn = $PauseContainer/Settings
 		var back_btn = $PauseContainer/BackToMenu
@@ -55,8 +60,14 @@ func _ready():
 		cont_btn.focus_neighbor_top = quit_btn.get_path()
 		cont_btn.focus_neighbor_bottom = sett_btn.get_path()
 		sett_btn.focus_neighbor_top = cont_btn.get_path()
-		sett_btn.focus_neighbor_bottom = back_btn.get_path()
-		back_btn.focus_neighbor_top = sett_btn.get_path()
+		if _export_btn != null:
+			sett_btn.focus_neighbor_bottom = _export_btn.get_path()
+			_export_btn.focus_neighbor_top = sett_btn.get_path()
+			_export_btn.focus_neighbor_bottom = back_btn.get_path()
+			back_btn.focus_neighbor_top = _export_btn.get_path()
+		else:
+			sett_btn.focus_neighbor_bottom = back_btn.get_path()
+			back_btn.focus_neighbor_top = sett_btn.get_path()
 		back_btn.focus_neighbor_bottom = quit_btn.get_path()
 		quit_btn.focus_neighbor_top = back_btn.get_path()
 		quit_btn.focus_neighbor_bottom = cont_btn.get_path()
@@ -70,6 +81,42 @@ func _ready():
 
 	# Setup high-visibility focus indicator for gamepad
 	_setup_focus_styling()
+
+func _setup_pause_export_button() -> void:
+	if _export_btn != null or not has_node("PauseContainer"):
+		return
+	var container := $PauseContainer
+	_export_btn = Button.new()
+	_export_btn.name = "ExportGameBtn"
+	_export_btn.text = "Export Match (.txt)"
+	_export_btn.pressed.connect(_on_export_game_pressed)
+
+	_export_status_label = Label.new()
+	_export_status_label.name = "ExportStatusLabel"
+	_export_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_export_status_label.add_theme_font_size_override("font_size", 12)
+	_export_status_label.add_theme_color_override("font_color", Color(0.76, 0.95, 0.78))
+	_export_status_label.visible = false
+
+	container.add_child(_export_btn)
+	container.add_child(_export_status_label)
+	var back_btn := container.get_node_or_null("BackToMenu")
+	if back_btn != null:
+		container.move_child(_export_btn, back_btn.get_index())
+		container.move_child(_export_status_label, _export_btn.get_index() + 1)
+
+func _on_export_game_pressed() -> void:
+	var result: Dictionary = MatchExporter.export_match_to_text_file(GameManager, NetworkManager)
+	if _export_status_label == null:
+		return
+	if bool(result.get("ok", false)):
+		DisplayServer.clipboard_set(str(result.get("global_path", "")))
+		_export_status_label.add_theme_color_override("font_color", Color(0.76, 0.95, 0.78))
+		_export_status_label.text = "Saved %s (path copied)" % str(result.get("file_name", ""))
+	else:
+		_export_status_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
+		_export_status_label.text = "Export failed: %s" % str(result.get("error", ""))
+	_export_status_label.visible = true
 
 func _setup_controls_card() -> void:
 	if _controls_card != null:
@@ -392,6 +439,8 @@ func toggle_pause_menu():
 		# Show pause menu
 		main_menu.visible = true
 		settings_menu.visible = false
+		if _export_status_label != null:
+			_export_status_label.visible = false
 		if _controls_card:
 			_controls_card.visible = true
 		

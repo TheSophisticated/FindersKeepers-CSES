@@ -24,6 +24,7 @@ extends Control
 @onready var player_legend_rows: VBoxContainer = $PlayerLegend/LegendVBox/LegendRows
  
 const MinimapUIScript = preload("res://Maps/Scripts/MinimapUI.gd")
+const MatchExporter = preload("res://scripts/managers/MatchExporter.gd")
 
 var local_parts_lost: int = 0
 var _banner_tween: Tween = null
@@ -35,6 +36,8 @@ var _spectator_banner: PanelContainer = null
 var _debug_overlay_label: Label = null
 var _debug_refresh_accum: float = 0.0
 var _minimap: Control = null
+var _export_btn: Button = null
+var _export_status_label: Label = null
  
 func _ready() -> void:
 	# Hide overlays initially
@@ -65,7 +68,56 @@ func _ready() -> void:
 	_setup_minimap()
 	_setup_spectator_banner()
 	_setup_debug_overlay()
+	_setup_game_over_export_ui()
 	_setup_focus_styling()
+
+func _setup_game_over_export_ui() -> void:
+	if game_over_panel == null or _export_btn != null:
+		return
+	var vbox := game_over_panel.get_node_or_null("VBoxContainer") as VBoxContainer
+	if vbox == null:
+		return
+	game_over_panel.offset_top = -185.0
+	game_over_panel.offset_bottom = 185.0
+
+	_export_btn = Button.new()
+	_export_btn.name = "ExportMatchBtn"
+	_export_btn.custom_minimum_size = Vector2(200, 36)
+	_export_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_export_btn.text = "Export Match (.txt)"
+	_export_btn.pressed.connect(_on_export_match_pressed)
+
+	_export_status_label = Label.new()
+	_export_status_label.name = "ExportStatusLabel"
+	_export_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_export_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_export_status_label.add_theme_font_size_override("font_size", 12)
+	_export_status_label.add_theme_color_override("font_color", Color(0.76, 0.95, 0.78))
+	_export_status_label.visible = false
+
+	vbox.add_child(_export_btn)
+	vbox.add_child(_export_status_label)
+	if menu_btn != null:
+		vbox.move_child(_export_btn, menu_btn.get_index())
+		vbox.move_child(_export_status_label, _export_btn.get_index() + 1)
+		_export_btn.focus_neighbor_bottom = menu_btn.get_path()
+		_export_btn.focus_neighbor_top = menu_btn.get_path()
+		menu_btn.focus_neighbor_top = _export_btn.get_path()
+		menu_btn.focus_neighbor_bottom = _export_btn.get_path()
+
+func _on_export_match_pressed() -> void:
+	var result: Dictionary = MatchExporter.export_match_to_text_file(GameManager, NetworkManager)
+	if _export_status_label == null:
+		return
+	if bool(result.get("ok", false)):
+		var gpath: String = str(result.get("global_path", ""))
+		DisplayServer.clipboard_set(gpath)
+		_export_status_label.add_theme_color_override("font_color", Color(0.76, 0.95, 0.78))
+		_export_status_label.text = "Exported: %s (full path copied)" % str(result.get("file_name", ""))
+	else:
+		_export_status_label.add_theme_color_override("font_color", Color(1.0, 0.45, 0.45))
+		_export_status_label.text = "Export failed: %s" % str(result.get("error", "Unknown error"))
+	_export_status_label.visible = true
 
 func _setup_minimap() -> void:
 	if _minimap != null or get_node_or_null("MinimapUI") != null:
@@ -381,6 +433,8 @@ func _on_game_over(winner_id: int, winner_name: String) -> void:
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	if game_over_panel:
 		game_over_panel.visible = true
+		if _export_status_label != null:
+			_export_status_label.visible = false
 		if winner_label:
 			var summary := ""
 			if winner_id == -1:
