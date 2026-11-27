@@ -1,4 +1,3 @@
-class_name PlayerCustomization
 extends RefCounted
 
 ## Static preset registry and cached material applier for player skin tone

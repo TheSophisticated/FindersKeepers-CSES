@@ -19,6 +19,7 @@ extends Control
 @onready var preview_camera: Camera3D = $Panel/VBoxContainer/CharacterPreview/Viewport/PreviewStage/Camera3D
 
 const CHARACTER_CATALOG: CharacterCatalog = preload("res://Models/characters/Definitions/CharacterCatalog.tres")
+const PlayerCustomization = preload("res://Models/characters/PlayerCustomization.gd")
 
 var _dots_time := 0.0
 var _selected_character_index := 0

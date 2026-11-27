@@ -3,6 +3,8 @@
 
 extends CharacterBody3D
 
+const PlayerCustomization = preload("res://Models/characters/PlayerCustomization.gd")
+
 # ===== EXPORTED SETTINGS =====
 @export_category("Movement Settings")
 @export var walk_speed := 10.0          # Normal movement speed

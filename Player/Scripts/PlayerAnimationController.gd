@@ -5,6 +5,8 @@
 
 extends Node
 
+const PlayerCustomization = preload("res://Models/characters/PlayerCustomization.gd")
+
 const ANIM_SCENES: Dictionary = {
 	"run": "res://Animations/Running.fbx",
 	"walk": "res://Animations/Walking.fbx",

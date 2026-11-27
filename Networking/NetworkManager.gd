@@ -33,6 +33,7 @@ var player_character_selections: Dictionary = {}
 var player_names: Dictionary = {}
 var player_customizations: Dictionary = {}
 const CHARACTER_CATALOG: CharacterCatalog = preload("res://Models/characters/Definitions/CharacterCatalog.tres")
+const PlayerCustomization = preload("res://Models/characters/PlayerCustomization.gd")
 const DEFAULT_CHARACTER_ID: StringName = &"player_1"
  
 # Signals

@@ -1,6 +1,8 @@
 class_name BodyPart
 extends RigidBody3D
 
+const PlayerCustomization = preload("res://Models/characters/PlayerCustomization.gd")
+
 @onready var owner_label: Label3D = $OwnerTag/OwnerLabel
 @onready var owner_label_background: MeshInstance3D = $OwnerTag/OwnerLabelBackground
 @onready var owner_label_frame: MeshInstance3D = $OwnerTag/OwnerLabelFrame
