@@ -23,6 +23,8 @@ extends Control
  
 @onready var player_legend_rows: VBoxContainer = $PlayerLegend/LegendVBox/LegendRows
  
+const MinimapUIScript = preload("res://Maps/Scripts/MinimapUI.gd")
+
 var local_parts_lost: int = 0
 var _banner_tween: Tween = null
 var _panic_vignette: ColorRect = null
@@ -32,6 +34,7 @@ var _last_time_remaining: float = 300.0
 var _spectator_banner: PanelContainer = null
 var _debug_overlay_label: Label = null
 var _debug_refresh_accum: float = 0.0
+var _minimap: Control = null
  
 func _ready() -> void:
 	# Hide overlays initially
@@ -59,9 +62,18 @@ func _ready() -> void:
 		shrine_decline_btn.focus_neighbor_right = shrine_accept_btn.get_path()
  
 	_setup_panic_vignette()
+	_setup_minimap()
 	_setup_spectator_banner()
 	_setup_debug_overlay()
 	_setup_focus_styling()
+
+func _setup_minimap() -> void:
+	if _minimap != null or get_node_or_null("MinimapUI") != null:
+		return
+	_minimap = MinimapUIScript.new()
+	add_child(_minimap)
+	# Place above PanicVignette (index 0) and below modal overlays
+	move_child(_minimap, 1)
 
 func _setup_debug_overlay() -> void:
 	_debug_overlay_label = Label.new()
@@ -361,6 +373,8 @@ func _on_shrine_resolved(accepted: bool) -> void:
 func _on_game_over(winner_id: int, winner_name: String) -> void:
 	if _spectator_banner != null:
 		_spectator_banner.visible = false
+	if _minimap != null:
+		_minimap.visible = false
 	var local_player := _get_local_player()
 	if local_player and local_player.has_method("set_input_enabled"):
 		local_player.set_input_enabled(false)

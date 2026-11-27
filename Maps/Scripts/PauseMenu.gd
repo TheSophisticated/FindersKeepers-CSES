@@ -111,6 +111,7 @@ func _setup_controls_card() -> void:
 		["Q / B", "Shove Player"],
 		["1 / 2 (LB / RB)", "Use Tarot Card"],
 		["F / Y", "Toggle Torch"],
+		["M", "Minimap Zoom"],
 		["Esc / P / Start", "Pause"]
 	]
 	for pair in bindings:
