@@ -38,12 +38,11 @@ func _stamp_disc(img: Image, cx: int, cy: int, radius: int, col: Color, alpha: f
 			img.set_pixel(px, py, dst.lerp(col, alpha))
 
 
-func _stamp_mesh_footprints(img: Image, root: Node, col: Color, alpha: float, max_half_extent: float = 40.0, min_radius: int = 1) -> int:
+func _stamp_mesh_footprints(img: Image, root: Node, col: Color, alpha: float, max_half_extent: float = 40.0, min_radius: int = 1, use_discs: bool = false) -> int:
 	if root == null:
 		return 0
 	var count := 0
 	var stack: Array[Node] = [root]
-	var step_world := (WORLD_MAX_X - WORLD_MIN_X) / float(IMG_SIZE)
 	while not stack.is_empty():
 		var cur: Node = stack.pop_back()
 		if cur is MeshInstance3D:
@@ -59,8 +58,8 @@ func _stamp_mesh_footprints(img: Image, root: Node, col: Color, alpha: float, ma
 					var rx := maxi(min_radius, int(round((p1.x - p0.x) * 0.5)))
 					var rz := maxi(min_radius, int(round((p1.y - p0.y) * 0.5)))
 					var pc := _world_to_pixel(c.x, c.z)
-					if rx <= 2 and rz <= 2:
-						_stamp_disc(img, pc.x, pc.y, maxi(rx, rz), col, alpha)
+					if use_discs or (rx <= 3 and rz <= 3):
+						_stamp_disc(img, pc.x, pc.y, mini(8, maxi(rx, rz)), col, alpha)
 					else:
 						for py in range(maxi(0, pc.y - rz), mini(IMG_SIZE - 1, pc.y + rz) + 1):
 							for px in range(maxi(0, pc.x - rx), mini(IMG_SIZE - 1, pc.x + rx) + 1):
@@ -178,11 +177,21 @@ func _init() -> void:
 	var ruins_node := world.get_node_or_null("ruins")
 	var skull_node := world.get_node_or_null("skull_area")
 
-	var n_forest := _stamp_mesh_footprints(img, forest_node, Color(0.16, 0.27, 0.19), 0.45, 16.0, 1)
-	var n_skull := _stamp_mesh_footprints(img, skull_node, Color(0.28, 0.19, 0.21), 0.40, 22.0, 1)
-	var n_grave := _stamp_mesh_footprints(img, grave_node, Color(0.46, 0.48, 0.52), 0.48, 18.0, 1)
-	var n_ruins := _stamp_mesh_footprints(img, ruins_node, Color(0.58, 0.57, 0.52), 0.65, 32.0, 2)
-	var n_church := _stamp_mesh_footprints(img, church_node, Color(0.76, 0.72, 0.64), 0.85, 50.0, 2)
+	var n_forest := _stamp_mesh_footprints(img, forest_node, Color(0.15, 0.28, 0.19), 0.42, 16.0, 2, true)
+	var n_skull := _stamp_mesh_footprints(img, skull_node, Color(0.32, 0.18, 0.22), 0.46, 22.0, 2, true)
+	var n_grave := _stamp_mesh_footprints(img, grave_node, Color(0.46, 0.49, 0.54), 0.44, 16.0, 1, true)
+	var n_ruins := _stamp_mesh_footprints(img, ruins_node, Color(0.58, 0.57, 0.52), 0.60, 24.0, 2, false)
+	var n_church := _stamp_mesh_footprints(img, church_node, Color(0.76, 0.72, 0.64), 0.85, 16.0, 2, false)
+
+	# Crisp architectural church footprint centered at SpellCenter (-107.25, 25.07)
+	var sc_node := world.get_node_or_null("SpellCenter") as Node3D
+	var ch_pos := sc_node.global_position if sc_node != null else Vector3(-107.25, 42.0, 25.07)
+	var cp := _world_to_pixel(ch_pos.x, ch_pos.z)
+	for py in range(cp.y - 6, cp.y + 7):
+		for px in range(cp.x - 9, cp.x + 10):
+			if px >= 0 and px < IMG_SIZE and py >= 0 and py < IMG_SIZE:
+				var is_border := (px == cp.x - 9 or px == cp.x + 9 or py == cp.y - 6 or py == cp.y + 6)
+				img.set_pixel(px, py, Color(0.92, 0.88, 0.78) if is_border else Color(0.68, 0.64, 0.58))
 
 	print("Stamped footprints -> forest:%d skull:%d grave:%d ruins:%d church:%d" % [n_forest, n_skull, n_grave, n_ruins, n_church])
 
